@@ -1268,7 +1268,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
   int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
   // Force block reward to zero when right shift is undefined.
   if (halvings >= 64)
-    return 0;
+    return 10000; // the issue remains open https://github.com/cyberyen/cyberyen/issues/1
 
   CAmount nSubsidy;
 
