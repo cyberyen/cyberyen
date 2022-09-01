@@ -24,6 +24,19 @@ To start your journey with Cyberyen Core, see the [installation guide](INSTALL.m
 
 The JSON-RPC API provided by Cyberyen Core is self-documenting and can be browsed with `cyberyen-cli help`, while detailed information for each command can be viewed with `cyberyen-cli help <command>`. Alternatively, see the [Bitcoin Core documentation](https://developer.bitcoin.org/reference/rpc/) - which implement a similar protocol - to get a browsable version.
 
+### Ports
+
+Cyberyen Core by default uses port `58383` for peer-to-peer communication that
+is needed to synchronize the "mainnet" blockchain and stay informed of new
+transactions and blocks. Additionally, a JSONRPC port can be opened, which
+defaults to port `58382` for mainnet nodes. It is strongly recommended to not
+expose RPC ports to the public internet.
+
+| Function | mainnet | testnet | regtest |
+| :------- | ------: | ------: | ------: |
+| P2P      |   58383 |   44551 |   18440 |
+| RPC      |   58382 |   44550 |   18439 |
+
 ## Contributing 🦾
 
 Cyberyen Core is an open source and community driven software. The development process is open and publicly visible; anyone can see, discuss and work on the software.
