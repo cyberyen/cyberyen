@@ -1266,31 +1266,28 @@ bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const CBlockIndex* pindex
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
   int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
-  // Force block reward to zero when right shift is undefined.
-  if (halvings >= 64)
-    return 10000; // the issue remains open https://github.com/cyberyen/cyberyen/issues/1
+
+  if (!consensusParams.fSimplifiedRewards);
 
   CAmount nSubsidy;
 
   if (nHeight <= 99000) {
-    nSubsidy = 1000000 * COIN;
+    nSubsidy = (1000000 * COIN) >> halvings;
   } else if (nHeight <= 144999) {
-    nSubsidy = 500000 * COIN;
+    nSubsidy = (500000 * COIN) >> halvings;
   } else if (nHeight <= 199999) {
-    nSubsidy = 250000 * COIN;
+    nSubsidy = (250000 * COIN) >> halvings;
   } else if (nHeight <= 299999) {
-    nSubsidy = 125000 * COIN;
+    nSubsidy = (125000 * COIN) >> halvings;
   } else if (nHeight <= 399999) {
-    nSubsidy = 62500 * COIN;
+    nSubsidy = (62500 * COIN) >> halvings;
   } else if (nHeight <= 499999) {
-    nSubsidy = 31250 * COIN;
+    nSubsidy = (31250 * COIN) >> halvings;
   } else if (nHeight <= 599999) {
-    nSubsidy = 15625 * COIN;
+    nSubsidy = (15625 * COIN) >> halvings;
   }  else {
     nSubsidy = 10000 * COIN;
   }
-  nSubsidy >>= halvings;
-
   return nSubsidy;
 }
 

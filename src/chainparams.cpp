@@ -67,13 +67,40 @@ public:
 	consensus.signet_blocks = false;
 	consensus.signet_challenge.clear();
 	consensus.nSubsidyHalvingInterval = 100000;
+	consensus.BIP16Height = 0;
+	consensus.BIP34Height = 0;
+	consensus.BIP34Hash = uint256S("0x34458c96bb547193fa90b2f2599056684b0083d8a2996f2025943eb545031d29");
+	consensus.BIP65Height = 0;
+	consensus.BIP66Height = 0;
+	consensus.CSVHeight = 0;
+	consensus.SegwitHeight = 0;
+	consensus.MinBIP9WarningHeight = 2304;
 	consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 	consensus.nPowTargetTimespan = 4 * 60 * 60;
 	consensus.nPowTargetSpacing = 1 * 60;
+	consensus.nPowKGWHeight = 0;
+	consensus.nPowDGWHeight = 0;
 	consensus.fPowAllowMinDifficultyBlocks = false;
 	consensus.fPowNoRetargeting = false;
-	consensus.nRuleChangeActivationThreshold = 9576; // 95%
-	consensus.nMinerConfirmationWindow = 10080; // nPowTargetTimespan / nPowTargetSpacing * 4
+	consensus.fSimplifiedRewards = true;
+	consensus.nRuleChangeActivationThreshold = 1728; // 75% from 2304
+	consensus.nMinerConfirmationWindow = 2304; // nPowTargetTimespan / nPowTargetSpacing * 4
+	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
+	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = Consensus::BIP9Deployment::NEVER_ACTIVE;
+	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+
+	// Deployment of Taproot (BIPs 340-342)
+	consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].bit = 2;
+	consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nStartHeight = 0;
+	consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeoutHeight = 0;
+
+	// Deployment of MWEB (LIP-0002, LIP-0003, and LIP-0004)
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].bit = 4;
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartHeight = 0;
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeoutHeight = 0;
+
+	consensus.nMinimumChainWork = uint256S("0x00");
+	consensus.defaultAssumeValid = uint256S("0x00");
 
 	/**
 	 * The message start string is designed to be unlikely to occur in normal data.
@@ -99,7 +126,6 @@ public:
 	// This is fine at runtime as we'll fall back to using them as an addrfetch if they don't support the
 	// service bits we want, but we should get them updated to support all service bits wanted by any
 	// release ASAP to avoid it where possible.
-	vSeeds.emplace_back("cyberyen.org");
 	vSeeds.emplace_back("dnsseed.cyberyen.work");
 
 	base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,28);
@@ -147,13 +173,39 @@ public:
 	consensus.signet_challenge.clear();
 	consensus.nSubsidyHalvingInterval = 100000;
 	consensus.BIP16Height = 0; // always enforce P2SH BIP16 on testnet
+	consensus.BIP34Height = 0;
+	consensus.BIP34Hash = uint256S("0x34458c96bb547193fa90b2f2599056684b0083d8a2996f2025943eb545031d29");
+	consensus.BIP65Height = 0;
+	consensus.BIP66Height = 0;
+	consensus.CSVHeight = 0;
+	consensus.SegwitHeight = 0;
+	consensus.MinBIP9WarningHeight = 2304; // segwit activation height + miner confirmation window
 	consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 	consensus.nPowTargetTimespan = 4 * 60 * 60;
 	consensus.nPowTargetSpacing = 1 * 60;
+	consensus.nPowKGWHeight = 0;
+	consensus.nPowDGWHeight = 0;
 	consensus.fPowAllowMinDifficultyBlocks = true;
 	consensus.fPowNoRetargeting = false;
-	consensus.nRuleChangeActivationThreshold = 2880; // 2 days (note this is significantly lower than Bitcoin standard)
-	consensus.nMinerConfirmationWindow = 10080; // 60 * 24 * 7 = 10,080 blocks, or one week
+	consensus.fSimplifiedRewards = true;
+	consensus.nRuleChangeActivationThreshold = 1728; // 75% from 2304
+	consensus.nMinerConfirmationWindow = 2304; // nPowTargetTimespan / nPowTargetSpacing * 4
+	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
+	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = Consensus::BIP9Deployment::NEVER_ACTIVE;
+	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+
+	// Deployment of Taproot (BIPs 340-342)
+	consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].bit = 2;
+	consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nStartHeight = 0;
+	consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeoutHeight = 0;
+
+	// Deployment of MWEB (LIP-0002, LIP-0003, and LIP-0004)
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].bit = 4;
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartHeight = 0;
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeoutHeight = 0;
+
+	consensus.nMinimumChainWork = uint256S("0x00");
+	consensus.defaultAssumeValid = uint256S("0x00");
 
 	pchMessageStart[0] = 0xfc;
 	pchMessageStart[1] = 0xc1;
@@ -172,7 +224,7 @@ public:
 	vFixedSeeds.clear();
 	vSeeds.clear();
 	// nodes with support for servicebits filtering should be at the top
-	vSeeds.emplace_back("dnsseed-test.cyberyen.work");
+	vSeeds.emplace_back("dnsseed.cyberyen.work");
 
 	base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,112);
 	base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196);
@@ -218,14 +270,39 @@ public:
 	consensus.signet_challenge.clear();
 	consensus.nSubsidyHalvingInterval = 150;
 	consensus.BIP16Height = 0;
-	consensus.nPowTargetTimespan = 4 * 60 * 60; // 3.5 days
+	consensus.BIP34Height = 0; // BIP34 activated on regtest (Used in functional tests)
+	consensus.BIP34Hash = uint256();
+	consensus.BIP65Height = 0; // BIP65 activated on regtest (Used in functional tests)
+	consensus.BIP66Height = 0; // BIP66 activated on regtest (Used in functional tests)
+	consensus.CSVHeight = 0; // CSV activated on regtest (Used in rpc activation tests)
+	consensus.SegwitHeight = 0; // SEGWIT is always activated on regtest unless overridden
+	consensus.MinBIP9WarningHeight = 0;
+	consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+	consensus.nPowTargetTimespan = 4 * 60 * 60;
 	consensus.nPowTargetSpacing = 1 * 60;
+	consensus.nPowKGWHeight = 0;
+	consensus.nPowDGWHeight = 0;
 	consensus.fPowAllowMinDifficultyBlocks = true;
 	consensus.fPowNoRetargeting = true;
-	consensus.nRuleChangeActivationThreshold = 540; // 75% for testchains
-	consensus.nMinerConfirmationWindow = 720;
-	consensus.nMinimumChainWork = uint256{};
-	consensus.defaultAssumeValid = uint256{};
+	consensus.fSimplifiedRewards = true;
+	consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
+	consensus.nMinerConfirmationWindow = 144;
+
+	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
+	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 0;
+	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+
+	consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].bit = 2;
+	consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nStartTime = Consensus::BIP9Deployment::ALWAYS_ACTIVE;
+	consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+
+	// Deployment of MWEB (LIP-0002 and LIP-0003)
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].bit = 4;
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartTime = 0;
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+
+	//consensus.nMinimumChainWork = uint256();
+	//consensus.defaultAssumeValid = uint256();
 
 	pchMessageStart[0] = 0xfa;
 	pchMessageStart[1] = 0xbf;
