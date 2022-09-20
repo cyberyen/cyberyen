@@ -70,7 +70,7 @@ static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB
 static const int MAX_SCRIPTCHECK_THREADS = 15;
 /** -par default (number of script-checking threads, 0 = auto) */
 static const int DEFAULT_SCRIPTCHECK_THREADS = 0;
-static const int64_t DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
+static const int64_t DEFAULT_MAX_TIP_AGE = 4 * 60 * 60;
 static const bool DEFAULT_CHECKPOINTS_ENABLED = true;
 static const bool DEFAULT_TXINDEX = false;
 static const char* const DEFAULT_BLOCKFILTERINDEX = "0";
@@ -202,8 +202,8 @@ void PruneBlockFilesManual(int nManualPruneHeight);
  * plTxnReplaced will be appended to with all transactions replaced from mempool
  * @param[out] fee_out optional argument to return tx fee to the caller **/
 bool AcceptToMemoryPool(CTxMemPool& pool, TxValidationState &state, const CTransactionRef &tx,
-                        std::list<CTransactionRef>* plTxnReplaced,
-                        bool bypass_limits, bool test_accept=false, CAmount* fee_out=nullptr) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
+			std::list<CTransactionRef>* plTxnReplaced,
+			bool bypass_limits, bool test_accept=false, CAmount* fee_out=nullptr) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
 
 /** Get the BIP9 state for a given deployment at the current tip. */
 ThresholdState VersionBitsTipState(const Consensus::Params& params, Consensus::DeploymentPos pos);
@@ -265,18 +265,18 @@ private:
 public:
     CScriptCheck(): ptxTo(nullptr), nIn(0), nFlags(0), cacheStore(false), error(SCRIPT_ERR_UNKNOWN_ERROR) {}
     CScriptCheck(const CTxOut& outIn, const CTransaction& txToIn, unsigned int nInIn, unsigned int nFlagsIn, bool cacheIn, PrecomputedTransactionData* txdataIn) :
-        m_tx_out(outIn), ptxTo(&txToIn), nIn(nInIn), nFlags(nFlagsIn), cacheStore(cacheIn), error(SCRIPT_ERR_UNKNOWN_ERROR), txdata(txdataIn) { }
+	m_tx_out(outIn), ptxTo(&txToIn), nIn(nInIn), nFlags(nFlagsIn), cacheStore(cacheIn), error(SCRIPT_ERR_UNKNOWN_ERROR), txdata(txdataIn) { }
 
     bool operator()();
 
     void swap(CScriptCheck &check) {
-        std::swap(ptxTo, check.ptxTo);
-        std::swap(m_tx_out, check.m_tx_out);
-        std::swap(nIn, check.nIn);
-        std::swap(nFlags, check.nFlags);
-        std::swap(cacheStore, check.cacheStore);
-        std::swap(error, check.error);
-        std::swap(txdata, check.txdata);
+	std::swap(ptxTo, check.ptxTo);
+	std::swap(m_tx_out, check.m_tx_out);
+	std::swap(nIn, check.nIn);
+	std::swap(nFlags, check.nFlags);
+	std::swap(cacheStore, check.cacheStore);
+	std::swap(error, check.error);
+	std::swap(txdata, check.txdata);
     }
 
     ScriptError GetScriptError() const { return error; }
@@ -420,10 +420,10 @@ public:
      *                                     which we've downloaded all transactions.
      */
     bool LoadBlockIndex(
-        const Consensus::Params& consensus_params,
-        CBlockTreeDB& blocktree,
-        std::set<CBlockIndex*, CBlockIndexWorkComparator>& block_index_candidates)
-        EXCLUSIVE_LOCKS_REQUIRED(cs_main);
+	const Consensus::Params& consensus_params,
+	CBlockTreeDB& blocktree,
+	std::set<CBlockIndex*, CBlockIndexWorkComparator>& block_index_candidates)
+	EXCLUSIVE_LOCKS_REQUIRED(cs_main);
 
     /** Clear all data members. */
     void Unload() EXCLUSIVE_LOCKS_REQUIRED(cs_main);
@@ -440,13 +440,13 @@ public:
      * that it doesn't descend from an invalid block, and then add it to m_block_index.
      */
     bool AcceptBlockHeader(
-        const CBlockHeader& block,
-        BlockValidationState& state,
-        const CChainParams& chainparams,
-        CBlockIndex** ppindex) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
+	const CBlockHeader& block,
+	BlockValidationState& state,
+	const CChainParams& chainparams,
+	CBlockIndex** ppindex) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
 
     ~BlockManager() {
-        Unload();
+	Unload();
     }
 };
 
@@ -558,10 +558,10 @@ public:
      * All parameters forwarded to CoinsViews.
      */
     void InitCoinsDB(
-        size_t cache_size_bytes,
-        bool in_memory,
-        bool should_wipe,
-        std::string leveldb_name = "chainstate");
+	size_t cache_size_bytes,
+	bool in_memory,
+	bool should_wipe,
+	std::string leveldb_name = "chainstate");
 
     //! Initialize the in-memory coins cache (to be done after the health of the on-disk database
     //! is verified).
@@ -570,7 +570,7 @@ public:
     //! @returns whether or not the CoinsViews object has been fully initialized and we can
     //!          safely flush this object to disk.
     bool CanFlushToDisk() EXCLUSIVE_LOCKS_REQUIRED(cs_main) {
-        return m_coins_views && m_coins_views->m_cacheview;
+	return m_coins_views && m_coins_views->m_cacheview;
     }
 
     //! The current chain of blockheaders we consult and build on.
@@ -594,21 +594,21 @@ public:
     //! @returns A reference to the in-memory cache of the UTXO set.
     CCoinsViewCache& CoinsTip() EXCLUSIVE_LOCKS_REQUIRED(cs_main)
     {
-        assert(m_coins_views->m_cacheview);
-        return *m_coins_views->m_cacheview.get();
+	assert(m_coins_views->m_cacheview);
+	return *m_coins_views->m_cacheview.get();
     }
 
     //! @returns A reference to the on-disk UTXO set database.
     CCoinsViewDB& CoinsDB() EXCLUSIVE_LOCKS_REQUIRED(cs_main)
     {
-        return m_coins_views->m_dbview;
+	return m_coins_views->m_dbview;
     }
 
     //! @returns A reference to a wrapped view of the in-memory UTXO set that
     //!     handles disk read errors gracefully.
     CCoinsViewErrorCatcher& CoinsErrorCatcher() EXCLUSIVE_LOCKS_REQUIRED(cs_main)
     {
-        return m_coins_views->m_catcherview;
+	return m_coins_views->m_catcherview;
     }
 
     //! Destructs all objects related to accessing the UTXO set.
@@ -623,7 +623,7 @@ public:
     //! Resize the CoinsViews caches dynamically and flush state to disk.
     //! @returns true unless an error occurred during the flush.
     bool ResizeCoinsCaches(size_t coinstip_size, size_t coinsdb_size)
-        EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
+	EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
 
     /**
      * Update the on-disk chain state.
@@ -637,10 +637,10 @@ public:
      * @returns true unless a system error occurred
      */
     bool FlushStateToDisk(
-        const CChainParams& chainparams,
-        BlockValidationState &state,
-        FlushStateMode mode,
-        int nManualPruneHeight = 0);
+	const CChainParams& chainparams,
+	BlockValidationState &state,
+	FlushStateMode mode,
+	int nManualPruneHeight = 0);
 
     //! Unconditionally flush all changes to disk.
     void ForceFlushStateToDisk();
@@ -664,16 +664,16 @@ public:
      * @returns true unless a system error occurred
      */
     bool ActivateBestChain(
-        BlockValidationState& state,
-        const CChainParams& chainparams,
-        std::shared_ptr<const CBlock> pblock) LOCKS_EXCLUDED(cs_main);
+	BlockValidationState& state,
+	const CChainParams& chainparams,
+	std::shared_ptr<const CBlock> pblock) LOCKS_EXCLUDED(cs_main);
 
     bool AcceptBlock(const std::shared_ptr<const CBlock>& pblock, BlockValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex, bool fRequested, const FlatFilePos* dbp, bool* fNewBlock) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
 
     // Block (dis)connection on a given view:
     DisconnectResult DisconnectBlock(const CBlock& block, const CBlockIndex* pindex, CCoinsViewCache& view);
     bool ConnectBlock(const CBlock& block, BlockValidationState& state, CBlockIndex* pindex,
-                      CCoinsViewCache& view, const CChainParams& chainparams, bool fJustCheck = false) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
+		      CCoinsViewCache& view, const CChainParams& chainparams, bool fJustCheck = false) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
 
     // Apply the effects of a block disconnection on the UTXO set.
     bool DisconnectTip(BlockValidationState& state, const CChainParams& chainparams, DisconnectedBlockTransactions* disconnectpool) EXCLUSIVE_LOCKS_REQUIRED(cs_main, m_mempool.cs);
@@ -715,12 +715,12 @@ public:
     //!
     //! @return the state of the size of the coins cache.
     CoinsCacheSizeState GetCoinsCacheSizeState(const CTxMemPool* tx_pool)
-        EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
+	EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
 
     CoinsCacheSizeState GetCoinsCacheSizeState(
-        const CTxMemPool* tx_pool,
-        size_t max_coins_cache_size_bytes,
-        size_t max_mempool_size_bytes) EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
+	const CTxMemPool* tx_pool,
+	size_t max_coins_cache_size_bytes,
+	size_t max_mempool_size_bytes) EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
 
     std::string ToString() EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
 
@@ -863,7 +863,7 @@ public:
     //! @param[in] snapshot_blockhash   If given, signify that this chainstate
     //!                                 is based on a snapshot.
     CChainState& InitializeChainstate(CTxMemPool& mempool, const uint256& snapshot_blockhash = uint256())
-        EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
+	EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
 
     //! Get all chainstates currently being used.
     std::vector<CChainState*> GetAll();
@@ -876,7 +876,7 @@ public:
 
     BlockMap& BlockIndex() EXCLUSIVE_LOCKS_REQUIRED(::cs_main)
     {
-        return m_blockman.m_block_index;
+	return m_blockman.m_block_index;
     }
 
     bool IsSnapshotActive() const;
