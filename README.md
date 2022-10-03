@@ -53,7 +53,7 @@ To see what's going on, meet people & discuss, learn
 about Cyberyen, give or ask for help, to share your project.
 
 Here are some places to visit:
-[CyberyenMatrix](https://matrix.to/#/#cyberyen:matrix.org)
+[Cyberyen [Matrix]](https://matrix.to/#/#cyberyen:matrix.org)
 
 ## License 📄
 Cyberyen Core is released under the terms of the MIT license. See
