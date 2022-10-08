@@ -12,7 +12,7 @@ The Dark Side of the Moon 🌚
 
 <br/>
 <div align="center">
-Cyberyen is a hybrid cryptocurrency grown from the Litecoin MWEB fork with grafted Dogecoin block parameters. The Cyberyen Core is the name of open source software that allows anyone to operate a node in the Cyberyen blockchain network and uses the Scrypt hashing method for Proof of Work adopted for this cryptocurrencies.
+Cyberyen is a hybrid cryptocurrency grown from the Litecoin MWEB fork with grafted new block parameters. The Cyberyen Core is the name of open source software that allows anyone to operate a node in the Cyberyen blockchain network and uses the Scrypt hashing method for Proof of Work adopted for this cryptocurrencies.
 
 <br/><br/>
 For more information, please see the website: <br/>https://cyberyen.org/
