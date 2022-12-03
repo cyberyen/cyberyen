@@ -74,7 +74,7 @@ public:
 	consensus.BIP66Height = 0;
 	consensus.CSVHeight = 0;
 	consensus.SegwitHeight = 0;
-	consensus.MinBIP9WarningHeight = 2304;
+	consensus.MinBIP9WarningHeight = 960;
 	consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 	consensus.nPowTargetTimespan = 4 * 60 * 60;
 	consensus.nPowTargetSpacing = 1 * 60;
@@ -83,8 +83,8 @@ public:
 	consensus.fPowAllowMinDifficultyBlocks = false;
 	consensus.fPowNoRetargeting = false;
 	consensus.fSimplifiedRewards = true;
-	consensus.nRuleChangeActivationThreshold = 1728; // 75% from 2304
-	consensus.nMinerConfirmationWindow = 2304; // nPowTargetTimespan / nPowTargetSpacing * 4
+	consensus.nRuleChangeActivationThreshold = 720; // 75% from 960
+	consensus.nMinerConfirmationWindow = 960; // nPowTargetTimespan / nPowTargetSpacing * 4
 	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
 	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = Consensus::BIP9Deployment::NEVER_ACTIVE;
 	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
@@ -179,7 +179,7 @@ public:
 	consensus.BIP66Height = 0;
 	consensus.CSVHeight = 0;
 	consensus.SegwitHeight = 0;
-	consensus.MinBIP9WarningHeight = 2304; // segwit activation height + miner confirmation window
+	consensus.MinBIP9WarningHeight = 960; // segwit activation height + miner confirmation window
 	consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 	consensus.nPowTargetTimespan = 4 * 60 * 60;
 	consensus.nPowTargetSpacing = 1 * 60;
@@ -188,8 +188,8 @@ public:
 	consensus.fPowAllowMinDifficultyBlocks = true;
 	consensus.fPowNoRetargeting = false;
 	consensus.fSimplifiedRewards = true;
-	consensus.nRuleChangeActivationThreshold = 1728; // 75% from 2304
-	consensus.nMinerConfirmationWindow = 2304; // nPowTargetTimespan / nPowTargetSpacing * 4
+	consensus.nRuleChangeActivationThreshold = 720; // 75% from 960
+	consensus.nMinerConfirmationWindow = 960; // nPowTargetTimespan / nPowTargetSpacing * 4
 	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
 	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = Consensus::BIP9Deployment::NEVER_ACTIVE;
 	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
