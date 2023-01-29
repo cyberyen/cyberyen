@@ -37,6 +37,12 @@ expose RPC ports to the public internet.
 | P2P      |   58383 |   44551 |   18440 |
 | RPC      |   58382 |   44550 |   18439 |
 
+### Common compiling error for Windows in Linux:
+Boost 1.70.0 
+
+Download https://boostorg.jfrog.io/artifactory/main/release/1.70.0/source/boost_1_70_0.tar.bz2
+and place into folder depends/sources/
+
 ## Contributing 🦾
 
 Cyberyen Core is an open source and community driven software. The development process is open and publicly visible; anyone can see, discuss and work on the software.
