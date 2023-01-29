@@ -148,6 +148,14 @@ public:
 	checkpointData = {
 	  {
 	    {  0, uint256S("0x34458c96bb547193fa90b2f2599056684b0083d8a2996f2025943eb545031d29")},
+            {  1, uint256S("0x47cb4e21c076575a197a977198282397f97dbe0e62f0a731bd226f0d800211de")}, // Confirm genesis
+            {  10, uint256S("0x4a72c527e4d4716a5818b99880826ec9b16cf7fd4b12623e49ac37201d6e6fa0")}, // Genesis confirmation window
+	    {  100, uint256S("0x486b645d55e488ee3e5086c438ab293c90dfdce37af31c1b9666abe81f12d216")}, // Maturity testing
+            {  241, uint256S("0x636534566b9fb309cc92b8e7842d9bd3c112d77bc3b7f3d73690c89b392bf8b3")}, // Difficulty adjustment
+            {  1000, uint256S("0xc8c20736dde8af32b54aaa28add2a9c80f57f76e54a636a90ad6fcb4753b1759")}, // Block 1000
+            {  2880, uint256S("0x57ddbe24d1bef052b153cd987eb4be3ae7e976cbf5bf134e653ce21e08f71d9e")}, // Block 2880 MWEB activation
+            {  9000, uint256S("0x63e692d93a141f5ab8171451b0b162e730deef707a7a40987ce74989fde4fc2f")}, // Block 9000
+            // {  10000, uint256S("")}, // Future Blocks
 
 	  }
 	};
