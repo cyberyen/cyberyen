@@ -17,6 +17,8 @@ BitcoinUnits::BitcoinUnits(QObject *parent):
 QList<BitcoinUnits::Unit> BitcoinUnits::availableUnits()
 {
     QList<BitcoinUnits::Unit> unitlist;
+    unitlist.append(MBTC);
+    unitlist.append(kBTC);
     unitlist.append(BTC);
     unitlist.append(mBTC);
     unitlist.append(uBTC);
@@ -28,6 +30,8 @@ bool BitcoinUnits::valid(int unit)
 {
     switch(unit)
     {
+    case MBTC:
+    case kBTC:
     case BTC:
     case mBTC:
     case uBTC:
@@ -42,10 +46,12 @@ QString BitcoinUnits::longName(int unit)
 {
     switch(unit)
     {
+    case MBTC: return QString("MCY");
+    case kBTC: return QString("kCY");
     case BTC: return QString("CY");
-    case mBTC: return QString("c");
-    case uBTC: return QString("photons");
-    case SAT: return QString("liteoshi");
+    case mBTC: return QString("mCY");
+    case uBTC: return QString("nuyen");
+    case SAT: return QString("rin");
     default: return QString("???");
     }
 }
@@ -54,8 +60,8 @@ QString BitcoinUnits::shortName(int unit)
 {
     switch(unit)
     {
-    case uBTC: return QString::fromUtf8("bits");
-    case SAT: return QString("sat");
+    case uBTC: return QString::fromUtf8("nuyen");
+    case SAT: return QString("rin");
     default: return longName(unit);
     }
 }
@@ -64,10 +70,12 @@ QString BitcoinUnits::description(int unit)
 {
     switch(unit)
     {
-    case BTC: return QString("Cyberyens");
-    case mBTC: return QString("c (1 / 1" THIN_SP_UTF8 "000)");
-    case uBTC: return QString("Photons (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
-    case SAT: return QString("Liteoshis (sat) (1 / 100" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
+    case MBTC: return QString("Mega-Cyberyen (1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
+    case kBTC: return QString("Kilo-Cyberyen (1" THIN_SP_UTF8 "000)");                
+    case BTC: return QString("Cyberyen");
+    case mBTC: return QString("Milli-Cyberyen (1 / 1" THIN_SP_UTF8 "000)");
+    case uBTC: return QString("Nuyen (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
+    case SAT: return QString("Rin (sat) (1 / 100" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
     default: return QString("???");
     }
 }
@@ -76,6 +84,8 @@ qint64 BitcoinUnits::factor(int unit)
 {
     switch(unit)
     {
+    case MBTC: return 100000000000000;
+    case kBTC: return 100000000000;
     case BTC: return 100000000;
     case mBTC: return 100000;
     case uBTC: return 100;
@@ -88,6 +98,8 @@ int BitcoinUnits::decimals(int unit)
 {
     switch(unit)
     {
+    case MBTC: return 14;
+    case kBTC: return 11;
     case BTC: return 8;
     case mBTC: return 5;
     case uBTC: return 2;
