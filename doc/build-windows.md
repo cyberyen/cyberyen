@@ -93,8 +93,7 @@ This means you cannot use a directory that is located directly on the host Windo
 
 ### Common compiling error for Windows in Linux:
 Boost 1.70.0
-
-Download https://boostorg.jfrog.io/artifactory/main/release/1.70.0/source/boost_1_70_0.tar.bz2
+⚠️ Download https://boostorg.jfrog.io/artifactory/main/release/1.70.0/source/boost_1_70_0.tar.bz2
 and place into folder depends/sources/
 
 Additional WSL Note: WSL support for [launching Win32 applications](https://docs.microsoft.com/en-us/archive/blogs/wsl/windows-and-ubuntu-interoperability#launching-win32-applications-from-within-wsl)
@@ -103,6 +102,7 @@ unexpected behaviour during the build, such as Win32 error dialogs for missing l
 is to temporarily disable WSL support for Win32 applications.
 
 Build using:
+```
 	cd ..
 	sudo chmod +x -R cyberyen-master
 	cd cyberyen-master
@@ -115,6 +115,7 @@ Build using:
 	CONFIG_SITE=$PWD/depends/x86_64-w64-mingw32/share/config.site ./configure --prefix=/ --with-inc
 	make -j 64  # make with 64 threads
 	sudo bash -c "echo 1 > /proc/sys/fs/binfmt_misc/status" # Enable WSL support for Win32 applications.
+```
 
 ## Depends system
 
