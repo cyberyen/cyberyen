@@ -57,9 +57,9 @@ installing the toolchain will be different.
 
 First, install the general dependencies:
 
-    sudo apt update
-    sudo apt upgrade
-    sudo apt install build-essential libtool autotools-dev automake pkg-config bsdmainutils curl git
+	sudo apt update
+	sudo apt upgrade
+	sudo apt install build-essential libtool autotools-dev automake pkg-config bsdmainutils curl git
 
 A host toolchain (`build-essential`) is necessary because some dependency
 packages need to build host utilities that are used in the build process.
@@ -68,22 +68,22 @@ See [dependencies.md](dependencies.md) for a complete overview.
 
 If you want to build the windows installer with `make deploy` you need [NSIS](https://nsis.sourceforge.io/Main_Page):
 
-    sudo apt install nsis
+	sudo apt install nsis
 
 Acquire the source in the usual way:
 
-    git clone https://github.com/cyberyen/cyberyen.git
-    cd cyberyen
+	git clone https://github.com/cyberyen/cyberyen.git
+	cd cyberyen
 
 ## Building for 64-bit Windows
 
 The first step is to install the mingw-w64 cross-compilation tool chain:
 
-    sudo apt install g++-mingw-w64-x86-64
+	sudo apt install g++-mingw-w64-x86-64
 
 Ubuntu Bionic 18.04 <sup>[1](#footnote1)</sup>:
 
-    sudo update-alternatives --config x86_64-w64-mingw32-g++ # Set the default mingw32 g++ compiler option to posix.
+	sudo update-alternatives --config x86_64-w64-mingw32-g++ # Set the default mingw32 g++ compiler option to posix.
 
 Once the toolchain is installed the build steps are common:
 
@@ -91,24 +91,30 @@ Note that for WSL the Cyberyen Core source path MUST be somewhere in the default
 example /usr/src/cyberyen, AND not under /mnt/d/. If this is not the case the dependency autoconf scripts will fail.
 This means you cannot use a directory that is located directly on the host Windows file system to perform the build.
 
+### Common compiling error for Windows in Linux:
+Boost 1.70.0
+
+Download https://boostorg.jfrog.io/artifactory/main/release/1.70.0/source/boost_1_70_0.tar.bz2
+and place into folder depends/sources/
+
 Additional WSL Note: WSL support for [launching Win32 applications](https://docs.microsoft.com/en-us/archive/blogs/wsl/windows-and-ubuntu-interoperability#launching-win32-applications-from-within-wsl)
 results in `Autoconf` configure scripts being able to execute Windows Portable Executable files. This can cause
 unexpected behaviour during the build, such as Win32 error dialogs for missing libraries. The recommended approach
 is to temporarily disable WSL support for Win32 applications.
 
 Build using:
-    cd ..
-    sudo chmod +x -R cyberyen-master
-    cd cyberyen-master
-    PATH=$(echo "$PATH" | sed -e 's/:\/mnt.*//g') # strip out problematic Windows %PATH% imported var
-    sudo bash -c "echo 0 > /proc/sys/fs/binfmt_misc/status" # Disable WSL support for Win32 applications.
-    cd depends
-    make HOST=x86_64-w64-mingw32 -j 64  # make with 64 threads
-    cd ..
-    ./autogen.sh
-    CONFIG_SITE=$PWD/depends/x86_64-w64-mingw32/share/config.site ./configure --prefix=/ --with-inc
-    make -j 64  # make with 64 threads 
-    sudo bash -c "echo 1 > /proc/sys/fs/binfmt_misc/status" # Enable WSL support for Win32 applications.
+	cd ..
+	sudo chmod +x -R cyberyen-master
+	cd cyberyen-master
+	PATH=$(echo "$PATH" | sed -e 's/:\/mnt.*//g') # strip out problematic Windows %PATH% imported var
+	sudo bash -c "echo 0 > /proc/sys/fs/binfmt_misc/status" # Disable WSL support for Win32 applications.
+	cd depends
+	make HOST=x86_64-w64-mingw32 -j 64  # make with 64 threads
+	cd ..
+	./autogen.sh
+	CONFIG_SITE=$PWD/depends/x86_64-w64-mingw32/share/config.site ./configure --prefix=/ --with-inc
+	make -j 64  # make with 64 threads
+	sudo bash -c "echo 1 > /proc/sys/fs/binfmt_misc/status" # Enable WSL support for Win32 applications.
 
 ## Depends system
 
@@ -122,11 +128,11 @@ executables to a directory on the Windows drive in the same directory structure
 as they appear in the release `.zip` archive. This can be done in the following
 way. This will install to `c:\workspace\cyberyen`, for example:
 
-    make install DESTDIR=/mnt/c/workspace/cyberyen
+	make install DESTDIR=/mnt/c/workspace/cyberyen
 
 You can also create an installer using:
 
-    make deploy
+	make deploy
 
 Footnotes
 ---------
