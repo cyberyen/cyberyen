@@ -93,15 +93,16 @@ This means you cannot use a directory that is located directly on the host Windo
 
 ### Common compiling error for Windows in Linux:
 Boost 1.70.0
+
 ⚠️ Download https://boostorg.jfrog.io/artifactory/main/release/1.70.0/source/boost_1_70_0.tar.bz2
-and place into folder depends/sources/
+and place into folder depends/sources/ ⚠️
 
 Additional WSL Note: WSL support for [launching Win32 applications](https://docs.microsoft.com/en-us/archive/blogs/wsl/windows-and-ubuntu-interoperability#launching-win32-applications-from-within-wsl)
 results in `Autoconf` configure scripts being able to execute Windows Portable Executable files. This can cause
 unexpected behaviour during the build, such as Win32 error dialogs for missing libraries. The recommended approach
 is to temporarily disable WSL support for Win32 applications.
 
-Build using:
+### Build using:
 ```
 	cd ..
 	sudo chmod +x -R cyberyen-master
