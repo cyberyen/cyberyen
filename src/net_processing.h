@@ -35,7 +35,7 @@ static const int DISCOURAGEMENT_THRESHOLD{100};
 class PeerManager final : public CValidationInterface, public NetEventsInterface {
 public:
     PeerManager(const CChainParams& chainparams, CConnman& connman, BanMan* banman,
-                CScheduler& scheduler, ChainstateManager& chainman, CTxMemPool& pool);
+		CScheduler& scheduler, ChainstateManager& chainman, CTxMemPool& pool);
 
     /**
      * Overridden from CValidationInterface.
@@ -85,7 +85,7 @@ public:
 
     /** Process a single message from a peer. Public for fuzz testing */
     void ProcessMessage(CNode& pfrom, const std::string& msg_type, CDataStream& vRecv,
-                        const std::chrono::microseconds time_received, const std::atomic<bool>& interruptMsgProc);
+			const std::chrono::microseconds time_received, const std::atomic<bool>& interruptMsgProc);
 
     /**
      * Increment peer's misbehavior score. If the new value >= DISCOURAGEMENT_THRESHOLD, mark the node
@@ -106,7 +106,7 @@ private:
      * @return Returns true if the peer was punished (probably disconnected)
      */
     bool MaybePunishNodeForBlock(NodeId nodeid, const BlockValidationState& state,
-                                 bool via_compact_block, const std::string& message = "");
+				 bool via_compact_block, const std::string& message = "");
 
     /**
      * Potentially disconnect and discourage a node based on the contents of a TxValidationState object
@@ -132,7 +132,7 @@ private:
      *  peer. The announcement parameters are decided in PeerManager and then
      *  passed to TxRequestTracker. */
     void AddTxAnnouncement(const CNode& node, const GenTxid& gtxid, std::chrono::microseconds current_time)
-        EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
+	EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
 
     const CChainParams& m_chainparams;
     CConnman& m_connman;
@@ -150,6 +150,8 @@ struct CNodeStateStats {
     int nSyncHeight = -1;
     int nCommonHeight = -1;
     std::vector<int> vHeightInFlight;
+    uint64_t m_addr_processed = 0;
+    uint64_t m_addr_rate_limited = 0;
 };
 
 /** Get statistics from node state */

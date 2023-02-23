@@ -24,7 +24,7 @@ for i in range(10):
     addr.time = int(time.time()) + i
     addr.nServices = NODE_NETWORK | NODE_WITNESS
     addr.ip = "123.123.123.{}".format(i % 256)
-    addr.port = 8333 + i
+    addr.port = 58383 + i
     ADDRS.append(addr)
 
 
@@ -38,8 +38,11 @@ class AddrReceiver(P2PInterface):
         for addr in message.addrs:
             assert_equal(addr.nServices, 9)
             assert addr.ip.startswith('123.123.123.')
-            assert (8333 <= addr.port < 8343)
-        self.addrv2_received_and_checked = True
+            assert (58383 <= addr.port < 58393)
+            expected_set = set((addr.ip, addr.port) for addr in ADDRS)
+            received_set = set((addr.ip, addr.port) for addr in message.addrs)
+        if expected_set == received_set:
+            self.addrv2_received_and_checked = True
 
     def wait_for_addrv2(self):
         self.wait_until(lambda: "addrv2" in self.last_message)
@@ -49,6 +52,7 @@ class AddrTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
+        self.extra_args = [["-whitelist=addr@127.0.0.1"]]
 
     def run_test(self):
         self.log.info('Create connection that sends addrv2 messages')
