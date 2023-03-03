@@ -164,10 +164,10 @@ public:
 
 
 	chainTxData = ChainTxData{
-	  // Data from rpc: getchaintxstats 4096 62e2e3d21343a00994d38a63524867507dbeee6850e8fbf02e9c47a3ccf82f24
-	  /* nTime    */ 1659708882,
-	  /* nTxCount */ 0,
-	  /* dTxRate  */ 0.29
+	  // Data from rpc: getchaintxstats 4096 bef473e2a2e72b740f041e8ba35407f6a7f3e267a0932ffb4896a4aea08d4a82
+	  /* nTime    */ 1677863663,
+	  /* nTxCount */ 110351,
+	  /* dTxRate  */ 0.03489181360446354
 	};
     }
 };
