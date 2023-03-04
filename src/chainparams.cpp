@@ -148,24 +148,26 @@ public:
 	checkpointData = {
 	  {
 	    {  0, uint256S("0x34458c96bb547193fa90b2f2599056684b0083d8a2996f2025943eb545031d29")},
-            {  1, uint256S("0x47cb4e21c076575a197a977198282397f97dbe0e62f0a731bd226f0d800211de")}, // Confirm genesis
-            {  10, uint256S("0x4a72c527e4d4716a5818b99880826ec9b16cf7fd4b12623e49ac37201d6e6fa0")}, // Genesis confirmation window
-	    {  100, uint256S("0x486b645d55e488ee3e5086c438ab293c90dfdce37af31c1b9666abe81f12d216")}, // Maturity testing
-            {  241, uint256S("0x636534566b9fb309cc92b8e7842d9bd3c112d77bc3b7f3d73690c89b392bf8b3")}, // Difficulty adjustment
-            {  1000, uint256S("0xc8c20736dde8af32b54aaa28add2a9c80f57f76e54a636a90ad6fcb4753b1759")}, // Block 1000
-            {  2880, uint256S("0x57ddbe24d1bef052b153cd987eb4be3ae7e976cbf5bf134e653ce21e08f71d9e")}, // Block 2880 MWEB activation
-            {  9000, uint256S("0x63e692d93a141f5ab8171451b0b162e730deef707a7a40987ce74989fde4fc2f")}, // Block 9000
-            // {  10000, uint256S("")}, // Future Blocks
+	    {  1, uint256S("0x47cb4e21c076575a197a977198282397f97dbe0e62f0a731bd226f0d800211de")}, // Confirm genesis
+	    {  1000, uint256S("0xc8c20736dde8af32b54aaa28add2a9c80f57f76e54a636a90ad6fcb4753b1759")}, // Genesis confirmation window
+	    {  2880, uint256S("0x57ddbe24d1bef052b153cd987eb4be3ae7e976cbf5bf134e653ce21e08f71d9e")}, // Block 2880 MWEB activation
+	    {  10000, uint256S("0x9eed8d9996a4ef6902c3bb796d7a2a0145ca78cf00628ee5cd728033d5e87ac8")}, // Block 10000
+	    {  20000, uint256S("0x4406f8fbac4265f8c65f1752af0d3f64d9afc7a94cc9155d47c160b16292ebf3")}, // Block 20000
+	    {  30000, uint256S("0x3c6fd070b209b8d2203f3042150e687f2c912e795941f4529c2218b7b1be143e")}, // Block 30000
+	    {  40000, uint256S("0x2e01888c1f9b7875dd8839d382d0737a1de795198adbbacd731198e7fff14671")}, // Block 40000
+	    {  50000, uint256S("0xf54ac3865d801947e15d2c0407e02a6ebfb9d0ee9a0ddf7b0c0bf637edce1369")}, // Block 50000
+	    {  55000, uint256S("0x414f111bb6729571bc178e5560164f9daa6056c003314e851d6123ab0fbefb3d")}, // Block 55000
+	    // {  60000, uint256S("")}, // Future Blocks
 
 	  }
 	};
 
 
 	chainTxData = ChainTxData{
-	  // Data from rpc: getchaintxstats 4096 62e2e3d21343a00994d38a63524867507dbeee6850e8fbf02e9c47a3ccf82f24
-	  /* nTime    */ 1659708882,
-	  /* nTxCount */ 0,
-	  /* dTxRate  */ 0.29
+	  // Data from rpc: getchaintxstats 4096 bef473e2a2e72b740f041e8ba35407f6a7f3e267a0932ffb4896a4aea08d4a82
+	  /* nTime    */ 1677863663,
+	  /* nTxCount */ 110351,
+	  /* dTxRate  */ 0.03489181360446354
 	};
     }
 };

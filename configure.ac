@@ -2,7 +2,7 @@ AC_PREREQ([2.69])
 define(_CLIENT_VERSION_MAJOR, 0)
 define(_CLIENT_VERSION_MINOR, 21)
 define(_CLIENT_VERSION_REVISION, 2)
-define(_CLIENT_VERSION_BUILD, 1)
+define(_CLIENT_VERSION_BUILD, 2)
 define(_CLIENT_VERSION_RC, 0)
 define(_CLIENT_VERSION_IS_RELEASE, true)
 define(_COPYRIGHT_YEAR, 2022)
@@ -202,7 +202,7 @@ dnl too much, so that it becomes difficult to spot Bitcoin Core warnings
 dnl or if they cause a build failure with --enable-werror.
 AC_ARG_ENABLE([suppress-external-warnings],
   [AS_HELP_STRING([--enable-suppress-external-warnings],
-                  [Suppress warnings from external headers (default is no)])],
+		  [Suppress warnings from external headers (default is no)])],
   [suppress_external_warnings=$enableval],
   [suppress_external_warnings=no])
 
@@ -278,41 +278,41 @@ AC_ARG_ENABLE([sse2],
 
 AC_ARG_ENABLE(man,
     [AS_HELP_STRING([--disable-man],
-                    [do not install man pages (default is to install)])],,
+		    [do not install man pages (default is to install)])],,
     enable_man=yes)
 AM_CONDITIONAL(ENABLE_MAN, test "$enable_man" != no)
 
 dnl Enable debug
 AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug],
-                    [use compiler flags and macros suited for debugging (default is no)])],
+		    [use compiler flags and macros suited for debugging (default is no)])],
     [enable_debug=$enableval],
     [enable_debug=no])
 
 dnl Enable different -fsanitize options
 AC_ARG_WITH([sanitizers],
     [AS_HELP_STRING([--with-sanitizers],
-                    [comma separated list of extra sanitizers to build with (default is none enabled)])],
+		    [comma separated list of extra sanitizers to build with (default is none enabled)])],
     [use_sanitizers=$withval])
 
 dnl Enable gprof profiling
 AC_ARG_ENABLE([gprof],
     [AS_HELP_STRING([--enable-gprof],
-                    [use gprof profiling compiler flags (default is no)])],
+		    [use gprof profiling compiler flags (default is no)])],
     [enable_gprof=$enableval],
     [enable_gprof=no])
 
 dnl Pass compiler & linker flags that make builds deterministic
 AC_ARG_ENABLE([determinism],
     [AS_HELP_STRING([--enable-determinism],
-                    [Enable compilation flags that make builds deterministic (default is no)])],
+		    [Enable compilation flags that make builds deterministic (default is no)])],
     [enable_determinism=$enableval],
     [enable_determinism=no])
 
 dnl Turn warnings into errors
 AC_ARG_ENABLE([werror],
     [AS_HELP_STRING([--enable-werror],
-                    [Treat certain compiler warnings as errors (default is no)])],
+		    [Treat certain compiler warnings as errors (default is no)])],
     [enable_werror=$enableval],
     [enable_werror=no])
 
@@ -408,7 +408,7 @@ if test "x$enable_werror" = "xyes"; then
   dnl -Wsuggest-override is broken with GCC before 9.2
   dnl https://gcc.gnu.org/bugzilla/show_bug.cgi?id=78010
   AX_CHECK_COMPILE_FLAG([-Werror=suggest-override],[ERROR_CXXFLAGS="$ERROR_CXXFLAGS -Werror=suggest-override"],,[[$CXXFLAG_WERROR]],
-                        [AC_LANG_SOURCE([[struct A { virtual void f(); }; struct B : A { void f() final; };]])])
+			[AC_LANG_SOURCE([[struct A { virtual void f(); }; struct B : A { void f() final; };]])])
   AX_CHECK_COMPILE_FLAG([-Werror=unreachable-code-loop-increment],[ERROR_CXXFLAGS="$ERROR_CXXFLAGS -Werror=unreachable-code-loop-increment"],,[[$CXXFLAG_WERROR]])
 fi
 
@@ -433,7 +433,7 @@ if test "x$CXXFLAGS_overridden" = "xno"; then
   AX_CHECK_COMPILE_FLAG([-Wlogical-op],[WARN_CXXFLAGS="$WARN_CXXFLAGS -Wlogical-op"],,[[$CXXFLAG_WERROR]])
   AX_CHECK_COMPILE_FLAG([-Woverloaded-virtual],[WARN_CXXFLAGS="$WARN_CXXFLAGS -Woverloaded-virtual"],,[[$CXXFLAG_WERROR]])
   AX_CHECK_COMPILE_FLAG([-Wsuggest-override],[WARN_CXXFLAGS="$WARN_CXXFLAGS -Wsuggest-override"],,[[$CXXFLAG_WERROR]],
-                        [AC_LANG_SOURCE([[struct A { virtual void f(); }; struct B : A { void f() final; };]])])
+			[AC_LANG_SOURCE([[struct A { virtual void f(); }; struct B : A { void f() final; };]])])
   AX_CHECK_COMPILE_FLAG([-Wunreachable-code-loop-increment],[WARN_CXXFLAGS="$WARN_CXXFLAGS -Wunreachable-code-loop-increment"],,[[$CXXFLAG_WERROR]])
 
   dnl Some compilers (gcc) ignore unknown -Wno-* options, but warn about all
@@ -648,54 +648,54 @@ case $host in
        AC_PATH_PROGS([RSVG_CONVERT], [rsvg-convert rsvg],rsvg-convert)
        AC_CHECK_PROG([BREW],brew, brew)
        if test x$BREW = xbrew; then
-         dnl These Homebrew packages may be keg-only, meaning that they won't be found
-         dnl in expected paths because they may conflict with system files. Ask
-         dnl Homebrew where each one is located, then adjust paths accordingly.
-         dnl It's safe to add these paths even if the functionality is disabled by
-         dnl the user (--without-wallet or --without-gui for example).
+	 dnl These Homebrew packages may be keg-only, meaning that they won't be found
+	 dnl in expected paths because they may conflict with system files. Ask
+	 dnl Homebrew where each one is located, then adjust paths accordingly.
+	 dnl It's safe to add these paths even if the functionality is disabled by
+	 dnl the user (--without-wallet or --without-gui for example).
 
-         if test "x$use_bdb" != xno && $BREW list --versions berkeley-db4 >/dev/null && test "x$BDB_CFLAGS" = "x" && test "x$BDB_LIBS" = "x"; then
-           bdb_prefix=$($BREW --prefix berkeley-db4 2>/dev/null)
-           dnl This must precede the call to BITCOIN_FIND_BDB48 below.
-           BDB_CFLAGS="-I$bdb_prefix/include"
-           BDB_LIBS="-L$bdb_prefix/lib -ldb_cxx-4.8"
-         fi
-         openssl_prefix=$($BREW --prefix openssl 2>/dev/null)
-         if test x$openssl_prefix != x; then
-           PKG_CONFIG_PATH="$openssl_prefix/lib/pkgconfig:$PKG_CONFIG_PATH"
-           export PKG_CONFIG_PATH
-           pkg_openssl=yes
-         fi
+	 if test "x$use_bdb" != xno && $BREW list --versions berkeley-db4 >/dev/null && test "x$BDB_CFLAGS" = "x" && test "x$BDB_LIBS" = "x"; then
+	   bdb_prefix=$($BREW --prefix berkeley-db4 2>/dev/null)
+	   dnl This must precede the call to BITCOIN_FIND_BDB48 below.
+	   BDB_CFLAGS="-I$bdb_prefix/include"
+	   BDB_LIBS="-L$bdb_prefix/lib -ldb_cxx-4.8"
+	 fi
+	 openssl_prefix=$($BREW --prefix openssl 2>/dev/null)
+	 if test x$openssl_prefix != x; then
+	   PKG_CONFIG_PATH="$openssl_prefix/lib/pkgconfig:$PKG_CONFIG_PATH"
+	   export PKG_CONFIG_PATH
+	   pkg_openssl=yes
+	 fi
 
-         if test "x$use_sqlite" != xno && $BREW list --versions sqlite3 >/dev/null; then
-           export PKG_CONFIG_PATH="$($BREW --prefix sqlite3 2>/dev/null)/lib/pkgconfig:$PKG_CONFIG_PATH"
-         fi
+	 if test "x$use_sqlite" != xno && $BREW list --versions sqlite3 >/dev/null; then
+	   export PKG_CONFIG_PATH="$($BREW --prefix sqlite3 2>/dev/null)/lib/pkgconfig:$PKG_CONFIG_PATH"
+	 fi
 
-         if $BREW list --versions qt5 >/dev/null; then
-           export PKG_CONFIG_PATH="$($BREW --prefix qt5 2>/dev/null)/lib/pkgconfig:$PKG_CONFIG_PATH"
-         fi
+	 if $BREW list --versions qt5 >/dev/null; then
+	   export PKG_CONFIG_PATH="$($BREW --prefix qt5 2>/dev/null)/lib/pkgconfig:$PKG_CONFIG_PATH"
+	 fi
        fi
      else
        case $build_os in
-         *darwin*)
-           BUILD_OS=darwin
-           ;;
-         *)
-           AC_PATH_TOOL([DSYMUTIL], [dsymutil], dsymutil)
-           AC_PATH_TOOL([INSTALLNAMETOOL], [install_name_tool], install_name_tool)
-           AC_PATH_TOOL([OTOOL], [otool], otool)
-           AC_PATH_PROGS([XORRISOFS], [xorrisofs], xorrisofs)
-           AC_PATH_PROGS([DMG], [dmg], dmg)
-           AC_PATH_PROGS([RSVG_CONVERT], [rsvg-convert rsvg],rsvg-convert)
-           AC_PATH_PROGS([IMAGEMAGICK_CONVERT], [convert],convert)
-           AC_PATH_PROGS([TIFFCP], [tiffcp],tiffcp)
+	 *darwin*)
+	   BUILD_OS=darwin
+	   ;;
+	 *)
+	   AC_PATH_TOOL([DSYMUTIL], [dsymutil], dsymutil)
+	   AC_PATH_TOOL([INSTALLNAMETOOL], [install_name_tool], install_name_tool)
+	   AC_PATH_TOOL([OTOOL], [otool], otool)
+	   AC_PATH_PROGS([XORRISOFS], [xorrisofs], xorrisofs)
+	   AC_PATH_PROGS([DMG], [dmg], dmg)
+	   AC_PATH_PROGS([RSVG_CONVERT], [rsvg-convert rsvg],rsvg-convert)
+	   AC_PATH_PROGS([IMAGEMAGICK_CONVERT], [convert],convert)
+	   AC_PATH_PROGS([TIFFCP], [tiffcp],tiffcp)
 
-           dnl libtool will try to strip the static lib, which is a problem for
-           dnl cross-builds because strip attempts to call a hard-coded ld,
-           dnl which may not exist in the path. Stripping the .a is not
-           dnl necessary, so just disable it.
-           old_striplib=
-           ;;
+	   dnl libtool will try to strip the static lib, which is a problem for
+	   dnl cross-builds because strip attempts to call a hard-coded ld,
+	   dnl which may not exist in the path. Stripping the .a is not
+	   dnl necessary, so just disable it.
+	   old_striplib=
+	   ;;
        esac
      fi
 
@@ -737,13 +737,13 @@ if test x$use_lcov = xyes; then
     ]])],[
       AC_MSG_RESULT([yes])
       if test x$LLVM_COV = x; then
-        AC_MSG_ERROR([lcov testing requested but llvm-cov not found])
+	AC_MSG_ERROR([lcov testing requested but llvm-cov not found])
       fi
       COV_TOOL="$LLVM_COV gcov"
     ],[
       AC_MSG_RESULT([no])
       if test x$GCOV = x; then
-        AC_MSG_ERROR([lcov testing requested but gcov not found])
+	AC_MSG_ERROR([lcov testing requested but gcov not found])
       fi
       COV_TOOL="$GCOV"
   ])
@@ -804,15 +804,15 @@ if test "x$enable_gprof" = xyes; then
     dnl -pie by default, in which case it needs to be turned off with -no-pie.
 
     if test x$use_hardening = xyes; then
-        AC_MSG_ERROR(gprof profiling is not compatible with hardening. Reconfigure with --disable-hardening or --disable-gprof)
+	AC_MSG_ERROR(gprof profiling is not compatible with hardening. Reconfigure with --disable-hardening or --disable-gprof)
     fi
     use_hardening=no
     AX_CHECK_COMPILE_FLAG([-pg],[GPROF_CXXFLAGS="-pg"],
-        [AC_MSG_ERROR(gprof profiling requested but not available)], [[$CXXFLAG_WERROR]])
+	[AC_MSG_ERROR(gprof profiling requested but not available)], [[$CXXFLAG_WERROR]])
 
     AX_CHECK_LINK_FLAG([[-no-pie]], [GPROF_LDFLAGS="-no-pie"])
     AX_CHECK_LINK_FLAG([[-pg]],[GPROF_LDFLAGS="$GPROF_LDFLAGS -pg"],
-        [AC_MSG_ERROR(gprof profiling requested but not available)], [[$GPROF_LDFLAGS]])
+	[AC_MSG_ERROR(gprof profiling requested but not available)], [[$GPROF_LDFLAGS]])
 fi
 
 if test x$TARGET_OS != xwindows; then
@@ -843,7 +843,7 @@ if test x$use_hardening != xno; then
   if test x$enable_debug != xyes; then
     AX_CHECK_PREPROC_FLAG([-D_FORTIFY_SOURCE=2],[
       AX_CHECK_PREPROC_FLAG([-U_FORTIFY_SOURCE],[
-        HARDENED_CPPFLAGS="$HARDENED_CPPFLAGS -U_FORTIFY_SOURCE"
+	HARDENED_CPPFLAGS="$HARDENED_CPPFLAGS -U_FORTIFY_SOURCE"
       ])
       HARDENED_CPPFLAGS="$HARDENED_CPPFLAGS -D_FORTIFY_SOURCE=2"
     ])
@@ -892,15 +892,15 @@ AC_CHECK_DECLS([daemon])
 
 AC_CHECK_DECLS([le16toh, le32toh, le64toh, htole16, htole32, htole64, be16toh, be32toh, be64toh, htobe16, htobe32, htobe64],,,
 		[#if HAVE_ENDIAN_H
-                 #include <endian.h>
-                 #elif HAVE_SYS_ENDIAN_H
-                 #include <sys/endian.h>
-                 #endif])
+		 #include <endian.h>
+		 #elif HAVE_SYS_ENDIAN_H
+		 #include <sys/endian.h>
+		 #endif])
 
 AC_CHECK_DECLS([bswap_16, bswap_32, bswap_64],,,
 		[#if HAVE_BYTESWAP_H
-                 #include <byteswap.h>
-                 #endif])
+		 #include <byteswap.h>
+		 #endif])
 
 AC_MSG_CHECKING(for __builtin_clzl)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
@@ -937,15 +937,15 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <malloc.h>]],
 dnl Check for posix_fallocate
 AC_MSG_CHECKING(for posix_fallocate)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-                   // same as in src/util/system.cpp
-                   #ifdef __linux__
-                   #ifdef _POSIX_C_SOURCE
-                   #undef _POSIX_C_SOURCE
-                   #endif
-                   #define _POSIX_C_SOURCE 200112L
-                   #endif // __linux__
-                   #include <fcntl.h>]],
-                   [[ int f = posix_fallocate(0, 0, 0); ]])],
+		   // same as in src/util/system.cpp
+		   #ifdef __linux__
+		   #ifdef _POSIX_C_SOURCE
+		   #undef _POSIX_C_SOURCE
+		   #endif
+		   #define _POSIX_C_SOURCE 200112L
+		   #endif // __linux__
+		   #include <fcntl.h>]],
+		   [[ int f = posix_fallocate(0, 0, 0); ]])],
  [ AC_MSG_RESULT(yes); AC_DEFINE(HAVE_POSIX_FALLOCATE, 1,[Define this symbol if you have posix_fallocate]) ],
  [ AC_MSG_RESULT(no)]
 )
@@ -986,20 +986,20 @@ if test "x$use_thread_local" = xyes || { test "x$use_thread_local" = xauto && te
     [
      case $host in
        *mingw*)
-          dnl mingw32's implementation of thread_local has also been shown to behave
-          dnl erroneously under concurrent usage; see:
-          dnl https://gist.github.com/jamesob/fe9a872051a88b2025b1aa37bfa98605
-          AC_MSG_RESULT(no)
-          ;;
-        *freebsd*)
-          dnl FreeBSD's implementation of thread_local is also buggy (per
-          dnl https://groups.google.com/d/msg/bsdmailinglist/22ncTZAbDp4/Dii_pII5AwAJ)
-          AC_MSG_RESULT(no)
-          ;;
-        *)
-          AC_DEFINE(HAVE_THREAD_LOCAL,1,[Define if thread_local is supported.])
-          AC_MSG_RESULT(yes)
-          ;;
+	  dnl mingw32's implementation of thread_local has also been shown to behave
+	  dnl erroneously under concurrent usage; see:
+	  dnl https://gist.github.com/jamesob/fe9a872051a88b2025b1aa37bfa98605
+	  AC_MSG_RESULT(no)
+	  ;;
+	*freebsd*)
+	  dnl FreeBSD's implementation of thread_local is also buggy (per
+	  dnl https://groups.google.com/d/msg/bsdmailinglist/22ncTZAbDp4/Dii_pII5AwAJ)
+	  AC_MSG_RESULT(no)
+	  ;;
+	*)
+	  AC_DEFINE(HAVE_THREAD_LOCAL,1,[Define if thread_local is supported.])
+	  AC_MSG_RESULT(yes)
+	  ;;
       esac
     ],
     [
@@ -1156,8 +1156,8 @@ fi
 AC_MSG_CHECKING([for std::system])
 AC_LINK_IFELSE(
     [ AC_LANG_PROGRAM(
-        [[ #include <cstdlib> ]],
-        [[ int nErr = std::system(""); ]]
+	[[ #include <cstdlib> ]],
+	[[ int nErr = std::system(""); ]]
     )],
     [ AC_MSG_RESULT(yes); AC_DEFINE(HAVE_STD__SYSTEM, 1, Define to 1 if std::system is available.)],
     [ AC_MSG_RESULT(no) ]
@@ -1166,8 +1166,8 @@ AC_LINK_IFELSE(
 AC_MSG_CHECKING([for ::_wsystem])
 AC_LINK_IFELSE(
     [ AC_LANG_PROGRAM(
-        [[ ]],
-        [[ int nErr = ::_wsystem(""); ]]
+	[[ ]],
+	[[ int nErr = ::_wsystem(""); ]]
     )],
     [ AC_MSG_RESULT(yes); AC_DEFINE(HAVE_WSYSTEM, 1, Define to 1 if ::wsystem is available.)],
     [ AC_MSG_RESULT(no) ]
@@ -1193,7 +1193,7 @@ dnl Do not change "-I/usr/include" to "-isystem /usr/include" because that
 dnl is not necessary (/usr/include is already a system directory) and because
 dnl it would break GCC's #include_next.
 AC_DEFUN([SUPPRESS_WARNINGS],
-         [$(echo $1 |${SED} -E -e 's/(^| )-I/\1-isystem /g' -e 's;-isystem /usr/include([/ ]|$);-I/usr/include\1;g')])
+	 [$(echo $1 |${SED} -E -e 's/(^| )-I/\1-isystem /g' -e 's;-isystem /usr/include([/ ]|$);-I/usr/include\1;g')])
 
 dnl enable-fuzz should disable all other targets
 if test "x$enable_fuzz" = "xyes"; then
@@ -1244,7 +1244,7 @@ if test x$enable_wallet != xno; then
     dnl Check for libdb_cxx only if wallet enabled
     BITCOIN_FIND_BDB48
     if test x$suppress_external_warnings != xno ; then
-        BDB_CPPFLAGS=SUPPRESS_WARNINGS($BDB_CPPFLAGS)
+	BDB_CPPFLAGS=SUPPRESS_WARNINGS($BDB_CPPFLAGS)
     fi
 
     dnl Check for sqlite3
@@ -1256,13 +1256,13 @@ if test x$enable_wallet != xno; then
       use_sqlite=no
     elif test "x$have_sqlite" = "xno"; then
       if test "x$use_sqlite" = "xyes"; then
-        AC_MSG_ERROR([sqlite support requested but cannot be built. Use --without-sqlite])
+	AC_MSG_ERROR([sqlite support requested but cannot be built. Use --without-sqlite])
       fi
       use_sqlite=no
     else
       if test x$use_sqlite != xno; then
-        AC_DEFINE([USE_SQLITE],[1],[Define if sqlite support should be compiled in])
-        use_sqlite=yes
+	AC_DEFINE([USE_SQLITE],[1],[Define if sqlite support should be compiled in])
+	use_sqlite=yes
       fi
     fi
     AC_MSG_RESULT([$use_sqlite])
@@ -1356,7 +1356,7 @@ if test x$use_tests = xyes; then
   AC_LINK_IFELSE([AC_LANG_SOURCE([
        #define BOOST_TEST_DYN_LINK
        #define BOOST_TEST_MAIN
-        #include <boost/test/unit_test.hpp>
+	#include <boost/test/unit_test.hpp>
 
        ])],
     [AC_MSG_RESULT(yes)]
