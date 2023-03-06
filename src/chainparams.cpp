@@ -128,7 +128,6 @@ public:
 	// release ASAP to avoid it where possible.
 	vSeeds.emplace_back("dnsseed.cyberyen.work");
 	vSeeds.emplace_back("cy-dnsseed.ruaxxx.com");
-	vSeeds.emplace_back("cydnsseed.mywire.org");
 
 	base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,28);
 	base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,77);
