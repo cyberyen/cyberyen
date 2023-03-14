@@ -1,4 +1,4 @@
-Litecoin Core version 0.21.2.2 is now available from:
+Cyberyen Core version 0.21.2.2 is now available from:
 
  <https://download.cyberyen.org/cyberyen-0.21.2.2/>.
 
