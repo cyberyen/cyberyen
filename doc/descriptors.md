@@ -79,19 +79,19 @@ Descriptors consist of several types of expressions. The top level expression is
   - A closing bracket `]`
 - Followed by the actual key, which is either:
   - Hex encoded public keys (either 66 characters starting with `02` or `03` for a compressed pubkey, or 130 characters starting with `04` for an uncompressed pubkey).
-    - Inside `wpkh` and `wsh`, only compressed public keys are permitted.
+	- Inside `wpkh` and `wsh`, only compressed public keys are permitted.
   - [WIF](https://en.bitcoin.it/wiki/Wallet_import_format) encoded private keys may be specified instead of the corresponding public key, with the same meaning.
   - `xpub` encoded extended public key or `xprv` encoded extended private key (as defined in [BIP 32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)).
-    - Followed by zero or more `/NUM` unhardened and `/NUM'` hardened BIP32 derivation steps.
-    - Optionally followed by a single `/*` or `/*'` final step to denote all (direct) unhardened or hardened children.
-    - The usage of hardened derivation steps requires providing the private key.
+	- Followed by zero or more `/NUM` unhardened and `/NUM'` hardened BIP32 derivation steps.
+	- Optionally followed by a single `/*` or `/*'` final step to denote all (direct) unhardened or hardened children.
+	- The usage of hardened derivation steps requires providing the private key.
 
 (Anywhere a `'` suffix is permitted to denote hardened derivation, the suffix `h` can be used instead.)
 
 `ADDR` expressions are any type of supported address:
-- P2PKH addresses (base58, of the form `L...` for mainnet or `[nm]...` for testnet). Note that P2PKH addresses in descriptors cannot be used for P2PK outputs (use the `pk` function instead).
+- P2PKH addresses (base58, of the form `C...` for mainnet or `[nm]...` for testnet). Note that P2PKH addresses in descriptors cannot be used for P2PK outputs (use the `pk` function instead).
 - P2SH addresses (base58, of the form `3...` for mainnet or `2...` for testnet, defined in [BIP 13](https://github.com/bitcoin/bips/blob/master/bip-0013.mediawiki)).
-- Segwit addresses (bech32, of the form `ltc1...` for mainnet or `tltc1...` for testnet, defined in [BIP 173](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki)).
+- Segwit addresses (bech32, of the form `cy1...` for mainnet or `tcy1...` for testnet, defined in [BIP 173](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki)).
 
 ## Explanation
 
