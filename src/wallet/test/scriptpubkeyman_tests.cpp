@@ -27,8 +27,8 @@ BOOST_AUTO_TEST_CASE(CanProvide)
     std::vector<CKey> keys(2);
     std::vector<CPubKey> pubkeys;
     for (CKey& key : keys) {
-        key.MakeNewKey(true);
-        pubkeys.emplace_back(key.GetPubKey());
+	key.MakeNewKey(true);
+	pubkeys.emplace_back(key.GetPubKey());
     }
     CScript multisig_script = GetScriptForMultisig(1, pubkeys);
     CScript p2sh_script = GetScriptForDestination(ScriptHash(multisig_script));

@@ -67,7 +67,7 @@ Note that some RPCs do not yet support segwit addresses. Notably, `signmessage`/
 
 P2WPKH change outputs are now used by default if any destination in the transaction is a P2WPKH or P2WSH output. This is done to ensure the change output is as indistinguishable from the other outputs as possible in either case.
 
-### BIP173 (Bech32) Address support ("ltc1..." addresses)
+### BIP173 (Bech32) Address support ("cy1..." addresses)
 
 Full support for native segwit addresses (BIP173 / Bech32) has now been added.
 This includes the ability to send to BIP173 addresses (including non-v0 ones), and generating these
@@ -149,7 +149,7 @@ used to create `rpcauth` credentials for a JSON-RPC user.
 ### Validateaddress improvements
 
 The `validateaddress` RPC output has been extended with a few new fields, and support for segwit addresses (both P2SH and Bech32). Specifically:
-* A new field `iswitness` is True for P2WPKH and P2WSH addresses ("ltc1..." addresses), but not for P2SH-wrapped segwit addresses (see below).
+* A new field `iswitness` is True for P2WPKH and P2WSH addresses ("cy1..." addresses), but not for P2SH-wrapped segwit addresses (see below).
 * The existing field `isscript` will now also report True for P2WSH addresses.
 * A new field `embedded` is present for all script addresses where the script is known and matches something that can be interpreted as a known address. This is particularly true for P2SH-P2WPKH and P2SH-P2WSH addresses. The value for `embedded` includes much of the information `validateaddress` would report if invoked directly on the embedded address.
 * For multisig scripts a new `pubkeys` field was added that reports the full public keys involved in the script (if known). This is a replacement for the existing `addresses` field (which reports the same information but encoded as P2PKH addresses), represented in a more useful and less confusing way. The `addresses` field remains present for non-segwit addresses for backward compatibility.

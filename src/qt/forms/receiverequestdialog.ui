@@ -65,7 +65,7 @@
    <item row="2" column="1" alignment="Qt::AlignTop">
     <widget class="QLabel" name="uri_content">
      <property name="text">
-      <string notr="true">cyberyen:LTC1...</string>
+      <string notr="true">cyberyen:CY1...</string>
      </property>
      <property name="textFormat">
       <enum>Qt::RichText</enum>
@@ -97,7 +97,7 @@
    <item row="3" column="1" alignment="Qt::AlignTop">
     <widget class="QLabel" name="address_content">
      <property name="text">
-      <string notr="true">bc1...</string>
+      <string notr="true">cy1...</string>
      </property>
      <property name="textFormat">
       <enum>Qt::PlainText</enum>
@@ -126,7 +126,7 @@
    <item row="4" column="1" alignment="Qt::AlignTop">
     <widget class="QLabel" name="amount_content">
      <property name="text">
-      <string notr="true">0.00000000 BTC</string>
+      <string notr="true">0.00000000 CY</string>
      </property>
      <property name="textFormat">
       <enum>Qt::PlainText</enum>
@@ -237,53 +237,53 @@
      <item>
       <widget class="QPushButton" name="btnCopyURI">
        <property name="text">
-        <string>Copy &amp;URI</string>
+	<string>Copy &amp;URI</string>
        </property>
        <property name="autoDefault">
-        <bool>false</bool>
+	<bool>false</bool>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="btnCopyAddress">
        <property name="text">
-        <string>Copy &amp;Address</string>
+	<string>Copy &amp;Address</string>
        </property>
        <property name="autoDefault">
-        <bool>false</bool>
+	<bool>false</bool>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="btnSaveAs">
        <property name="text">
-        <string>&amp;Save Image...</string>
+	<string>&amp;Save Image...</string>
        </property>
        <property name="autoDefault">
-        <bool>false</bool>
+	<bool>false</bool>
        </property>
       </widget>
      </item>
      <item>
       <spacer name="horizontalSpacer_2">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+	<enum>Qt::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
+	<size>
+	 <width>40</width>
+	 <height>20</height>
+	</size>
        </property>
       </spacer>
      </item>
      <item>
       <widget class="QDialogButtonBox" name="buttonBox">
        <property name="focusPolicy">
-        <enum>Qt::StrongFocus</enum>
+	<enum>Qt::StrongFocus</enum>
        </property>
        <property name="standardButtons">
-        <set>QDialogButtonBox::Ok</set>
+	<set>QDialogButtonBox::Ok</set>
        </property>
       </widget>
      </item>
