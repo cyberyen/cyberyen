@@ -1,6 +1,6 @@
 Cyberyen Core version 0.21.2.2 is now available from:
 
- <https://download.cyberyen.org/cyberyen-0.21.2.2/>.
+ <https://github.com/cyberyen/cyberyen/releases/tag/v0.21.2.2/>.
 
 This is a new patch version release that includes important security updates.
 
