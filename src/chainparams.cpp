@@ -99,8 +99,8 @@ public:
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartHeight = 0;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeoutHeight = 0;
 
-	consensus.nMinimumChainWork = uint256S("0x00");
-	consensus.defaultAssumeValid = uint256S("0x00");
+	consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000077f3f4e389d101e");
+	consensus.defaultAssumeValid = uint256S("0xef396143080509b77b87faad293261b468d9ec22e149858b6b60efd4be750fa2"); // 120623
 
 	/**
 	 * The message start string is designed to be unlikely to occur in normal data.
@@ -153,22 +153,21 @@ public:
 	    {  1000, uint256S("0xc8c20736dde8af32b54aaa28add2a9c80f57f76e54a636a90ad6fcb4753b1759")}, // Genesis confirmation window
 	    {  2880, uint256S("0x57ddbe24d1bef052b153cd987eb4be3ae7e976cbf5bf134e653ce21e08f71d9e")}, // Block 2880 MWEB activation
 	    {  10000, uint256S("0x9eed8d9996a4ef6902c3bb796d7a2a0145ca78cf00628ee5cd728033d5e87ac8")}, // Block 10000
-	    {  20000, uint256S("0x4406f8fbac4265f8c65f1752af0d3f64d9afc7a94cc9155d47c160b16292ebf3")}, // Block 20000
-	    {  30000, uint256S("0x3c6fd070b209b8d2203f3042150e687f2c912e795941f4529c2218b7b1be143e")}, // Block 30000
-	    {  40000, uint256S("0x2e01888c1f9b7875dd8839d382d0737a1de795198adbbacd731198e7fff14671")}, // Block 40000
-	    {  50000, uint256S("0xf54ac3865d801947e15d2c0407e02a6ebfb9d0ee9a0ddf7b0c0bf637edce1369")}, // Block 50000
 	    {  55000, uint256S("0x414f111bb6729571bc178e5560164f9daa6056c003314e851d6123ab0fbefb3d")}, // Block 55000
-	    // {  60000, uint256S("")}, // Future Blocks
-
+	    {  80000, uint256S("0x32ae090c0d343663ada5c9a5e29057325a0445207461cc67d6b2063dea71f602")}, // Block 80000
+	    {  90000, uint256S("0x84686fb34c249133aa155c04f7bbc6035bdb71f9fc845444137b7535fed69cdb")}, // Block 90000
+	    {  100005, uint256S("0xe08f6b3a18a2092139916b5994f15b93ac4a5ffc0d27ce09c1a8da3e16e24138")}, // Block 100005
+	    {  120000, uint256S("0x977d00a8bc7022e6fba57c10b01b8eb868f94ed5fe4c3dd430cedf6f3af36e45")}, // Block 120000
+	    // {  145000, uint256S("0x")}, // Future Blocks
 	  }
 	};
 
 
 	chainTxData = ChainTxData{
-	  // Data from rpc: getchaintxstats 4096 bef473e2a2e72b740f041e8ba35407f6a7f3e267a0932ffb4896a4aea08d4a82
-	  /* nTime    */ 1677863663,
-	  /* nTxCount */ 110351,
-	  /* dTxRate  */ 0.03489181360446354
+	  // Data from rpc: getchaintxstats 4096 ef396143080509b77b87faad293261b468d9ec22e149858b6b60efd4be750fa2
+	  /* nTime    */ 1682008709,
+	  /* nTxCount */ 246073,
+	  /* dTxRate  */ 0.03253798553867309
 	};
     }
 };
