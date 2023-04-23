@@ -25,8 +25,8 @@ struct CCheckpointData {
     MapCheckpoints mapCheckpoints;
 
     int GetHeight() const {
-        const auto& final_checkpoint = mapCheckpoints.rbegin();
-        return final_checkpoint->first /* height */;
+	const auto& final_checkpoint = mapCheckpoints.rbegin();
+	return final_checkpoint->first /* height */;
     }
 };
 
@@ -53,14 +53,14 @@ class CChainParams
 {
 public:
     enum Base58Type {
-        PUBKEY_ADDRESS,
-        SCRIPT_ADDRESS,
-        SCRIPT_ADDRESS2,
-        SECRET_KEY,
-        EXT_PUBLIC_KEY,
-        EXT_SECRET_KEY,
+	PUBKEY_ADDRESS,
+	SCRIPT_ADDRESS,
+	SCRIPT_ADDRESS2,
+	SECRET_KEY,
+	EXT_PUBLIC_KEY,
+	EXT_SECRET_KEY,
 
-        MAX_BASE58_TYPES
+	MAX_BASE58_TYPES
     };
 
     const Consensus::Params& GetConsensus() const { return consensus; }

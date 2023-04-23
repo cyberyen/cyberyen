@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014-2022 The Litecoin Core developers
+# Copyright (c) 2014-2022 The Cyberyen Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the -mempoolreplacement (RBF) flag."""
@@ -8,11 +8,11 @@ from test_framework.messages import COIN, COutPoint, CTransaction, CTxIn, CTxOut
 from test_framework.script import CScript, OP_DROP
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_raises_rpc_error, satoshi_round
-from test_framework.ltc_util import make_utxo
+from test_framework.cy_util import make_utxo
 from test_framework.script_util import DUMMY_P2WPKH_SCRIPT
 
 
-class LtcReplaceByFeeTest(BitcoinTestFramework):
+class CyReplaceByFeeTest(BitcoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 2
         self.extra_args = [
@@ -99,4 +99,4 @@ class LtcReplaceByFeeTest(BitcoinTestFramework):
         rbf_node.sendrawtransaction(tx3c_hex, 0)
 
 if __name__ == '__main__':
-    LtcReplaceByFeeTest().main()
+    CyReplaceByFeeTest().main()

@@ -30,8 +30,7 @@ enum NetPermissionFlags {
     PF_NOBAN = (1U << 4) | PF_DOWNLOAD,
     // Can query the mempool
     PF_MEMPOOL = (1U << 5),
-    // Can request addrs without hitting a privacy-preserving cache, and send us
-    // unlimited amounts of addrs.
+    // Can request addrs without hitting a privacy-preserving cache
     PF_ADDR = (1U << 7),
 
     // True if the user did not specifically set fine grained permissions

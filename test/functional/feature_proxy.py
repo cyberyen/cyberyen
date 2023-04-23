@@ -2,13 +2,13 @@
 # Copyright (c) 2015-2019 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-"""Test litecoind with different proxy configuration.
+"""Test cyberyend with different proxy configuration.
 
 Test plan:
-- Start litecoind's with different proxy configurations
+- Start cyberyend's with different proxy configurations
 - Use addnode to initiate connections
 - Verify that proxies are connected to, and the right connection command is given
-- Proxy configurations to test on litecoind side:
+- Proxy configurations to test on cyberyend side:
     - `-proxy` (proxy everything)
     - `-onion` (proxy just onions)
     - `-proxyrandomize` Circuit randomization

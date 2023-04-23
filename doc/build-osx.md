@@ -62,17 +62,17 @@ Also, the Homebrew package could be installed:
 brew install berkeley-db4
 ```
 
-## Build Litecoin Core
+## Build Cyberyen Core
 
-1. Clone the Litecoin Core source code:
+1. Clone the Cyberyen Core source code:
     ```shell
-    git clone https://github.com/litecoin-project/litecoin
-    cd litecoin
+    git clone https://github.com/cyberyen/cyberyen
+    cd cyberyen
     ```
 
-2.  Build Litecoin Core:
+2.  Build Cyberyen Core:
 
-    Configure and build the headless Litecoin Core binaries as well as the GUI (if Qt is found).
+    Configure and build the headless Cyberyen Core binaries as well as the GUI (if Qt is found).
 
     You can disable the GUI build by passing `--without-gui` to configure.
     ```shell
@@ -92,7 +92,7 @@ brew install berkeley-db4
     ```
 
 ## Disable-wallet mode
-When the intention is to run only a P2P node without a wallet, Litecoin Core may be
+When the intention is to run only a P2P node without a wallet, Cyberyen Core may be
 compiled in disable-wallet mode with:
 ```shell
 ./configure --disable-wallet
@@ -103,30 +103,30 @@ In this case there is no dependency on [*Berkeley DB*](#berkeley-db) and [*SQLit
 Mining is also possible in disable-wallet mode using the `getblocktemplate` RPC call.
 
 ## Running
-Litecoin Core is now available at `./src/litecoind`
+Cyberyen Core is now available at `./src/cyberyend`
 
 Before running, you may create an empty configuration file:
 ```shell
-mkdir -p "/Users/${USER}/Library/Application Support/Litecoin"
+mkdir -p "/Users/${USER}/Library/Application Support/Cyberyen"
 
-touch "/Users/${USER}/Library/Application Support/Litecoin/litecoin.conf"
+touch "/Users/${USER}/Library/Application Support/Cyberyen/cyberyen.conf"
 
-chmod 600 "/Users/${USER}/Library/Application Support/Litecoin/litecoin.conf"
+chmod 600 "/Users/${USER}/Library/Application Support/Cyberyen/cyberyen.conf"
 ```
 
-The first time you run litecoind, it will start downloading the blockchain. This process could
+The first time you run cyberyend, it will start downloading the blockchain. This process could
 take many hours, or even days on slower than average systems.
 
 You can monitor the download process by looking at the debug.log file:
 ```shell
-tail -f $HOME/Library/Application\ Support/Litecoin/debug.log
+tail -f $HOME/Library/Application\ Support/Cyberyen/debug.log
 ```
 
 ## Other commands:
 ```shell
-./src/litecoind -daemon      # Starts the litecoin daemon.
-./src/litecoin-cli --help    # Outputs a list of command-line options.
-./src/litecoin-cli help      # Outputs a list of RPC commands when the daemon is running.
+./src/cyberyend -daemon      # Starts the cyberyen daemon.
+./src/cyberyen-cli --help    # Outputs a list of command-line options.
+./src/cyberyen-cli help      # Outputs a list of RPC commands when the daemon is running.
 ```
 
 ## Notes
