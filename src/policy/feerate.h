@@ -12,7 +12,7 @@
 #include <string>
 
 const std::string CURRENCY_UNIT = "CY"; // One formatted unit
-const std::string CURRENCY_ATOM = "sat"; // One indivisible minimum value unit
+const std::string CURRENCY_ATOM = "rin"; // One indivisible minimum value unit
 
 /* Used to determine type of fee estimation requested */
 enum class FeeEstimateMode {
@@ -39,8 +39,8 @@ public:
     CFeeRate() : nSatoshisPerK(0) { }
     template<typename I>
     explicit CFeeRate(const I _nSatoshisPerK): nSatoshisPerK(_nSatoshisPerK) {
-        // We've previously had bugs creep in from silent double->int conversion...
-        static_assert(std::is_integral<I>::value, "CFeeRate should be used without floats");
+	// We've previously had bugs creep in from silent double->int conversion...
+	static_assert(std::is_integral<I>::value, "CFeeRate should be used without floats");
     }
     /** Constructor for a fee rate in satoshis per kvB (sat/kvB). The size in bytes must not exceed (2^63 - 1).
      *
