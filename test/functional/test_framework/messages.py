@@ -44,7 +44,7 @@ MAX_BLOOM_FILTER_SIZE = 36000
 MAX_BLOOM_HASH_FUNCS = 50
 
 COIN = 100000000  # 1 btc in satoshis
-MAX_MONEY = 84000000 * COIN
+MAX_MONEY = 10000000000 * COIN
 
 BIP125_SEQUENCE_NUMBER = 0xfffffffd  # Sequence number that is BIP 125 opt-in and BIP 68-opt-out
 
@@ -578,7 +578,7 @@ class CTransaction:
         r += struct.pack("<I", self.nLockTime)
         return r
 
-    
+
     # Only serialize with mweb when explicitly called for
     def serialize_with_mweb(self):
         flags = 0
@@ -751,7 +751,7 @@ class CBlock(CBlockHeader):
             r += ser_vector(self.vtx, "serialize_with_witness")
         else:
             r += ser_vector(self.vtx, "serialize_without_witness")
-        
+
         return r
 
     # Calculate the merkle root given a vector of transaction hashes
@@ -868,10 +868,10 @@ class P2PHeaderAndShortIDs:
             self.shortids.append(struct.unpack("<Q", f.read(6) + b'\x00\x00')[0])
         self.prefilled_txn = deser_vector(f, PrefilledTransaction)
         self.prefilled_txn_length = len(self.prefilled_txn)
-        
+
         if len(self.prefilled_txn) > 0 and self.prefilled_txn[-1].tx.hogex:
             self.mweb_block = deser_mweb_block(f)
-                
+
     # When using version 2 compact blocks, we must serialize with_witness.
     # When using version 3 compact blocks, we must serialize with_mweb.
     def serialize(self, version=1):
@@ -1359,7 +1359,7 @@ class msg_no_witness_block(msg_block):
     __slots__ = ()
     def serialize(self):
         return self.block.serialize(with_witness=False, with_mweb=False)
-    
+
 class msg_no_mweb_block(msg_block):
     __slots__ = ()
     def serialize(self):
@@ -1890,7 +1890,7 @@ def ser_varint(n):
 
 def deser_varint(f):
     n = 0;
-    while True: 
+    while True:
         chData = struct.unpack("B", f.read(1))[0]
         n = (n << 7) | (chData & 0x7F)
         if chData & 0x80:
@@ -1976,7 +1976,7 @@ class MWEBHeader:
         r += ser_varint(self.num_txos)
         r += ser_varint(self.num_kernels)
         return r
-    
+
     def rehash(self):
         self.hash = blake3(self.serialize())
         return self.hash
@@ -2008,6 +2008,6 @@ class MWEBBlock:
         r += ser_vector(self.outputs)
         r += ser_vector(self.kernels)
         return r
-    
+
     def rehash(self):
         return self.header.rehash()
