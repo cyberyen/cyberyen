@@ -80,6 +80,7 @@ public:
 	consensus.nPowTargetSpacing = 1 * 60;
 	consensus.nPowKGWHeight = 0;
 	consensus.nPowDGWHeight = 0;
+	consensus.nLWMA3Height = 149999;
 	consensus.fPowAllowMinDifficultyBlocks = false;
 	consensus.fPowNoRetargeting = false;
 	consensus.fSimplifiedRewards = true;
@@ -195,6 +196,7 @@ public:
 	consensus.nPowTargetSpacing = 1 * 60;
 	consensus.nPowKGWHeight = 0;
 	consensus.nPowDGWHeight = 0;
+	consensus.nLWMA3Height = 0;
 	consensus.fPowAllowMinDifficultyBlocks = true;
 	consensus.fPowNoRetargeting = false;
 	consensus.fSimplifiedRewards = true;
@@ -292,6 +294,7 @@ public:
 	consensus.nPowTargetSpacing = 1 * 60;
 	consensus.nPowKGWHeight = 0;
 	consensus.nPowDGWHeight = 0;
+	consensus.nLWMA3Height = 0;
 	consensus.fPowAllowMinDifficultyBlocks = true;
 	consensus.fPowNoRetargeting = true;
 	consensus.fSimplifiedRewards = true;
