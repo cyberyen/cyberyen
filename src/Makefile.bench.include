@@ -64,6 +64,7 @@ bench_bench_cyberyen_LDADD = \
   $(LIBUNIVALUE) \
   $(EVENT_PTHREADS_LIBS) \
   $(EVENT_LIBS) \
+  $(LIBFMT) \
   $(LIBMW)
 
 if ENABLE_ZMQ
