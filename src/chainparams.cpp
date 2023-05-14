@@ -100,8 +100,8 @@ public:
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartHeight = 0;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeoutHeight = 0;
 
-	consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000077f3f4e389d101e");
-	consensus.defaultAssumeValid = uint256S("0xef396143080509b77b87faad293261b468d9ec22e149858b6b60efd4be750fa2"); // 120623
+	consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000010171ce0e357c96c");
+	consensus.defaultAssumeValid = uint256S("0xa081803346c8c098808140e6e26c1bdafd39d486b3fcc2d3174de2d18872736a"); // 145259
 
 	/**
 	 * The message start string is designed to be unlikely to occur in normal data.
@@ -149,26 +149,28 @@ public:
 
 	checkpointData = {
 	  {
-	    {  0, uint256S("0x34458c96bb547193fa90b2f2599056684b0083d8a2996f2025943eb545031d29")},
-	    {  1, uint256S("0x47cb4e21c076575a197a977198282397f97dbe0e62f0a731bd226f0d800211de")}, // Confirm genesis
-	    {  1000, uint256S("0xc8c20736dde8af32b54aaa28add2a9c80f57f76e54a636a90ad6fcb4753b1759")}, // Genesis confirmation window
-	    {  2880, uint256S("0x57ddbe24d1bef052b153cd987eb4be3ae7e976cbf5bf134e653ce21e08f71d9e")}, // Block 2880 MWEB activation
-	    {  10000, uint256S("0x9eed8d9996a4ef6902c3bb796d7a2a0145ca78cf00628ee5cd728033d5e87ac8")}, // Block 10000
-	    {  55000, uint256S("0x414f111bb6729571bc178e5560164f9daa6056c003314e851d6123ab0fbefb3d")}, // Block 55000
-	    {  80000, uint256S("0x32ae090c0d343663ada5c9a5e29057325a0445207461cc67d6b2063dea71f602")}, // Block 80000
-	    {  90000, uint256S("0x84686fb34c249133aa155c04f7bbc6035bdb71f9fc845444137b7535fed69cdb")}, // Block 90000
-	    {  100005, uint256S("0xe08f6b3a18a2092139916b5994f15b93ac4a5ffc0d27ce09c1a8da3e16e24138")}, // Block 100005
-	    {  120000, uint256S("0x977d00a8bc7022e6fba57c10b01b8eb868f94ed5fe4c3dd430cedf6f3af36e45")}, // Block 120000
-	    // {  145000, uint256S("0x")}, // Future Blocks
+	    {  0,      uint256S("0x34458c96bb547193fa90b2f2599056684b0083d8a2996f2025943eb545031d29")},
+	    {  1,      uint256S("0x47cb4e21c076575a197a977198282397f97dbe0e62f0a731bd226f0d800211de")},
+	    {  1000,   uint256S("0xc8c20736dde8af32b54aaa28add2a9c80f57f76e54a636a90ad6fcb4753b1759")},
+	    {  2880,   uint256S("0x57ddbe24d1bef052b153cd987eb4be3ae7e976cbf5bf134e653ce21e08f71d9e")},
+	    {  10000,  uint256S("0x9eed8d9996a4ef6902c3bb796d7a2a0145ca78cf00628ee5cd728033d5e87ac8")},
+	    {  55000,  uint256S("0x414f111bb6729571bc178e5560164f9daa6056c003314e851d6123ab0fbefb3d")},
+	    {  80000,  uint256S("0x32ae090c0d343663ada5c9a5e29057325a0445207461cc67d6b2063dea71f602")},
+	    {  90000,  uint256S("0x84686fb34c249133aa155c04f7bbc6035bdb71f9fc845444137b7535fed69cdb")},
+	    {  100005, uint256S("0xe08f6b3a18a2092139916b5994f15b93ac4a5ffc0d27ce09c1a8da3e16e24138")},
+	    {  120000, uint256S("0x977d00a8bc7022e6fba57c10b01b8eb868f94ed5fe4c3dd430cedf6f3af36e45")},
+	    {  144999, uint256S("0xcf88b7b476697e040ce836c3b68a6e6bde7d434649426a4a4e17bc7887f4e53d")}, // fix GetBlockSubsidy, commit 2931510
+	    {  145000, uint256S("0x9e6bec0dc608dc51d181c1cafc07bd26554eba9119b8a2c9692d17b0446dd424")},
+	    // {  149999, uint256S("0x")}, // Future Block, LWMA3 activation
 	  }
 	};
 
 
 	chainTxData = ChainTxData{
-	  // Data from rpc: getchaintxstats 4096 ef396143080509b77b87faad293261b468d9ec22e149858b6b60efd4be750fa2
-	  /* nTime    */ 1682008709,
-	  /* nTxCount */ 246073,
-	  /* dTxRate  */ 0.03253798553867309
+	  // Data from rpc: getchaintxstats 4096 a081803346c8c098808140e6e26c1bdafd39d486b3fcc2d3174de2d18872736a
+	  /* nTime    */ 1684047557,
+	  /* nTxCount */ 297656,
+	  /* dTxRate  */ 0.02205816035973355
 	};
     }
 };
