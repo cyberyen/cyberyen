@@ -101,8 +101,8 @@ public:
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartHeight = 0;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeoutHeight = 0;
 
-	consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000010171ce0e357c96c");
-	consensus.defaultAssumeValid = uint256S("0xa081803346c8c098808140e6e26c1bdafd39d486b3fcc2d3174de2d18872736a"); // 145259
+	consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000138b3481fcbd3b7f");
+	consensus.defaultAssumeValid = uint256S("0x3327645cbf39b2fa454eb0c501130a645128baef61d031c7995257ae9f1b26a2"); // 160969
 
 	/**
 	 * The message start string is designed to be unlikely to occur in normal data.
@@ -163,16 +163,17 @@ public:
 	    {  144999, uint256S("0xcf88b7b476697e040ce836c3b68a6e6bde7d434649426a4a4e17bc7887f4e53d")}, // fix GetBlockSubsidy, commit 2931510
 	    {  145000, uint256S("0x9e6bec0dc608dc51d181c1cafc07bd26554eba9119b8a2c9692d17b0446dd424")},
 	    {  149999, uint256S("0x1afa7bcfedb1fe0799b7dac2feea3ba13d58cd2cce1c4814f03db130a79687f5")}, // LWMA3 activation
+	    {  160900, uint256S("0x6e2a4407bc590782662697f76999f9649e774a2103a6ca5777b030fac28f2fef")},
 	    // {  200000, uint256S("0x")}, // Future Block
 	  }
 	};
 
 
 	chainTxData = ChainTxData{
-	  // Data from rpc: getchaintxstats 4096 a081803346c8c098808140e6e26c1bdafd39d486b3fcc2d3174de2d18872736a
-	  /* nTime    */ 1684047557,
-	  /* nTxCount */ 297656,
-	  /* dTxRate  */ 0.02205816035973355
+	  // Data from rpc: getchaintxstats 4096 3327645cbf39b2fa454eb0c501130a645128baef61d031c7995257ae9f1b26a2
+	  /* nTime    */ 1685438019,
+	  /* nTxCount */ 330697,
+	  /* dTxRate  */ 0.02464631037413013
 	};
     }
 };
