@@ -81,7 +81,7 @@ public:
 	consensus.nPowKGWHeight = 0;
 	consensus.nPowDGWHeight = 0;
 	consensus.nLWMA3Height = 149999;
-	consensus.nLWMA3BiggerWindow = 165000;
+	consensus.nLWMA3BiggerWindow = 175000;
 	consensus.fPowAllowMinDifficultyBlocks = false;
 	consensus.fPowNoRetargeting = false;
 	consensus.fSimplifiedRewards = true;
