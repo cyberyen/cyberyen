@@ -1,16 +1,12 @@
 Cyberyen Core version 0.21.2.5 is now available from:
 
- <https://download.cyberyen.org/cyberyen-0.21.2.5/>.
+ <https://github.com/cyberyen/cyberyen/releases/tag/v0.21.2.5/>.
 
-This is a new patch version release that includes important security updates. Fix block subsidy calculations.
+This is a new patch version release that includes important security updates.
 
 Please report bugs using the issue tracker at GitHub:
 
   <https://github.com/cyberyen/cyberyen/issues>
-
-To receive security and update notifications, please subscribe to:
-
-  <https://matrix.to/#/#cyberyen-dev:matrix.org>
 
 Notable changes
 ===============
