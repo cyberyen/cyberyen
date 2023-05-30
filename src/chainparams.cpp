@@ -81,6 +81,7 @@ public:
 	consensus.nPowKGWHeight = 0;
 	consensus.nPowDGWHeight = 0;
 	consensus.nLWMA3Height = 149999;
+	consensus.nLWMA3BiggerWindow = 165000;
 	consensus.fPowAllowMinDifficultyBlocks = false;
 	consensus.fPowNoRetargeting = false;
 	consensus.fSimplifiedRewards = true;
@@ -200,6 +201,7 @@ public:
 	consensus.nPowKGWHeight = 0;
 	consensus.nPowDGWHeight = 0;
 	consensus.nLWMA3Height = 0;
+	consensus.nLWMA3BiggerWindow = 0;
 	consensus.fPowAllowMinDifficultyBlocks = true;
 	consensus.fPowNoRetargeting = false;
 	consensus.fSimplifiedRewards = true;
@@ -298,6 +300,7 @@ public:
 	consensus.nPowKGWHeight = 0;
 	consensus.nPowDGWHeight = 0;
 	consensus.nLWMA3Height = 0;
+	consensus.nLWMA3BiggerWindow = 0;
 	consensus.fPowAllowMinDifficultyBlocks = true;
 	consensus.fPowNoRetargeting = true;
 	consensus.fSimplifiedRewards = true;
