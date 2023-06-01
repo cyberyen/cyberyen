@@ -58,16 +58,16 @@ memory available when compiling Cyberyen Core. On systems with less, gcc can be
 tuned to conserve memory with additional CXXFLAGS:
 
 
-    ./configure CXXFLAGS="--param ggc-min-expand=1 --param ggc-min-heapsize=32768"
+	./configure CXXFLAGS="--param ggc-min-expand=1 --param ggc-min-heapsize=32768"
 
 Alternatively, or in addition, debugging information can be skipped for compilation. The default compile flags are
 `-g -O2`, and can be changed with:
 
-    ./configure CXXFLAGS="-O2"
+	./configure CXXFLAGS="-O2"
 
 Finally, clang (often less resource hungry) can be used instead of gcc, which is used by default:
 
-    ./configure CXX=clang++ CC=clang
+	./configure CXX=clang++ CC=clang
 
 ## Linux Distribution Specific Instructions
 
@@ -77,11 +77,11 @@ Finally, clang (often less resource hungry) can be used instead of gcc, which is
 
 Build requirements:
 
-    sudo apt-get install build-essential libtool autotools-dev automake pkg-config bsdmainutils python3
+	sudo apt-get install build-essential libtool autotools-dev automake pkg-config bsdmainutils python3 libssl-dev
 
 Now, you can either build from self-compiled [depends](/depends/README.md) or install the required dependencies:
 
-    sudo apt-get install libevent-dev libboost-system-dev libboost-filesystem-dev libboost-test-dev libboost-thread-dev libfmt-dev
+	sudo apt-get install libevent-dev libboost-system-dev libboost-filesystem-dev libboost-test-dev libboost-thread-dev libfmt-dev
 
 BerkeleyDB is required for the wallet.
 
@@ -94,18 +94,18 @@ Otherwise, you can build from self-compiled `depends` (see above).
 
 SQLite is required for the wallet:
 
-    sudo apt install libsqlite3-dev
+	sudo apt install libsqlite3-dev
 
 To build Cyberyen Core without wallet, see [*Disable-wallet mode*](/doc/build-unix.md#disable-wallet-mode)
 
 
 Optional (see `--with-miniupnpc` and `--enable-upnp-default`):
 
-    sudo apt-get install libminiupnpc-dev
+	sudo apt-get install libminiupnpc-dev
 
 ZMQ dependencies (provides ZMQ API):
 
-    sudo apt-get install libzmq3-dev
+	sudo apt-get install libzmq3-dev
 
 GUI dependencies:
 
@@ -115,11 +115,11 @@ To build without GUI pass `--without-gui`.
 
 To build with Qt 5 you need the following:
 
-    sudo apt-get install libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools
+	sudo apt-get install libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools
 
 libqrencode (optional) can be installed with:
 
-    sudo apt-get install libqrencode-dev
+	sudo apt-get install libqrencode-dev
 
 Once these are installed, they will be found by configure and a cyberyen-qt executable will be
 built by default.
@@ -131,27 +131,27 @@ built by default.
 
 Build requirements:
 
-    sudo dnf install gcc-c++ libtool make autoconf automake libevent-devel boost-devel libdb4-devel libdb4-cxx-devel python3 fmt
+	sudo dnf install gcc-c++ libtool make autoconf automake libevent-devel boost-devel libdb4-devel libdb4-cxx-devel python3 fmt
 
 Optional (see `--with-miniupnpc` and `--enable-upnp-default`):
 
-    sudo dnf install miniupnpc-devel
+	sudo dnf install miniupnpc-devel
 
 ZMQ dependencies (provides ZMQ API):
 
-    sudo dnf install zeromq-devel
+	sudo dnf install zeromq-devel
 
 To build with Qt 5 you need the following:
 
-    sudo dnf install qt5-qttools-devel qt5-qtbase-devel
+	sudo dnf install qt5-qttools-devel qt5-qtbase-devel
 
 libqrencode (optional) can be installed with:
 
-    sudo dnf install qrencode-devel
+	sudo dnf install qrencode-devel
 
 SQLite can be installed with:
 
-    sudo dnf install sqlite-devel
+	sudo dnf install sqlite-devel
 
 Notes
 -----
@@ -208,44 +208,44 @@ Hardening Flags:
 
 Hardening enables the following features:
 * _Position Independent Executable_: Build position independent code to take advantage of Address Space Layout Randomization
-    offered by some kernels. Attackers who can cause execution of code at an arbitrary memory
-    location are thwarted if they don't know where anything useful is located.
-    The stack and heap are randomly located by default, but this allows the code section to be
-    randomly located as well.
+	offered by some kernels. Attackers who can cause execution of code at an arbitrary memory
+	location are thwarted if they don't know where anything useful is located.
+	The stack and heap are randomly located by default, but this allows the code section to be
+	randomly located as well.
 
-    On an AMD64 processor where a library was not compiled with -fPIC, this will cause an error
-    such as: "relocation R_X86_64_32 against `......' can not be used when making a shared object;"
+	On an AMD64 processor where a library was not compiled with -fPIC, this will cause an error
+	such as: "relocation R_X86_64_32 against `......' can not be used when making a shared object;"
 
-    To test that you have built PIE executable, install scanelf, part of paxutils, and use:
+	To test that you have built PIE executable, install scanelf, part of paxutils, and use:
 
-    	scanelf -e ./cyberyen
+		scanelf -e ./cyberyen
 
-    The output should contain:
+	The output should contain:
 
-     TYPE
-    ET_DYN
+	 TYPE
+	ET_DYN
 
 * _Non-executable Stack_: If the stack is executable then trivial stack-based buffer overflow exploits are possible if
-    vulnerable buffers are found. By default, Cyberyen Core should be built with a non-executable stack,
-    but if one of the libraries it uses asks for an executable stack or someone makes a mistake
-    and uses a compiler extension which requires an executable stack, it will silently build an
-    executable without the non-executable stack protection.
+	vulnerable buffers are found. By default, Cyberyen Core should be built with a non-executable stack,
+	but if one of the libraries it uses asks for an executable stack or someone makes a mistake
+	and uses a compiler extension which requires an executable stack, it will silently build an
+	executable without the non-executable stack protection.
 
-    To verify that the stack is non-executable after compiling use:
-    `scanelf -e ./cyberyen`
+	To verify that the stack is non-executable after compiling use:
+	`scanelf -e ./cyberyen`
 
-    The output should contain:
+	The output should contain:
 	STK/REL/PTL
 	RW- R-- RW-
 
-    The STK RW- means that the stack is readable and writeable but not executable.
+	The STK RW- means that the stack is readable and writeable but not executable.
 
 Disable-wallet mode
 --------------------
 When the intention is to run only a P2P node without a wallet, Cyberyen Core may be compiled in
 disable-wallet mode with:
 
-    ./configure --disable-wallet
+	./configure --disable-wallet
 
 In this case there is no dependency on Berkeley DB 4.8 and SQLite.
 
@@ -255,19 +255,19 @@ Additional Configure Flags
 --------------------------
 A list of additional configure flags can be displayed with:
 
-    ./configure --help
+	./configure --help
 
 
 Setup and Build Example: Arch Linux
 -----------------------------------
 This example lists the steps necessary to setup and build a command line only, non-wallet distribution of the latest changes on Arch Linux:
 
-    pacman -S git base-devel boost libevent python
-    git clone https://github.com/cyberyen/cyberyen.git
-    cd cyberyen/
-    ./autogen.sh
-    ./configure --disable-wallet --without-gui --without-miniupnpc
-    make check
+	pacman -S git base-devel boost libevent python
+	git clone https://github.com/cyberyen/cyberyen.git
+	cd cyberyen/
+	./autogen.sh
+	./configure --disable-wallet --without-gui --without-miniupnpc
+	make check
 
 Note:
 Enabling wallet support requires either compiling against a Berkeley DB newer than 4.8 (package `db`) using `--with-incompatible-bdb`,
@@ -286,16 +286,16 @@ installing the toolchain will be different.
 Make sure you install the build requirements mentioned above.
 Then, install the toolchain and curl:
 
-    sudo apt-get install g++-arm-linux-gnueabihf curl
+	sudo apt-get install g++-arm-linux-gnueabihf curl
 
 To build executables for ARM:
 
-    cd depends
-    make HOST=arm-linux-gnueabihf NO_QT=1
-    cd ..
-    ./autogen.sh
-    ./configure --prefix=$PWD/depends/arm-linux-gnueabihf --enable-glibc-back-compat --enable-reduce-exports LDFLAGS=-static-libstdc++
-    make
+	cd depends
+	make HOST=arm-linux-gnueabihf NO_QT=1
+	cd ..
+	./autogen.sh
+	./configure --prefix=$PWD/depends/arm-linux-gnueabihf --enable-glibc-back-compat --enable-reduce-exports LDFLAGS=-static-libstdc++
+	make
 
 
 For further documentation on the depends system see [README.md](../depends/README.md) in the depends directory.
