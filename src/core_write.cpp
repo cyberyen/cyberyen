@@ -22,7 +22,17 @@ UniValue ValueFromAmount(const CAmount& amount)
     int64_t quotient = n_abs / COIN;
     int64_t remainder = n_abs % COIN;
     return UniValue(UniValue::VNUM,
-            strprintf("%s%d.%08d", sign ? "-" : "", quotient, remainder));
+	    strprintf("%s%d.%08d", sign ? "-" : "", quotient, remainder));
+}
+
+UniValue ValueFromAmount(const arith_uint256& amount)
+{
+    bool sign = amount < 0;
+    arith_uint256 n_abs = (sign ? -amount : amount);
+    arith_uint256 quotient = n_abs / COIN;
+    arith_uint256 remainder = n_abs - (quotient * COIN);
+    return UniValue(UniValue::VNUM,
+	    strprintf("%s%d.%08d", sign ? "-" : "", (int64_t)quotient.getdouble(), (int64_t)remainder.getdouble()));
 }
 
 std::string FormatScript(const CScript& script)
@@ -31,32 +41,32 @@ std::string FormatScript(const CScript& script)
     CScript::const_iterator it = script.begin();
     opcodetype op;
     while (it != script.end()) {
-        CScript::const_iterator it2 = it;
-        std::vector<unsigned char> vch;
-        if (script.GetOp(it, op, vch)) {
-            if (op == OP_0) {
-                ret += "0 ";
-                continue;
-            } else if ((op >= OP_1 && op <= OP_16) || op == OP_1NEGATE) {
-                ret += strprintf("%i ", op - OP_1NEGATE - 1);
-                continue;
-            } else if (op >= OP_NOP && op <= OP_NOP10) {
-                std::string str(GetOpName(op));
-                if (str.substr(0, 3) == std::string("OP_")) {
-                    ret += str.substr(3, std::string::npos) + " ";
-                    continue;
-                }
-            }
-            if (vch.size() > 0) {
-                ret += strprintf("0x%x 0x%x ", HexStr(std::vector<uint8_t>(it2, it - vch.size())),
-                                               HexStr(std::vector<uint8_t>(it - vch.size(), it)));
-            } else {
-                ret += strprintf("0x%x ", HexStr(std::vector<uint8_t>(it2, it)));
-            }
-            continue;
-        }
-        ret += strprintf("0x%x ", HexStr(std::vector<uint8_t>(it2, script.end())));
-        break;
+	CScript::const_iterator it2 = it;
+	std::vector<unsigned char> vch;
+	if (script.GetOp(it, op, vch)) {
+	    if (op == OP_0) {
+		ret += "0 ";
+		continue;
+	    } else if ((op >= OP_1 && op <= OP_16) || op == OP_1NEGATE) {
+		ret += strprintf("%i ", op - OP_1NEGATE - 1);
+		continue;
+	    } else if (op >= OP_NOP && op <= OP_NOP10) {
+		std::string str(GetOpName(op));
+		if (str.substr(0, 3) == std::string("OP_")) {
+		    ret += str.substr(3, std::string::npos) + " ";
+		    continue;
+		}
+	    }
+	    if (vch.size() > 0) {
+		ret += strprintf("0x%x 0x%x ", HexStr(std::vector<uint8_t>(it2, it - vch.size())),
+					       HexStr(std::vector<uint8_t>(it - vch.size(), it)));
+	    } else {
+		ret += strprintf("0x%x ", HexStr(std::vector<uint8_t>(it2, it)));
+	    }
+	    continue;
+	}
+	ret += strprintf("0x%x ", HexStr(std::vector<uint8_t>(it2, script.end())));
+	break;
     }
     return ret.substr(0, ret.size() - 1);
 }
@@ -91,40 +101,40 @@ std::string ScriptToAsmStr(const CScript& script, const bool fAttemptSighashDeco
     std::vector<unsigned char> vch;
     CScript::const_iterator pc = script.begin();
     while (pc < script.end()) {
-        if (!str.empty()) {
-            str += " ";
-        }
-        if (!script.GetOp(pc, opcode, vch)) {
-            str += "[error]";
-            return str;
-        }
-        if (0 <= opcode && opcode <= OP_PUSHDATA4) {
-            if (vch.size() <= static_cast<std::vector<unsigned char>::size_type>(4)) {
-                str += strprintf("%d", CScriptNum(vch, false).getint());
-            } else {
-                // the IsUnspendable check makes sure not to try to decode OP_RETURN data that may match the format of a signature
-                if (fAttemptSighashDecode && !script.IsUnspendable()) {
-                    std::string strSigHashDecode;
-                    // goal: only attempt to decode a defined sighash type from data that looks like a signature within a scriptSig.
-                    // this won't decode correctly formatted public keys in Pubkey or Multisig scripts due to
-                    // the restrictions on the pubkey formats (see IsCompressedOrUncompressedPubKey) being incongruous with the
-                    // checks in CheckSignatureEncoding.
-                    if (CheckSignatureEncoding(vch, SCRIPT_VERIFY_STRICTENC, nullptr)) {
-                        const unsigned char chSigHashType = vch.back();
-                        const auto it = mapSigHashTypes.find(chSigHashType);
-                        if (it != mapSigHashTypes.end()) {
-                            strSigHashDecode = "[" + it->second + "]";
-                            vch.pop_back(); // remove the sighash type byte. it will be replaced by the decode.
-                        }
-                    }
-                    str += HexStr(vch) + strSigHashDecode;
-                } else {
-                    str += HexStr(vch);
-                }
-            }
-        } else {
-            str += GetOpName(opcode);
-        }
+	if (!str.empty()) {
+	    str += " ";
+	}
+	if (!script.GetOp(pc, opcode, vch)) {
+	    str += "[error]";
+	    return str;
+	}
+	if (0 <= opcode && opcode <= OP_PUSHDATA4) {
+	    if (vch.size() <= static_cast<std::vector<unsigned char>::size_type>(4)) {
+		str += strprintf("%d", CScriptNum(vch, false).getint());
+	    } else {
+		// the IsUnspendable check makes sure not to try to decode OP_RETURN data that may match the format of a signature
+		if (fAttemptSighashDecode && !script.IsUnspendable()) {
+		    std::string strSigHashDecode;
+		    // goal: only attempt to decode a defined sighash type from data that looks like a signature within a scriptSig.
+		    // this won't decode correctly formatted public keys in Pubkey or Multisig scripts due to
+		    // the restrictions on the pubkey formats (see IsCompressedOrUncompressedPubKey) being incongruous with the
+		    // checks in CheckSignatureEncoding.
+		    if (CheckSignatureEncoding(vch, SCRIPT_VERIFY_STRICTENC, nullptr)) {
+			const unsigned char chSigHashType = vch.back();
+			const auto it = mapSigHashTypes.find(chSigHashType);
+			if (it != mapSigHashTypes.end()) {
+			    strSigHashDecode = "[" + it->second + "]";
+			    vch.pop_back(); // remove the sighash type byte. it will be replaced by the decode.
+			}
+		    }
+		    str += HexStr(vch) + strSigHashDecode;
+		} else {
+		    str += HexStr(vch);
+		}
+	    }
+	} else {
+	    str += GetOpName(opcode);
+	}
     }
     return str;
 }
@@ -147,12 +157,12 @@ void ScriptToUniv(const CScript& script, UniValue& out, bool include_address)
 
     CTxDestination address;
     if (include_address && ExtractDestination(script, address) && type != TxoutType::PUBKEY) {
-        out.pushKV("address", EncodeDestination(address));
+	out.pushKV("address", EncodeDestination(address));
     }
 }
 
 void ScriptPubKeyToUniv(const CScript& scriptPubKey,
-                        UniValue& out, bool fIncludeHex)
+			UniValue& out, bool fIncludeHex)
 {
     TxoutType type;
     std::vector<CTxDestination> addresses;
@@ -160,11 +170,11 @@ void ScriptPubKeyToUniv(const CScript& scriptPubKey,
 
     out.pushKV("asm", ScriptToAsmStr(scriptPubKey));
     if (fIncludeHex)
-        out.pushKV("hex", HexStr(scriptPubKey));
+	out.pushKV("hex", HexStr(scriptPubKey));
 
     if (!ExtractDestinations(scriptPubKey, type, addresses, nRequired) || type == TxoutType::PUBKEY) {
-        out.pushKV("type", GetTxnOutputType(type));
-        return;
+	out.pushKV("type", GetTxnOutputType(type));
+	return;
     }
 
     out.pushKV("reqSigs", nRequired);
@@ -172,7 +182,7 @@ void ScriptPubKeyToUniv(const CScript& scriptPubKey,
 
     UniValue a(UniValue::VARR);
     for (const CTxDestination& addr : addresses) {
-        a.push_back(EncodeDestination(addr));
+	a.push_back(EncodeDestination(addr));
     }
     out.pushKV("addresses", a);
 }
@@ -191,92 +201,92 @@ void TxToUniv(const CTransaction& tx, const uint256& hashBlock, UniValue& entry,
 
     UniValue vin(UniValue::VARR);
     for (const CTxInput& input : tx.GetInputs()) {
-        UniValue in(UniValue::VOBJ);
-        in.pushKV("ismweb", input.IsMWEB());
+	UniValue in(UniValue::VOBJ);
+	in.pushKV("ismweb", input.IsMWEB());
 
-        if (input.IsMWEB()) {
-            in.pushKV("output_id", input.ToMWEB().ToHex());
-        } else {
-            const CTxIn& txin = input.GetTxIn();
-            if (tx.IsCoinBase())
-                in.pushKV("coinbase", HexStr(txin.scriptSig));
-            else {
-                in.pushKV("txid", txin.prevout.hash.GetHex());
-                in.pushKV("vout", (int64_t)txin.prevout.n);
-                UniValue o(UniValue::VOBJ);
-                o.pushKV("asm", ScriptToAsmStr(txin.scriptSig, true));
-                o.pushKV("hex", HexStr(txin.scriptSig));
-                in.pushKV("scriptSig", o);
-            }
-            if (!txin.scriptWitness.IsNull()) {
-                UniValue txinwitness(UniValue::VARR);
-                for (const auto& item : txin.scriptWitness.stack) {
-                    txinwitness.push_back(HexStr(item));
-                }
-                in.pushKV("txinwitness", txinwitness);
-            }
-            in.pushKV("sequence", (int64_t)txin.nSequence);
-        }
+	if (input.IsMWEB()) {
+	    in.pushKV("output_id", input.ToMWEB().ToHex());
+	} else {
+	    const CTxIn& txin = input.GetTxIn();
+	    if (tx.IsCoinBase())
+		in.pushKV("coinbase", HexStr(txin.scriptSig));
+	    else {
+		in.pushKV("txid", txin.prevout.hash.GetHex());
+		in.pushKV("vout", (int64_t)txin.prevout.n);
+		UniValue o(UniValue::VOBJ);
+		o.pushKV("asm", ScriptToAsmStr(txin.scriptSig, true));
+		o.pushKV("hex", HexStr(txin.scriptSig));
+		in.pushKV("scriptSig", o);
+	    }
+	    if (!txin.scriptWitness.IsNull()) {
+		UniValue txinwitness(UniValue::VARR);
+		for (const auto& item : txin.scriptWitness.stack) {
+		    txinwitness.push_back(HexStr(item));
+		}
+		in.pushKV("txinwitness", txinwitness);
+	    }
+	    in.pushKV("sequence", (int64_t)txin.nSequence);
+	}
 
-        vin.push_back(in);
+	vin.push_back(in);
     }
     entry.pushKV("vin", vin);
 
     UniValue vout(UniValue::VARR);
     int64_t n = 0;
     for (const CTxOutput& output : tx.GetOutputs()) {
-        UniValue out(UniValue::VOBJ);
-        out.pushKV("ismweb", output.IsMWEB());
+	UniValue out(UniValue::VOBJ);
+	out.pushKV("ismweb", output.IsMWEB());
 
-        if (output.IsMWEB()) {
-            out.pushKV("output_id", output.ToMWEB().ToHex());
-        } else {
-            const CTxOut& txout = output.GetTxOut();
-            out.pushKV("value", ValueFromAmount(txout.nValue));
-            out.pushKV("n", n++);
+	if (output.IsMWEB()) {
+	    out.pushKV("output_id", output.ToMWEB().ToHex());
+	} else {
+	    const CTxOut& txout = output.GetTxOut();
+	    out.pushKV("value", ValueFromAmount(txout.nValue));
+	    out.pushKV("n", n++);
 
-            UniValue o(UniValue::VOBJ);
-            ScriptPubKeyToUniv(txout.scriptPubKey, o, true);
-            out.pushKV("scriptPubKey", o);
-        }
+	    UniValue o(UniValue::VOBJ);
+	    ScriptPubKeyToUniv(txout.scriptPubKey, o, true);
+	    out.pushKV("scriptPubKey", o);
+	}
 
-        vout.push_back(out);
+	vout.push_back(out);
     }
     entry.pushKV("vout", vout);
 
     if (tx.HasMWEBTx()) {
-        UniValue vkern(UniValue::VARR);
+	UniValue vkern(UniValue::VARR);
 
-        for (const Kernel& kernel : tx.mweb_tx.m_transaction->GetKernels()) {
-            UniValue kern(UniValue::VOBJ);
-            kern.pushKV("kernel_id", kernel.GetKernelID().ToHex());
+	for (const Kernel& kernel : tx.mweb_tx.m_transaction->GetKernels()) {
+	    UniValue kern(UniValue::VOBJ);
+	    kern.pushKV("kernel_id", kernel.GetKernelID().ToHex());
 
-            kern.pushKV("fee", ValueFromAmount(kernel.GetFee()));
-            kern.pushKV("pegin", ValueFromAmount(kernel.GetPegIn()));
+	    kern.pushKV("fee", ValueFromAmount(kernel.GetFee()));
+	    kern.pushKV("pegin", ValueFromAmount(kernel.GetPegIn()));
 
-            UniValue pegouts(UniValue::VARR);
-            for (const PegOutCoin& pegout : kernel.GetPegOuts()) {
-                UniValue uni_pegout(UniValue::VOBJ);
-                uni_pegout.pushKV("value", ValueFromAmount(pegout.GetAmount()));
+	    UniValue pegouts(UniValue::VARR);
+	    for (const PegOutCoin& pegout : kernel.GetPegOuts()) {
+		UniValue uni_pegout(UniValue::VOBJ);
+		uni_pegout.pushKV("value", ValueFromAmount(pegout.GetAmount()));
 
-                UniValue p(UniValue::VOBJ);
-                ScriptPubKeyToUniv(pegout.GetScriptPubKey(), p, true);
-                uni_pegout.pushKV("scriptPubKey", p);
+		UniValue p(UniValue::VOBJ);
+		ScriptPubKeyToUniv(pegout.GetScriptPubKey(), p, true);
+		uni_pegout.pushKV("scriptPubKey", p);
 
-                pegouts.push_back(uni_pegout);
-            }
-            kern.pushKV("pegout", pegouts);
+		pegouts.push_back(uni_pegout);
+	    }
+	    kern.pushKV("pegout", pegouts);
 
-            vkern.push_back(kern);
-        }
+	    vkern.push_back(kern);
+	}
 
-        entry.pushKV("vkern", vkern);
+	entry.pushKV("vkern", vkern);
     }
 
     if (!hashBlock.IsNull())
-        entry.pushKV("blockhash", hashBlock.GetHex());
+	entry.pushKV("blockhash", hashBlock.GetHex());
 
     if (include_hex) {
-        entry.pushKV("hex", EncodeHexTx(tx, serialize_flags)); // The hex-encoded transaction. Used the name "hex" to be consistent with the verbose output of "getrawtransaction".
+	entry.pushKV("hex", EncodeHexTx(tx, serialize_flags)); // The hex-encoded transaction. Used the name "hex" to be consistent with the verbose output of "getrawtransaction".
     }
 }
