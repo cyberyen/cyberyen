@@ -190,7 +190,7 @@ public:
 	consensus.nSubsidyHalvingInterval = 100000;
 	consensus.BIP16Height = 0; // always enforce P2SH BIP16 on testnet
 	consensus.BIP34Height = 0;
-	consensus.BIP34Hash = uint256S("0x34458c96bb547193fa90b2f2599056684b0083d8a2996f2025943eb545031d29");
+	consensus.BIP34Hash = uint256S("0xfc87d3af1c388f561386e08cfb74819cc04cf33ddb6c39f0bfb685048d3dfb2a");
 	consensus.BIP65Height = 0;
 	consensus.BIP66Height = 0;
 	consensus.CSVHeight = 0;
