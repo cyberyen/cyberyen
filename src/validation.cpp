@@ -151,6 +151,8 @@ arith_uint256 nMinimumChainWork;
 
 CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
 
+uint64_t nMaxReorgLength = DEFAULT_MAX_REORG_LENGTH;
+
 CBlockPolicyEstimator feeEstimator;
 
 // Internal stuff
@@ -2749,6 +2751,12 @@ bool CChainState::ConnectTip(BlockValidationState& state, const CChainParams& ch
     return true;
 }
 
+static bool CheckMaxReorgLength(const CBlockIndex* pindexOldTip, const CBlockIndex* pindexNew) {
+    const CBlockIndex *pindexFork = m_chain.FindFork(pindexNew);
+    auto reorgLength = pindexOldTip ? pindexOldTip->nHeight - (pindexFork ? pindexFork->nHeight : -1) : 0;
+    return reorgLength <= nMaxReorgLength;
+}
+
 /**
  * Return the tip of the chain with the most work in it, that isn't
  * known to be invalid (it's however far from certain to be valid).
@@ -2833,6 +2841,9 @@ bool CChainState::ActivateBestChainStep(BlockValidationState& state, const CChai
 
     const CBlockIndex *pindexOldTip = m_chain.Tip();
     const CBlockIndex *pindexFork = m_chain.FindFork(pindexMostWork);
+
+	// Reject fork if reorg is too long.
+    assert(CheckMaxReorgLength(pindexOldTip, pindexFork));
 
     // Disconnect active blocks which are no longer in the best chain.
     bool fBlocksDisconnected = false;
@@ -3764,6 +3775,8 @@ bool BlockManager::AcceptBlockHeader(const CBlockHeader& block, BlockValidationS
 	}
 	if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev, GetAdjustedTime()))
 	    return error("%s: Consensus::ContextualCheckBlockHeader: %s, %s", __func__, hash.ToString(), state.ToString());
+	if (!CheckMaxReorgLength(chainActive.Tip(), pindexPrev))
+        return state.DoS(100, error("%s: prev chain violates max reorg length", __func__), 0, "bad-prevblk");
 
 	/* Determine if this block descends from any block which has been found
 	 * invalid (m_failed_blocks), then mark pindexPrev and any blocks between
