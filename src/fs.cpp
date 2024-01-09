@@ -42,14 +42,14 @@ FileLock::FileLock(const fs::path& file)
 {
     fd = open(file.string().c_str(), O_RDWR);
     if (fd == -1) {
-        reason = GetErrorReason();
+	reason = GetErrorReason();
     }
 }
 
 FileLock::~FileLock()
 {
     if (fd != -1) {
-        close(fd);
+	close(fd);
     }
 }
 
@@ -62,27 +62,27 @@ static bool IsWSL()
 bool FileLock::TryLock()
 {
     if (fd == -1) {
-        return false;
+	return false;
     }
 
     // Exclusive file locking is broken on WSL using fcntl (issue #18622)
     // This workaround can be removed once the bug on WSL is fixed
     static const bool is_wsl = IsWSL();
     if (is_wsl) {
-        if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
-            reason = GetErrorReason();
-            return false;
-        }
+	if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
+	    reason = GetErrorReason();
+	    return false;
+	}
     } else {
-        struct flock lock;
-        lock.l_type = F_WRLCK;
-        lock.l_whence = SEEK_SET;
-        lock.l_start = 0;
-        lock.l_len = 0;
-        if (fcntl(fd, F_SETLK, &lock) == -1) {
-            reason = GetErrorReason();
-            return false;
-        }
+	struct flock lock;
+	lock.l_type = F_WRLCK;
+	lock.l_whence = SEEK_SET;
+	lock.l_start = 0;
+	lock.l_len = 0;
+	if (fcntl(fd, F_SETLK, &lock) == -1) {
+	    reason = GetErrorReason();
+	    return false;
+	}
     }
 
     return true;
@@ -92,7 +92,7 @@ bool FileLock::TryLock()
 static std::string GetErrorReason() {
     wchar_t* err;
     FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<WCHAR*>(&err), 0, nullptr);
+	nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<WCHAR*>(&err), 0, nullptr);
     std::wstring err_str(err);
     LocalFree(err);
     return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>>().to_bytes(err_str);
@@ -101,28 +101,28 @@ static std::string GetErrorReason() {
 FileLock::FileLock(const fs::path& file)
 {
     hFile = CreateFileW(file.wstring().c_str(),  GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+	nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile == INVALID_HANDLE_VALUE) {
-        reason = GetErrorReason();
+	reason = GetErrorReason();
     }
 }
 
 FileLock::~FileLock()
 {
     if (hFile != INVALID_HANDLE_VALUE) {
-        CloseHandle(hFile);
+	CloseHandle(hFile);
     }
 }
 
 bool FileLock::TryLock()
 {
     if (hFile == INVALID_HANDLE_VALUE) {
-        return false;
+	return false;
     }
     _OVERLAPPED overlapped = {0};
     if (!LockFileEx(hFile, LOCKFILE_EXCLUSIVE_LOCK | LOCKFILE_FAIL_IMMEDIATELY, 0, std::numeric_limits<DWORD>::max(), std::numeric_limits<DWORD>::max(), &overlapped)) {
-        reason = GetErrorReason();
-        return false;
+	reason = GetErrorReason();
+	return false;
     }
     return true;
 }
@@ -154,36 +154,36 @@ static std::string openmodeToStr(std::ios_base::openmode mode)
     switch (mode & ~std::ios_base::ate) {
     case std::ios_base::out:
     case std::ios_base::out | std::ios_base::trunc:
-        return "w";
+	return "w";
     case std::ios_base::out | std::ios_base::app:
     case std::ios_base::app:
-        return "a";
+	return "a";
     case std::ios_base::in:
-        return "r";
+	return "r";
     case std::ios_base::in | std::ios_base::out:
-        return "r+";
+	return "r+";
     case std::ios_base::in | std::ios_base::out | std::ios_base::trunc:
-        return "w+";
+	return "w+";
     case std::ios_base::in | std::ios_base::out | std::ios_base::app:
     case std::ios_base::in | std::ios_base::app:
-        return "a+";
+	return "a+";
     case std::ios_base::out | std::ios_base::binary:
     case std::ios_base::out | std::ios_base::trunc | std::ios_base::binary:
-        return "wb";
+	return "wb";
     case std::ios_base::out | std::ios_base::app | std::ios_base::binary:
     case std::ios_base::app | std::ios_base::binary:
-        return "ab";
+	return "ab";
     case std::ios_base::in | std::ios_base::binary:
-        return "rb";
+	return "rb";
     case std::ios_base::in | std::ios_base::out | std::ios_base::binary:
-        return "r+b";
+	return "r+b";
     case std::ios_base::in | std::ios_base::out | std::ios_base::trunc | std::ios_base::binary:
-        return "w+b";
+	return "w+b";
     case std::ios_base::in | std::ios_base::out | std::ios_base::app | std::ios_base::binary:
     case std::ios_base::in | std::ios_base::app | std::ios_base::binary:
-        return "a+b";
+	return "a+b";
     default:
-        return std::string();
+	return std::string();
     }
 }
 
@@ -193,20 +193,20 @@ void ifstream::open(const fs::path& p, std::ios_base::openmode mode)
     mode |= std::ios_base::in;
     m_file = fsbridge::fopen(p, openmodeToStr(mode).c_str());
     if (m_file == nullptr) {
-        return;
+	return;
     }
     m_filebuf = __gnu_cxx::stdio_filebuf<char>(m_file, mode);
     rdbuf(&m_filebuf);
     if (mode & std::ios_base::ate) {
-        seekg(0, std::ios_base::end);
+	seekg(0, std::ios_base::end);
     }
 }
 
 void ifstream::close()
 {
     if (m_file != nullptr) {
-        m_filebuf.close();
-        fclose(m_file);
+	m_filebuf.close();
+	fclose(m_file);
     }
     m_file = nullptr;
 }
@@ -217,26 +217,30 @@ void ofstream::open(const fs::path& p, std::ios_base::openmode mode)
     mode |= std::ios_base::out;
     m_file = fsbridge::fopen(p, openmodeToStr(mode).c_str());
     if (m_file == nullptr) {
-        return;
+	return;
     }
     m_filebuf = __gnu_cxx::stdio_filebuf<char>(m_file, mode);
     rdbuf(&m_filebuf);
     if (mode & std::ios_base::ate) {
-        seekp(0, std::ios_base::end);
+	seekp(0, std::ios_base::end);
     }
 }
 
 void ofstream::close()
 {
     if (m_file != nullptr) {
-        m_filebuf.close();
-        fclose(m_file);
+	m_filebuf.close();
+	fclose(m_file);
     }
     m_file = nullptr;
 }
 #else // __GLIBCXX__
 
+#if BOOST_VERSION >= 107700
+static_assert(sizeof(*BOOST_FILESYSTEM_C_STR(fs::path())) == sizeof(wchar_t),
+#else
 static_assert(sizeof(*fs::path().BOOST_FILESYSTEM_C_STR) == sizeof(wchar_t),
+#endif // BOOST_VERSION >= 107700
     "Warning: This build is using boost::filesystem ofstream and ifstream "
     "implementations which will fail to open paths containing multibyte "
     "characters. You should delete this static_assert to ignore this warning, "
