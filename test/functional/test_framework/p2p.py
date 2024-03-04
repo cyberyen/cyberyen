@@ -30,6 +30,7 @@ import threading
 
 from test_framework.messages import (
     CBlockHeader,
+    Hash,
     MAX_HEADERS_RESULTS,
     MIN_VERSION_SUPPORTED,
     msg_addr,
@@ -56,6 +57,7 @@ from test_framework.messages import (
     msg_merkleblock,
     msg_mwebheader,
     msg_notfound,
+    msg_mwebleafset,
     msg_ping,
     msg_pong,
     msg_sendaddrv2,
@@ -105,6 +107,7 @@ MESSAGEMAP = {
     b"merkleblock": msg_merkleblock,
     b"mwebheader": msg_mwebheader,
     b"notfound": msg_notfound,
+    b"mwebleafset": msg_mwebleafset,
     b"ping": msg_ping,
     b"pong": msg_pong,
     b"sendaddrv2": msg_sendaddrv2,
@@ -487,6 +490,18 @@ class P2PInterface(P2PConnection):
             if not last_mwebheader:
                 return False
             return last_mwebheader.merkleblockwithmweb.merkle.header.rehash() == int(blockhash, 16)
+
+        self.wait_until(test_function, timeout=timeout)
+
+    def wait_for_mwebleafset(self, blockhash, timeout=60):
+        """Waits for an mwebleafset message
+
+        The hash of the block header must match the provided blockhash"""
+        def test_function():
+            last_mwebleafset = self.last_message.get('mwebleafset')
+            if not last_mwebleafset:
+                return False
+            return last_mwebleafset.block_hash == Hash(int(blockhash, 16))
 
         self.wait_until(test_function, timeout=timeout)
 
