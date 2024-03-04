@@ -10,10 +10,36 @@ using namespace mmr;
 mw::Hash MMRUtil::CalcParentHash(const Index& index, const mw::Hash& left_hash, const mw::Hash& right_hash)
 {
     return Hasher()
-        .Append<uint64_t>(index.GetPosition())
-        .Append(left_hash)
-        .Append(right_hash)
-        .hash();
+	.Append<uint64_t>(index.GetPosition())
+	.Append(left_hash)
+	.Append(right_hash)
+	.hash();
+}
+
+std::vector<mmr::Index> MMRUtil::CalcPeakIndices(const uint64_t num_nodes)
+{
+    if (num_nodes == 0) {
+	return {};
+    }
+
+    // Find the "peaks"
+    std::vector<mmr::Index> peak_indices;
+
+    uint64_t peakSize = BitUtil::FillOnesToRight(num_nodes);
+    uint64_t numLeft = num_nodes;
+    uint64_t sumPrevPeaks = 0;
+    while (peakSize != 0) {
+	if (numLeft >= peakSize) {
+	    peak_indices.push_back(mmr::Index::At(sumPrevPeaks + peakSize - 1));
+	    sumPrevPeaks += peakSize;
+	    numLeft -= peakSize;
+	}
+
+	peakSize >>= 1;
+    }
+
+    assert(numLeft == 0);
+    return peak_indices;
 }
 
 BitSet MMRUtil::BuildCompactBitSet(const uint64_t num_leaves, const BitSet& unspent_leaf_indices)
@@ -24,11 +50,11 @@ BitSet MMRUtil::BuildCompactBitSet(const uint64_t num_leaves, const BitSet& unsp
 
     LeafIndex leaf_idx = LeafIndex::At(0);
     while (leaf_idx.Get() < num_leaves) {
-        if (unspent_leaf_indices.size() > leaf_idx.Get() && !unspent_leaf_indices.test(leaf_idx.Get())) {
-            prunable_nodes.set(leaf_idx.GetPosition());
-        }
+	if (unspent_leaf_indices.size() > leaf_idx.Get() && !unspent_leaf_indices.test(leaf_idx.Get())) {
+	    prunable_nodes.set(leaf_idx.GetPosition());
+	}
 
-        leaf_idx = leaf_idx.Next();
+	leaf_idx = leaf_idx.Next();
     }
 
     LeafIndex next_leaf = LeafIndex::At(num_leaves);
@@ -36,20 +62,20 @@ BitSet MMRUtil::BuildCompactBitSet(const uint64_t num_leaves, const BitSet& unsp
 
     uint64_t height = 1;
     while ((std::pow(2, height + 1) - 2) <= next_leaf.GetPosition()) {
-        SiblingIter iter(height, last_node);
-        while (iter.Next()) {
-            Index right_child = iter.Get().GetRightChild();
-            if (prunable_nodes.test(right_child.GetPosition())) {
-                Index left_child = iter.Get().GetLeftChild();
-                if (prunable_nodes.test(left_child.GetPosition())) {
-                    compactable_node_indices.set(right_child.GetPosition());
-                    compactable_node_indices.set(left_child.GetPosition());
-                    prunable_nodes.set(iter.Get().GetPosition());
-                }
-            }
-        }
+	SiblingIter iter(height, last_node);
+	while (iter.Next()) {
+	    Index right_child = iter.Get().GetRightChild();
+	    if (prunable_nodes.test(right_child.GetPosition())) {
+		Index left_child = iter.Get().GetLeftChild();
+		if (prunable_nodes.test(left_child.GetPosition())) {
+		    compactable_node_indices.set(right_child.GetPosition());
+		    compactable_node_indices.set(left_child.GetPosition());
+		    prunable_nodes.set(iter.Get().GetPosition());
+		}
+	    }
+	}
 
-        ++height;
+	++height;
     }
 
     return compactable_node_indices;
@@ -60,12 +86,12 @@ BitSet MMRUtil::DiffCompactBitSet(const BitSet& prev_compact, const BitSet& new_
     BitSet diff;
 
     for (size_t i = 0; i < new_compact.size(); i++) {
-        if (prev_compact.size() > i && prev_compact.test(i)) {
-            assert(new_compact.test(i));
-            continue;
-        }
+	if (prev_compact.size() > i && prev_compact.test(i)) {
+	    assert(new_compact.test(i));
+	    continue;
+	}
 
-        diff.bitset.push_back(new_compact.test(i));
+	diff.bitset.push_back(new_compact.test(i));
     }
 
     return diff;
@@ -83,31 +109,31 @@ BitSet MMRUtil::CalcPrunedParents(const BitSet& unspent_leaf_indices)
 
     LeafIndex leaf_idx = LeafIndex::At(0);
     while (leaf_idx.Get() < unspent_leaf_indices.size()) {
-        if (!unspent_leaf_indices.test(leaf_idx.Get())) {
-            ret.set(leaf_idx.GetPosition());
-        }
+	if (!unspent_leaf_indices.test(leaf_idx.Get())) {
+	    ret.set(leaf_idx.GetPosition());
+	}
 
-        leaf_idx = leaf_idx.Next();
+	leaf_idx = leaf_idx.Next();
     }
 
     Index last_node = LeafIndex::At(unspent_leaf_indices.size()).GetNodeIndex();
 
     uint64_t height = 1;
-    while ((std::pow(2, height + 1) - 2) <= last_node.GetPosition()) {
-        SiblingIter iter(height, last_node);
-        while (iter.Next()) {
-            Index right_child = iter.Get().GetRightChild();
-            if (ret.test(right_child.GetPosition())) {
-                Index left_child = iter.Get().GetLeftChild();
-                if (ret.test(left_child.GetPosition())) {
-                    ret.set(right_child.GetPosition(), false);
-                    ret.set(left_child.GetPosition(), false);
-                    ret.set(iter.Get().GetPosition());
-                }
-            }
-        }
+    while ((uint64_t(2) << height) - 2 <= last_node.GetPosition()) {
+	SiblingIter iter(height, last_node);
+	while (iter.Next()) {
+	    Index right_child = iter.Get().GetRightChild();
+	    if (ret.test(right_child.GetPosition())) {
+		Index left_child = iter.Get().GetLeftChild();
+		if (ret.test(left_child.GetPosition())) {
+		    ret.set(right_child.GetPosition(), false);
+		    ret.set(left_child.GetPosition(), false);
+		    ret.set(iter.Get().GetPosition());
+		}
+	    }
+	}
 
-        ++height;
+	++height;
     }
 
 
@@ -126,10 +152,10 @@ SiblingIter::SiblingIter(const uint64_t height, const Index& last_node)
 bool SiblingIter::Next()
 {
     if (m_siblingNum == 0) {
-        m_next = Index(m_baseInc - 1, m_height);
+	m_next = Index(m_baseInc - 1, m_height);
     } else {
-        uint64_t increment = m_baseInc + BitUtil::CountRightmostZeros(m_siblingNum);
-        m_next = Index(m_next.GetPosition() + increment, m_height);
+	uint64_t increment = m_baseInc + BitUtil::CountRightmostZeros(m_siblingNum);
+	m_next = Index(m_next.GetPosition() + increment, m_height);
     }
 
     ++m_siblingNum;
