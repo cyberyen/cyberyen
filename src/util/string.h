@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <cstdint>
 #include <locale>
 #include <sstream>
 #include <string>
@@ -19,7 +20,7 @@ NODISCARD inline std::string TrimString(const std::string& str, const std::strin
 {
     std::string::size_type front = str.find_first_not_of(pattern);
     if (front == std::string::npos) {
-        return std::string();
+	return std::string();
     }
     std::string::size_type end = str.find_last_not_of(pattern);
     return str.substr(front, end - front + 1);
@@ -38,8 +39,8 @@ auto Join(const std::vector<T>& list, const BaseType& separator, UnaryOp unary_o
 {
     decltype(unary_op(list.at(0))) ret;
     for (size_t i = 0; i < list.size(); ++i) {
-        if (i > 0) ret += separator;
-        ret += unary_op(list.at(i));
+	if (i > 0) ret += separator;
+	ret += unary_op(list.at(i));
     }
     return ret;
 }
@@ -81,10 +82,10 @@ std::string ToString(const T& t)
  */
 template <typename T1, size_t PREFIX_LEN>
 NODISCARD inline bool HasPrefix(const T1& obj,
-                                const std::array<uint8_t, PREFIX_LEN>& prefix)
+				const std::array<uint8_t, PREFIX_LEN>& prefix)
 {
     return obj.size() >= PREFIX_LEN &&
-           std::equal(std::begin(prefix), std::end(prefix), std::begin(obj));
+	   std::equal(std::begin(prefix), std::end(prefix), std::begin(obj));
 }
 
 #endif // BITCOIN_UTIL_STRENCODINGS_H

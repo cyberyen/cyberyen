@@ -5,11 +5,12 @@
 #ifndef BITCOIN_SUPPORT_LOCKEDPOOL_H
 #define BITCOIN_SUPPORT_LOCKEDPOOL_H
 
-#include <stdint.h>
 #include <list>
 #include <map>
-#include <mutex>
 #include <memory>
+#include <mutex>
+#include <stdexcept>
+#include <stdint.h>
 #include <unordered_map>
 
 /**
@@ -57,11 +58,11 @@ public:
     /** Memory statistics. */
     struct Stats
     {
-        size_t used;
-        size_t free;
-        size_t total;
-        size_t chunks_used;
-        size_t chunks_free;
+	size_t used;
+	size_t free;
+	size_t total;
+	size_t chunks_used;
+	size_t chunks_free;
     };
 
     /** Allocate size bytes from this arena.
@@ -144,12 +145,12 @@ public:
     /** Memory statistics. */
     struct Stats
     {
-        size_t used;
-        size_t free;
-        size_t total;
-        size_t locked;
-        size_t chunks_used;
-        size_t chunks_free;
+	size_t used;
+	size_t free;
+	size_t total;
+	size_t locked;
+	size_t chunks_used;
+	size_t chunks_free;
     };
 
     /** Create a new LockedPool. This takes ownership of the MemoryPageLocker,
@@ -186,12 +187,12 @@ private:
     class LockedPageArena: public Arena
     {
     public:
-        LockedPageArena(LockedPageAllocator *alloc_in, void *base_in, size_t size, size_t align);
-        ~LockedPageArena();
+	LockedPageArena(LockedPageAllocator *alloc_in, void *base_in, size_t size, size_t align);
+	~LockedPageArena();
     private:
-        void *base;
-        size_t size;
-        LockedPageAllocator *allocator;
+	void *base;
+	size_t size;
+	LockedPageAllocator *allocator;
     };
 
     bool new_arena(size_t size, size_t align);
@@ -221,9 +222,9 @@ public:
     /** Return the current instance, or create it once */
     static LockedPoolManager& Instance()
     {
-        static std::once_flag init_flag;
-        std::call_once(init_flag, LockedPoolManager::CreateInstance);
-        return *LockedPoolManager::_instance;
+	static std::once_flag init_flag;
+	std::call_once(init_flag, LockedPoolManager::CreateInstance);
+	return *LockedPoolManager::_instance;
     }
 
 private:
