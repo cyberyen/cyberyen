@@ -45,13 +45,13 @@ static SECP256K1_INLINE void secp256k1_callback_call(const secp256k1_callback * 
 #ifdef DETERMINISTIC
 #define CHECK(cond) do { \
     if (EXPECT(!(cond), 0)) { \
-        TEST_FAILURE("test condition failed"); \
+	TEST_FAILURE("test condition failed"); \
     } \
 } while(0)
 #else
 #define CHECK(cond) do { \
     if (EXPECT(!(cond), 0)) { \
-        TEST_FAILURE("test condition failed: " #cond); \
+	TEST_FAILURE("test condition failed: " #cond); \
     } \
 } while(0)
 #endif
@@ -68,6 +68,18 @@ static SECP256K1_INLINE void secp256k1_callback_call(const secp256k1_callback * 
 #define VERIFY_SETUP(stmt)
 #endif
 
+/* Define `VG_UNDEF` and `VG_CHECK` when VALGRIND is defined  */
+#if !defined(VG_CHECK)
+# if defined(VALGRIND)
+#  include <valgrind/memcheck.h>
+#  define VG_UNDEF(x,y) VALGRIND_MAKE_MEM_UNDEFINED((x),(y))
+#  define VG_CHECK(x,y) VALGRIND_CHECK_MEM_IS_DEFINED((x),(y))
+# else
+#  define VG_UNDEF(x,y)
+#  define VG_CHECK(x,y)
+# endif
+#endif
+
 /* Like `VG_CHECK` but on VERIFY only */
 #if defined(VERIFY)
 #define VG_CHECK_VERIFY(x, y) VG_CHECK((x), (y))
@@ -78,7 +90,7 @@ static SECP256K1_INLINE void secp256k1_callback_call(const secp256k1_callback * 
 static SECP256K1_INLINE void *checked_malloc(const secp256k1_callback* cb, size_t size) {
     void *ret = malloc(size);
     if (ret == NULL) {
-        secp256k1_callback_call(cb, "Out of memory");
+	secp256k1_callback_call(cb, "Out of memory");
     }
     return ret;
 }
@@ -86,7 +98,7 @@ static SECP256K1_INLINE void *checked_malloc(const secp256k1_callback* cb, size_
 static SECP256K1_INLINE void *checked_realloc(const secp256k1_callback* cb, void *ptr, size_t size) {
     void *ret = realloc(ptr, size);
     if (ret == NULL) {
-        secp256k1_callback_call(cb, "Out of memory");
+	secp256k1_callback_call(cb, "Out of memory");
     }
     return ret;
 }
@@ -106,7 +118,7 @@ SECP256K1_INLINE static int secp256k1_sign_and_abs64(uint64_t *out, int64_t in) 
 SECP256K1_INLINE static int secp256k1_clz64_var(uint64_t x) {
     int ret;
     if (!x) {
-        return 64;
+	return 64;
     }
 # if defined(HAVE_BUILTIN_CLZLL)
     ret = __builtin_clzll(x);
@@ -127,9 +139,9 @@ static SECP256K1_INLINE void memczero(void* s, size_t len, int flag)
     volatile int vflag = flag;
     unsigned char mask = -(unsigned char)vflag;
     while (len) {
-        *p &= ~mask;
-        p++;
-        len--;
+	*p &= ~mask;
+	p++;
+	len--;
     }
 }
 
@@ -144,10 +156,10 @@ static SECP256K1_INLINE int secp256k1_memcmp_var(const void* s1, const void* s2,
     size_t i;
 
     for (i = 0; i < n; i++) {
-        int diff = p1[i] - p2[i];
-        if (diff != 0) {
-            return diff;
-        }
+	int diff = p1[i] - p2[i];
+	if (diff != 0) {
+	    return diff;
+	}
     }
     return 0;
 }
