@@ -11,9 +11,9 @@ LeafIndex MemMMR::AddLeaf(const Leaf& leaf)
 
     auto nextIdx = leaf.GetNodeIndex().GetNext();
     while (!nextIdx.IsLeaf()) {
-        mw::Hash leftHash = GetHash(nextIdx.GetLeftChild());
-        m_hashes.push_back(MMRUtil::CalcParentHash(nextIdx, leftHash, m_hashes.back()));
-        nextIdx = nextIdx.GetNext();
+	mw::Hash leftHash = GetHash(nextIdx.GetLeftChild());
+	m_hashes.push_back(MMRUtil::CalcParentHash(nextIdx, leftHash, m_hashes.back()));
+	nextIdx = nextIdx.GetNext();
     }
 
     return leaf.GetLeafIndex();
@@ -45,5 +45,5 @@ void MemMMR::Rewind(const uint64_t numLeaves)
 {
     assert(numLeaves <= m_leaves.size());
     m_leaves.resize(numLeaves);
-    m_hashes.resize(GetNextLeafIdx().GetPosition());
+    m_hashes.resize(GetNumNodes());
 }
