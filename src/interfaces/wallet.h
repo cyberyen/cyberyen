@@ -74,7 +74,7 @@ public:
 
     //! Change wallet passphrase.
     virtual bool changeWalletPassphrase(const SecureString& old_wallet_passphrase,
-        const SecureString& new_wallet_passphrase) = 0;
+	const SecureString& new_wallet_passphrase) = 0;
 
     //! Abort a rescan.
     virtual void abortRescan() = 0;
@@ -111,9 +111,9 @@ public:
 
     //! Look up address in wallet, return whether exists.
     virtual bool getAddress(const CTxDestination& dest,
-        std::string* name,
-        isminetype* is_mine,
-        std::string* purpose) = 0;
+	std::string* name,
+	isminetype* is_mine,
+	std::string* purpose) = 0;
 
     //! Get wallet address list.
     virtual std::vector<WalletAddress> getAddresses() = 0;
@@ -147,17 +147,17 @@ public:
 
     //! Create transaction.
     virtual CTransactionRef createTransaction(const std::vector<CRecipient>& recipients,
-        const CCoinControl& coin_control,
-        bool sign,
-        int& change_pos,
-        CAmount& fee,
-        bilingual_str& fail_reason) = 0;
+	const CCoinControl& coin_control,
+	bool sign,
+	int& change_pos,
+	CAmount& fee,
+	bilingual_str& fail_reason) = 0;
 
     //! Commit transaction.
     virtual void commitTransaction(CTransactionRef tx,
-        WalletValueMap value_map,
-        WalletOrderForm order_form,
-        const std::vector<ReserveDestination*>& reserved_keys) = 0;
+	WalletValueMap value_map,
+	WalletOrderForm order_form,
+	const std::vector<ReserveDestination*>& reserved_keys) = 0;
 
     //! Return whether transaction can be abandoned.
     virtual bool transactionCanBeAbandoned(const uint256& txid) = 0;
@@ -170,20 +170,26 @@ public:
 
     //! Create bump transaction.
     virtual bool createBumpTransaction(const uint256& txid,
-        const CCoinControl& coin_control,
-        std::vector<bilingual_str>& errors,
-        CAmount& old_fee,
-        CAmount& new_fee,
-        CMutableTransaction& mtx) = 0;
+	const CCoinControl& coin_control,
+	std::vector<bilingual_str>& errors,
+	CAmount& old_fee,
+	CAmount& new_fee,
+	CMutableTransaction& mtx) = 0;
 
     //! Sign bump transaction.
     virtual bool signBumpTransaction(CMutableTransaction& mtx) = 0;
 
     //! Commit bump transaction.
     virtual bool commitBumpTransaction(const uint256& txid,
-        CMutableTransaction&& mtx,
-        std::vector<bilingual_str>& errors,
-        uint256& bumped_txid) = 0;
+	CMutableTransaction&& mtx,
+	std::vector<bilingual_str>& errors,
+	uint256& bumped_txid) = 0;
+
+    //! Return whether transaction can be rebroadcast.
+    virtual bool transactionCanBeRebroadcast(const uint256& txid) = 0;
+
+    //! Rebroadcast transaction.
+    virtual bool rebroadcastTransaction(const uint256& txid) = 0;
 
     //! Get a transaction.
     virtual CTransactionRef getTx(const uint256& txid) = 0;
@@ -196,18 +202,18 @@ public:
 
     //! Get transaction details.
     virtual WalletTx getWalletTxDetails(const uint256& txid,
-        WalletTxStatus& tx_status,
-        WalletOrderForm& order_form,
-        bool& in_mempool,
-        int& num_blocks) = 0;
+	WalletTxStatus& tx_status,
+	WalletOrderForm& order_form,
+	bool& in_mempool,
+	int& num_blocks) = 0;
 
     //! Fill PSBT.
     virtual TransactionError fillPSBT(int sighash_type,
-        bool sign,
-        bool bip32derivs,
-        PartiallySignedTransaction& psbtx,
-        bool& complete,
-        size_t* n_signed) = 0;
+	bool sign,
+	bool bip32derivs,
+	PartiallySignedTransaction& psbtx,
+	bool& complete,
+	size_t* n_signed) = 0;
 
     //! Get balances.
     virtual WalletBalances getBalances() = 0;
@@ -252,10 +258,10 @@ public:
 
     //! Get minimum fee.
     virtual CAmount getMinimumFee(unsigned int tx_bytes,
-        uint64_t mweb_weight,
-        const CCoinControl& coin_control,
-        int* returned_target,
-        FeeReason* reason) = 0;
+	uint64_t mweb_weight,
+	const CCoinControl& coin_control,
+	int* returned_target,
+	FeeReason* reason) = 0;
 
     //! Get tx confirm target.
     virtual unsigned int getConfirmTarget() = 0;
@@ -298,10 +304,10 @@ public:
 
     //! Register handler for address book changed messages.
     using AddressBookChangedFn = std::function<void(const CTxDestination& address,
-        const std::string& label,
-        bool is_mine,
-        const std::string& purpose,
-        ChangeType status)>;
+	const std::string& label,
+	bool is_mine,
+	const std::string& purpose,
+	ChangeType status)>;
     virtual std::unique_ptr<Handler> handleAddressBookChanged(AddressBookChangedFn fn) = 0;
 
     //! Register handler for transaction changed messages.
@@ -357,7 +363,7 @@ struct WalletAddress
     std::string purpose;
 
     WalletAddress(CTxDestination dest, isminetype is_mine, std::string name, std::string purpose)
-        : dest(std::move(dest)), is_mine(is_mine), name(std::move(name)), purpose(std::move(purpose))
+	: dest(std::move(dest)), is_mine(is_mine), name(std::move(name)), purpose(std::move(purpose))
     {
     }
 };
@@ -375,10 +381,10 @@ struct WalletBalances
 
     bool balanceChanged(const WalletBalances& prev) const
     {
-        return balance != prev.balance || unconfirmed_balance != prev.unconfirmed_balance ||
-               immature_balance != prev.immature_balance || watch_only_balance != prev.watch_only_balance ||
-               unconfirmed_watch_only_balance != prev.unconfirmed_watch_only_balance ||
-               immature_watch_only_balance != prev.immature_watch_only_balance;
+	return balance != prev.balance || unconfirmed_balance != prev.unconfirmed_balance ||
+	       immature_balance != prev.immature_balance || watch_only_balance != prev.watch_only_balance ||
+	       unconfirmed_watch_only_balance != prev.unconfirmed_watch_only_balance ||
+	       immature_watch_only_balance != prev.immature_watch_only_balance;
     }
 };
 
