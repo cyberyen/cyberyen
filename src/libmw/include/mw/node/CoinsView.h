@@ -29,22 +29,23 @@ public:
     using CPtr = std::shared_ptr<const ICoinsView>;
 
     ICoinsView(const mw::Header::CPtr& pHeader, const std::shared_ptr<mw::DBWrapper>& pDBWrapper)
-        : m_pHeader(pHeader), m_pDatabase(pDBWrapper) { }
+	: m_pHeader(pHeader), m_pDatabase(pDBWrapper) { }
     virtual ~ICoinsView() = default;
 
     void SetBestHeader(const mw::Header::CPtr& pHeader) noexcept { m_pHeader = pHeader; }
     mw::Header::CPtr GetBestHeader() const noexcept { return m_pHeader; }
 
     const std::shared_ptr<mw::DBWrapper>& GetDatabase() const noexcept { return m_pDatabase; }
+    void SetDatabase(const std::shared_ptr<mw::DBWrapper>& pDBWrapper) noexcept { m_pDatabase = pDBWrapper; }
 
     virtual bool IsCache() const noexcept = 0;
 
     // Virtual functions
     virtual UTXO::CPtr GetUTXO(const mw::Hash& output_id) const = 0;
     virtual void WriteBatch(
-        const mw::DBBatch::UPtr& pBatch,
-        const CoinsViewUpdates& updates,
-        const mw::Header::CPtr& pHeader
+	const mw::DBBatch::UPtr& pBatch,
+	const CoinsViewUpdates& updates,
+	const mw::Header::CPtr& pHeader
     ) = 0;
 
     virtual ILeafSet::Ptr GetLeafSet() const noexcept = 0;
@@ -105,9 +106,9 @@ public:
     void UndoBlock(const mw::BlockUndo::CPtr& pUndo);
 
     void WriteBatch(
-        const mw::DBBatch::UPtr& pBatch,
-        const CoinsViewUpdates& updates,
-        const mw::Header::CPtr& pHeader
+	const mw::DBBatch::UPtr& pBatch,
+	const CoinsViewUpdates& updates,
+	const mw::Header::CPtr& pHeader
     ) final;
     void Compact() const final { m_pBase->Compact(); }
 
@@ -144,18 +145,18 @@ public:
     using Ptr = std::shared_ptr<CoinsViewDB>;
 
     static CoinsViewDB::Ptr Open(
-        const FilePath& datadir,
-        const mw::Header::CPtr& pBestHeader,
-        const mw::DBWrapper::Ptr& pDBWrapper
+	const FilePath& datadir,
+	const mw::Header::CPtr& pBestHeader,
+	const mw::DBWrapper::Ptr& pDBWrapper
     );
 
     bool IsCache() const noexcept final { return false; }
 
     UTXO::CPtr GetUTXO(const mw::Hash& output_id) const final;
     void WriteBatch(
-        const mw::DBBatch::UPtr& pBatch,
-        const CoinsViewUpdates& updates,
-        const mw::Header::CPtr& pHeader
+	const mw::DBBatch::UPtr& pBatch,
+	const CoinsViewUpdates& updates,
+	const mw::Header::CPtr& pHeader
     ) final;
     void Compact() const final;
 
@@ -166,13 +167,13 @@ public:
 
 private:
     CoinsViewDB(
-        const mw::Header::CPtr& pBestHeader,
-        const mw::DBWrapper::Ptr& pDBWrapper,
-        const LeafSet::Ptr& pLeafSet,
-        const PMMR::Ptr& pOutputPMMR
+	const mw::Header::CPtr& pBestHeader,
+	const mw::DBWrapper::Ptr& pDBWrapper,
+	const LeafSet::Ptr& pLeafSet,
+	const PMMR::Ptr& pOutputPMMR
     ) : ICoinsView(pBestHeader, pDBWrapper),
-        m_pLeafSet(pLeafSet),
-        m_pOutputPMMR(pOutputPMMR) { }
+	m_pLeafSet(pLeafSet),
+	m_pOutputPMMR(pOutputPMMR) { }
 
     void AddUTXO(CoinDB& coinDB, const Output& output);
     void AddUTXO(CoinDB& coinDB, const UTXO::CPtr& pUTXO);

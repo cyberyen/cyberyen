@@ -111,14 +111,14 @@ enum class FeeEstimateMode;
 constexpr OutputType DEFAULT_ADDRESS_TYPE{OutputType::BECH32};
 
 static constexpr uint64_t KNOWN_WALLET_FLAGS =
-        WALLET_FLAG_AVOID_REUSE
+	WALLET_FLAG_AVOID_REUSE
     |   WALLET_FLAG_BLANK_WALLET
     |   WALLET_FLAG_KEY_ORIGIN_METADATA
     |   WALLET_FLAG_DISABLE_PRIVATE_KEYS
     |   WALLET_FLAG_DESCRIPTORS;
 
 static constexpr uint64_t MUTABLE_WALLET_FLAGS =
-        WALLET_FLAG_AVOID_REUSE;
+	WALLET_FLAG_AVOID_REUSE;
 
 static const std::map<std::string,WalletFlags> WALLET_FLAG_MAP{
     {"avoid_reuse", WALLET_FLAG_AVOID_REUSE},
@@ -147,8 +147,8 @@ public:
     bool IsChange() const { return m_change; }
     const std::string& GetLabel() const { return m_label; }
     void SetLabel(const std::string& label) {
-        m_change = false;
-        m_label = label;
+	m_change = false;
+	m_label = label;
     }
 };
 
@@ -160,17 +160,17 @@ struct CRecipient
 
     bool IsMWEB() const noexcept
     {
-        return receiver.IsMWEB();
+	return receiver.IsMWEB();
     }
 
     const StealthAddress& GetMWEBAddress() const noexcept
     {
-        return receiver.GetMWEBAddress();
+	return receiver.GetMWEBAddress();
     }
 
     const CScript& GetScript() const noexcept
     {
-        return receiver.GetScript();
+	return receiver.GetScript();
     }
 };
 
@@ -181,8 +181,8 @@ static inline void ReadOrderPos(int64_t& nOrderPos, mapValue_t& mapValue)
 {
     if (!mapValue.count("n"))
     {
-        nOrderPos = -1; // TODO: calculate elsewhere
-        return;
+	nOrderPos = -1; // TODO: calculate elsewhere
+	return;
     }
     nOrderPos = atoi64(mapValue["n"]);
 }
@@ -191,14 +191,14 @@ static inline void ReadOrderPos(int64_t& nOrderPos, mapValue_t& mapValue)
 static inline void WriteOrderPos(const int64_t& nOrderPos, mapValue_t& mapValue)
 {
     if (nOrderPos == -1)
-        return;
+	return;
     mapValue["n"] = ToString(nOrderPos);
 }
 
 static inline void ReadPegoutIndices(std::vector<std::pair<mw::Hash, size_t>>& pegout_indices, const mapValue_t& mapValue)
 {
     if (!mapValue.count("pegout_indices")) {
-        return;
+	return;
     }
 
     std::vector<uint8_t> bytes = ParseHex(mapValue.at("pegout_indices"));
@@ -206,25 +206,25 @@ static inline void ReadPegoutIndices(std::vector<std::pair<mw::Hash, size_t>>& p
 
     size_t num_indices = ReadVarInt<CDataStream, VarIntMode::DEFAULT, size_t>(s);
     for (size_t i = 0; i < num_indices; i++) {
-        mw::Hash kernel_id;
-        s >> kernel_id;
-        size_t sub_idx = ReadVarInt<CDataStream, VarIntMode::DEFAULT, size_t>(s);
+	mw::Hash kernel_id;
+	s >> kernel_id;
+	size_t sub_idx = ReadVarInt<CDataStream, VarIntMode::DEFAULT, size_t>(s);
 
-        pegout_indices.push_back({std::move(kernel_id), sub_idx});
+	pegout_indices.push_back({std::move(kernel_id), sub_idx});
     }
 }
 
 static inline void WritePegoutIndices(const std::vector<std::pair<mw::Hash, size_t>>& pegout_indices, mapValue_t& mapValue)
 {
     if (pegout_indices.empty()) {
-        return;
+	return;
     }
 
     CDataStream s(SER_DISK, PROTOCOL_VERSION);
     WriteVarInt<CDataStream, VarIntMode::DEFAULT, size_t>(s, pegout_indices.size());
     for (const auto& pegout_idx : pegout_indices) {
-        pegout_idx.first.Serialize(s);
-        WriteVarInt<CDataStream, VarIntMode::DEFAULT, size_t>(s, pegout_idx.second);
+	pegout_idx.first.Serialize(s);
+	WriteVarInt<CDataStream, VarIntMode::DEFAULT, size_t>(s, pegout_idx.second);
     }
 
     mapValue["pegout_indices"] = HexStr(std::vector<uint8_t>{s.begin(), s.end()});
@@ -248,12 +248,12 @@ public:
     template<typename Stream>
     void Unserialize(Stream& s)
     {
-        CTransactionRef tx;
-        uint256 hashBlock;
-        std::vector<uint256> vMerkleBranch;
-        int nIndex;
+	CTransactionRef tx;
+	uint256 hashBlock;
+	std::vector<uint256> vMerkleBranch;
+	int nIndex;
 
-        s >> tx >> hashBlock >> vMerkleBranch >> nIndex;
+	s >> tx >> hashBlock >> vMerkleBranch >> nIndex;
     }
 };
 
@@ -342,28 +342,28 @@ public:
     mutable CAmount nChangeCached;
 
     CWalletTx(const CWallet* wallet, CTransactionRef arg, boost::optional<MWEB::WalletTxInfo> mweb_wtx_info_ = boost::none)
-        : pwallet(wallet),
-          tx(std::move(arg))
+	: pwallet(wallet),
+	  tx(std::move(arg))
     {
-        Init();
-        mweb_wtx_info = mweb_wtx_info_;
+	Init();
+	mweb_wtx_info = mweb_wtx_info_;
     }
 
     CWalletTx(CWalletTx&& wtx) = default;
 
     void Init()
     {
-        mapValue.clear();
-        vOrderForm.clear();
-        fTimeReceivedIsTxTime = false;
-        nTimeReceived = 0;
-        nTimeSmart = 0;
-        fFromMe = false;
-        fChangeCached = false;
-        fInMempool = false;
-        nChangeCached = 0;
-        nOrderPos = -1;
-        m_confirm = Confirmation{};
+	mapValue.clear();
+	vOrderForm.clear();
+	fTimeReceivedIsTxTime = false;
+	nTimeReceived = 0;
+	nTimeSmart = 0;
+	fFromMe = false;
+	fChangeCached = false;
+	fInMempool = false;
+	nChangeCached = 0;
+	nOrderPos = -1;
+	m_confirm = Confirmation{};
     }
 
     CTransactionRef tx;
@@ -377,10 +377,10 @@ public:
      * or CONFIRMED transition.
      */
     enum Status {
-        UNCONFIRMED,
-        CONFIRMED,
-        CONFLICTED,
-        ABANDONED
+	UNCONFIRMED,
+	CONFIRMED,
+	CONFLICTED,
+	ABANDONED
     };
 
     /* Confirmation includes tx status and a triplet of {block height/block hash/tx index in block}
@@ -389,12 +389,12 @@ public:
      * and block height of the deepest conflicting tx.
      */
     struct Confirmation {
-        Status status;
-        int block_height;
-        uint256 hashBlock;
-        int nIndex;
-        Confirmation(Status s = UNCONFIRMED, int b = 0, uint256 h = uint256(), int i = 0) : status(s), block_height(b), hashBlock(h), nIndex(i) {}
-        bool operator!=(const Confirmation& c) const { return status != c.status || block_height != c.block_height || hashBlock != c.hashBlock || nIndex != c.nIndex; }
+	Status status;
+	int block_height;
+	uint256 hashBlock;
+	int nIndex;
+	Confirmation(Status s = UNCONFIRMED, int b = 0, uint256 h = uint256(), int i = 0) : status(s), block_height(b), hashBlock(h), nIndex(i) {}
+	bool operator!=(const Confirmation& c) const { return status != c.status || block_height != c.block_height || hashBlock != c.hashBlock || nIndex != c.nIndex; }
     };
 
     Confirmation m_confirm;
@@ -402,82 +402,82 @@ public:
     template<typename Stream>
     void Serialize(Stream& s) const
     {
-        mapValue_t mapValueCopy = mapValue;
+	mapValue_t mapValueCopy = mapValue;
 
-        mapValueCopy["fromaccount"] = "";
-        WriteOrderPos(nOrderPos, mapValueCopy);
-        if (nTimeSmart) {
-            mapValueCopy["timesmart"] = strprintf("%u", nTimeSmart);
-        }
+	mapValueCopy["fromaccount"] = "";
+	WriteOrderPos(nOrderPos, mapValueCopy);
+	if (nTimeSmart) {
+	    mapValueCopy["timesmart"] = strprintf("%u", nTimeSmart);
+	}
 
-        WritePegoutIndices(pegout_indices, mapValueCopy);
-        if (mweb_wtx_info) {
-            mapValueCopy["mweb_info"] = mweb_wtx_info->ToHex();
-        }
+	WritePegoutIndices(pegout_indices, mapValueCopy);
+	if (mweb_wtx_info) {
+	    mapValueCopy["mweb_info"] = mweb_wtx_info->ToHex();
+	}
 
-        std::vector<char> dummy_vector1; //!< Used to be vMerkleBranch
-        std::vector<char> dummy_vector2; //!< Used to be vtxPrev
-        bool dummy_bool = false; //!< Used to be fSpent
-        uint256 serializedHash = isAbandoned() ? ABANDON_HASH : m_confirm.hashBlock;
-        int serializedIndex = isAbandoned() || isConflicted() ? -1 : m_confirm.nIndex;
-        s << tx << serializedHash << dummy_vector1 << serializedIndex << dummy_vector2 << mapValueCopy << vOrderForm << fTimeReceivedIsTxTime << nTimeReceived << fFromMe << dummy_bool;
+	std::vector<char> dummy_vector1; //!< Used to be vMerkleBranch
+	std::vector<char> dummy_vector2; //!< Used to be vtxPrev
+	bool dummy_bool = false; //!< Used to be fSpent
+	uint256 serializedHash = isAbandoned() ? ABANDON_HASH : m_confirm.hashBlock;
+	int serializedIndex = isAbandoned() || isConflicted() ? -1 : m_confirm.nIndex;
+	s << tx << serializedHash << dummy_vector1 << serializedIndex << dummy_vector2 << mapValueCopy << vOrderForm << fTimeReceivedIsTxTime << nTimeReceived << fFromMe << dummy_bool;
     }
 
     template<typename Stream>
     void Unserialize(Stream& s)
     {
-        Init();
+	Init();
 
-        std::vector<uint256> dummy_vector1; //!< Used to be vMerkleBranch
-        std::vector<CMerkleTx> dummy_vector2; //!< Used to be vtxPrev
-        bool dummy_bool; //! Used to be fSpent
-        int serializedIndex;
-        s >> tx >> m_confirm.hashBlock >> dummy_vector1 >> serializedIndex >> dummy_vector2 >> mapValue >> vOrderForm >> fTimeReceivedIsTxTime >> nTimeReceived >> fFromMe >> dummy_bool;
+	std::vector<uint256> dummy_vector1; //!< Used to be vMerkleBranch
+	std::vector<CMerkleTx> dummy_vector2; //!< Used to be vtxPrev
+	bool dummy_bool; //! Used to be fSpent
+	int serializedIndex;
+	s >> tx >> m_confirm.hashBlock >> dummy_vector1 >> serializedIndex >> dummy_vector2 >> mapValue >> vOrderForm >> fTimeReceivedIsTxTime >> nTimeReceived >> fFromMe >> dummy_bool;
 
-        /* At serialization/deserialization, an nIndex == -1 means that hashBlock refers to
-         * the earliest block in the chain we know this or any in-wallet ancestor conflicts
-         * with. If nIndex == -1 and hashBlock is ABANDON_HASH, it means transaction is abandoned.
-         * In same context, an nIndex >= 0 refers to a confirmed transaction (if hashBlock set) or
-         * unconfirmed one. Older clients interpret nIndex == -1 as unconfirmed for backward
-         * compatibility (pre-commit 9ac63d6).
-         */
-        if (serializedIndex == -1 && m_confirm.hashBlock == ABANDON_HASH) {
-            setAbandoned();
-        } else if (serializedIndex == -1) {
-            setConflicted();
-        } else if (!m_confirm.hashBlock.IsNull()) {
-            m_confirm.nIndex = serializedIndex;
-            setConfirmed();
-        }
+	/* At serialization/deserialization, an nIndex == -1 means that hashBlock refers to
+	 * the earliest block in the chain we know this or any in-wallet ancestor conflicts
+	 * with. If nIndex == -1 and hashBlock is ABANDON_HASH, it means transaction is abandoned.
+	 * In same context, an nIndex >= 0 refers to a confirmed transaction (if hashBlock set) or
+	 * unconfirmed one. Older clients interpret nIndex == -1 as unconfirmed for backward
+	 * compatibility (pre-commit 9ac63d6).
+	 */
+	if (serializedIndex == -1 && m_confirm.hashBlock == ABANDON_HASH) {
+	    setAbandoned();
+	} else if (serializedIndex == -1) {
+	    setConflicted();
+	} else if (!m_confirm.hashBlock.IsNull()) {
+	    m_confirm.nIndex = serializedIndex;
+	    setConfirmed();
+	}
 
-        ReadOrderPos(nOrderPos, mapValue);
-        nTimeSmart = mapValue.count("timesmart") ? (unsigned int)atoi64(mapValue["timesmart"]) : 0;
+	ReadOrderPos(nOrderPos, mapValue);
+	nTimeSmart = mapValue.count("timesmart") ? (unsigned int)atoi64(mapValue["timesmart"]) : 0;
 
-        ReadPegoutIndices(pegout_indices, mapValue);
-        mweb_wtx_info = mapValue.count("mweb_info") ? boost::make_optional(MWEB::WalletTxInfo::FromHex(mapValue["mweb_info"])) : boost::none;
+	ReadPegoutIndices(pegout_indices, mapValue);
+	mweb_wtx_info = mapValue.count("mweb_info") ? boost::make_optional(MWEB::WalletTxInfo::FromHex(mapValue["mweb_info"])) : boost::none;
 
-        mapValue.erase("fromaccount");
-        mapValue.erase("spent");
-        mapValue.erase("n");
-        mapValue.erase("timesmart");
-        mapValue.erase("mweb_info");
-        mapValue.erase("pegout_indices");
+	mapValue.erase("fromaccount");
+	mapValue.erase("spent");
+	mapValue.erase("n");
+	mapValue.erase("timesmart");
+	mapValue.erase("mweb_info");
+	mapValue.erase("pegout_indices");
     }
 
     void SetTx(CTransactionRef arg)
     {
-        tx = std::move(arg);
+	tx = std::move(arg);
     }
 
     //! make sure balances are recalculated
     void MarkDirty()
     {
-        m_amounts[DEBIT].Reset();
-        m_amounts[CREDIT].Reset();
-        m_amounts[IMMATURE_CREDIT].Reset();
-        m_amounts[AVAILABLE_CREDIT].Reset();
-        fChangeCached = false;
-        m_is_cache_empty = true;
+	m_amounts[DEBIT].Reset();
+	m_amounts[CREDIT].Reset();
+	m_amounts[IMMATURE_CREDIT].Reset();
+	m_amounts[AVAILABLE_CREDIT].Reset();
+	fChangeCached = false;
+	m_is_cache_empty = true;
     }
 
     //! filter decides which addresses will count towards the debit
@@ -496,15 +496,15 @@ public:
     // Get the marginal bytes if spending the specified output from this transaction
     int GetSpendSize(unsigned int out, bool use_max_sig = false) const
     {
-        return CalculateMaximumSignedInputSize(tx->vout[out], pwallet, use_max_sig);
+	return CalculateMaximumSignedInputSize(tx->vout[out], pwallet, use_max_sig);
     }
 
     void GetAmounts(std::list<COutputEntry>& listReceived,
-                    std::list<COutputEntry>& listSent, CAmount& nFee, const isminefilter& filter) const;
+		    std::list<COutputEntry>& listSent, CAmount& nFee, const isminefilter& filter) const;
 
     bool IsFromMe(const isminefilter& filter) const
     {
-        return (GetDebit(filter) > 0);
+	return (GetDebit(filter) > 0);
     }
 
     // True if only scriptSigs are different
@@ -528,36 +528,36 @@ public:
 
     std::vector<CTxInput> GetInputs() const
     {
-        std::vector<CTxInput> inputs = tx->GetInputs();
-        if (mweb_wtx_info && mweb_wtx_info->spent_input) {
-            inputs.push_back(*mweb_wtx_info->spent_input);
-        }
+	std::vector<CTxInput> inputs = tx->GetInputs();
+	if (mweb_wtx_info && mweb_wtx_info->spent_input) {
+	    inputs.push_back(*mweb_wtx_info->spent_input);
+	}
 
-        return inputs;
+	return inputs;
     }
 
     std::vector<CTxOutput> GetOutputs() const
     {
-        std::vector<CTxOutput> outputs = tx->GetOutputs();
-        if (mweb_wtx_info && mweb_wtx_info->received_coin) {
-            outputs.push_back(CTxOutput{mweb_wtx_info->received_coin->output_id});
-        }
+	std::vector<CTxOutput> outputs = tx->GetOutputs();
+	if (mweb_wtx_info && mweb_wtx_info->received_coin) {
+	    outputs.push_back(CTxOutput{mweb_wtx_info->received_coin->output_id});
+	}
 
-        return outputs;
+	return outputs;
     }
 
     bool IsPartialMWEB() const
     {
-        return tx->IsNull() && mweb_wtx_info;
+	return tx->IsNull() && mweb_wtx_info;
     }
 
     const uint256& GetHash() const
     {
-        if (IsPartialMWEB()) {
-            return mweb_wtx_info->GetHash();
-        }
+	if (IsPartialMWEB()) {
+	    return mweb_wtx_info->GetHash();
+	}
 
-        return tx->GetHash();
+	return tx->GetHash();
     }
 
     /**
@@ -584,10 +584,10 @@ public:
     bool isAbandoned() const { return m_confirm.status == CWalletTx::ABANDONED; }
     void setAbandoned()
     {
-        m_confirm.status = CWalletTx::ABANDONED;
-        m_confirm.hashBlock = uint256();
-        m_confirm.block_height = 0;
-        m_confirm.nIndex = 0;
+	m_confirm.status = CWalletTx::ABANDONED;
+	m_confirm.hashBlock = uint256();
+	m_confirm.block_height = 0;
+	m_confirm.nIndex = 0;
     }
     bool isConflicted() const { return m_confirm.status == CWalletTx::CONFLICTED; }
     void setConflicted() { m_confirm.status = CWalletTx::CONFLICTED; }
@@ -635,19 +635,19 @@ public:
 
     COutput(const CWalletTx *txIn, int iIn, int nDepthIn, bool fSpendableIn, bool fSolvableIn, bool fSafeIn, bool use_max_sig_in = false)
     {
-        tx = txIn; i = iIn; nDepth = nDepthIn; fSpendable = fSpendableIn; fSolvable = fSolvableIn; fSafe = fSafeIn; nInputBytes = -1; use_max_sig = use_max_sig_in;
-        // If known and signable by the given wallet, compute nInputBytes
-        // Failure will keep this value -1
-        if (fSpendable && tx) {
-            nInputBytes = tx->GetSpendSize(i, use_max_sig);
-        }
+	tx = txIn; i = iIn; nDepth = nDepthIn; fSpendable = fSpendableIn; fSolvable = fSolvableIn; fSafe = fSafeIn; nInputBytes = -1; use_max_sig = use_max_sig_in;
+	// If known and signable by the given wallet, compute nInputBytes
+	// Failure will keep this value -1
+	if (fSpendable && tx) {
+	    nInputBytes = tx->GetSpendSize(i, use_max_sig);
+	}
     }
 
     std::string ToString() const;
 
     inline CInputCoin GetInputCoin() const
     {
-        return CInputCoin(tx->tx, i, nInputBytes);
+	return CInputCoin(tx->tx, i, nInputBytes);
     }
 };
 
@@ -666,67 +666,67 @@ struct COutputCoin {
 
     bool IsSpendable() const
     {
-        if (IsMWEB()) return true;
-        return boost::get<COutput>(m_output).fSpendable;
+	if (IsMWEB()) return true;
+	return boost::get<COutput>(m_output).fSpendable;
     }
 
     bool IsSolvable() const
     {
-        if (IsMWEB()) return true;
-        return boost::get<COutput>(m_output).fSolvable;
+	if (IsMWEB()) return true;
+	return boost::get<COutput>(m_output).fSolvable;
     }
 
     bool GetDestination(CTxDestination& dest) const
     {
-        if (IsMWEB()) {
-            dest = boost::get<MWOutput>(m_output).address;
-            return true;
-        } else {
-            const COutput& out = boost::get<COutput>(m_output);
-            return ExtractDestination(out.tx->tx->vout[out.i].scriptPubKey, dest);
-        }
+	if (IsMWEB()) {
+	    dest = boost::get<MWOutput>(m_output).address;
+	    return true;
+	} else {
+	    const COutput& out = boost::get<COutput>(m_output);
+	    return ExtractDestination(out.tx->tx->vout[out.i].scriptPubKey, dest);
+	}
     }
 
     DestinationAddr GetAddress() const
     {
-        if (IsMWEB()) return boost::get<MWOutput>(m_output).address;
+	if (IsMWEB()) return boost::get<MWOutput>(m_output).address;
 
-        const COutput& out = boost::get<COutput>(m_output);
-        return out.tx->tx->vout[out.i].scriptPubKey;
+	const COutput& out = boost::get<COutput>(m_output);
+	return out.tx->tx->vout[out.i].scriptPubKey;
     }
 
     CAmount GetValue() const
     {
-        if (IsMWEB()) return boost::get<MWOutput>(m_output).coin.amount;
+	if (IsMWEB()) return boost::get<MWOutput>(m_output).coin.amount;
 
-        const COutput& out = boost::get<COutput>(m_output);
-        return out.tx->tx->vout[out.i].nValue;
+	const COutput& out = boost::get<COutput>(m_output);
+	return out.tx->tx->vout[out.i].nValue;
     }
 
     int GetDepth() const
     {
-        if (IsMWEB()) return boost::get<MWOutput>(m_output).nDepth;
-        return boost::get<COutput>(m_output).nDepth;
+	if (IsMWEB()) return boost::get<MWOutput>(m_output).nDepth;
+	return boost::get<COutput>(m_output).nDepth;
     }
 
     CInputCoin GetInputCoin() const
     {
-        if (IsMWEB()) return CInputCoin(boost::get<MWOutput>(m_output).coin);
-        return boost::get<COutput>(m_output).GetInputCoin();
+	if (IsMWEB()) return CInputCoin(boost::get<MWOutput>(m_output).coin);
+	return boost::get<COutput>(m_output).GetInputCoin();
     }
 
     OutputIndex GetIndex() const
     {
-        if (IsMWEB()) return boost::get<MWOutput>(m_output).coin.output_id;
+	if (IsMWEB()) return boost::get<MWOutput>(m_output).coin.output_id;
 
-        const COutput& out = boost::get<COutput>(m_output);
-        return COutPoint(out.tx->GetHash(), out.i);
+	const COutput& out = boost::get<COutput>(m_output);
+	return COutPoint(out.tx->GetHash(), out.i);
     }
 
     const CWalletTx* GetWalletTx() const
     {
-        if (IsMWEB()) return boost::get<MWOutput>(m_output).wtx;
-        return boost::get<COutput>(m_output).tx;
+	if (IsMWEB()) return boost::get<MWOutput>(m_output).wtx;
+	return boost::get<COutput>(m_output).tx;
     }
 
     boost::variant<COutput, MWOutput> m_output;
@@ -748,16 +748,16 @@ struct CoinSelectionParams
     InputPreference input_preference = InputPreference::ANY;
 
     CoinSelectionParams(bool use_bnb, size_t change_output_size, size_t mweb_change_output_weight, size_t change_spend_size, CFeeRate effective_feerate,
-                        CFeeRate long_term_feerate, CFeeRate discard_feerate, size_t tx_noinputs_size, size_t mweb_nochange_weight) :
-        use_bnb(use_bnb),
-        change_output_size(change_output_size),
-        mweb_change_output_weight(mweb_change_output_weight),
-        change_spend_size(change_spend_size),
-        m_effective_feerate(effective_feerate),
-        m_long_term_feerate(long_term_feerate),
-        m_discard_feerate(discard_feerate),
-        tx_noinputs_size(tx_noinputs_size),
-        mweb_nochange_weight(mweb_nochange_weight)
+			CFeeRate long_term_feerate, CFeeRate discard_feerate, size_t tx_noinputs_size, size_t mweb_nochange_weight) :
+	use_bnb(use_bnb),
+	change_output_size(change_output_size),
+	mweb_change_output_weight(mweb_change_output_weight),
+	change_spend_size(change_spend_size),
+	m_effective_feerate(effective_feerate),
+	m_long_term_feerate(long_term_feerate),
+	m_discard_feerate(discard_feerate),
+	tx_noinputs_size(tx_noinputs_size),
+	mweb_nochange_weight(mweb_nochange_weight)
     {}
     CoinSelectionParams() {}
 };
@@ -891,7 +891,7 @@ public:
      */
     WalletDatabase& GetDBHandle()
     {
-        return *database;
+	return *database;
     }
     WalletDatabase& GetDatabase() const override { return *database; }
 
@@ -901,7 +901,7 @@ public:
      * if they are not ours
      */
     bool SelectCoins(const std::vector<COutputCoin>& vAvailableCoins, const CAmount& nTargetValue, std::set<CInputCoin>& setCoinsRet, CAmount& nValueRet,
-                    const CCoinControl& coin_control, CoinSelectionParams& coin_selection_params, bool& bnb_used) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
+		    const CCoinControl& coin_control, CoinSelectionParams& coin_selection_params, bool& bnb_used) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 
     /** Get a name for this wallet for logging/debugging purposes.
      */
@@ -913,17 +913,17 @@ public:
 
     /** Construct wallet with specified name and database implementation. */
     CWallet(interfaces::Chain* chain, const std::string& name, std::unique_ptr<WalletDatabase> database)
-        : m_chain(chain),
-          m_name(name),
-          database(std::move(database))
+	: m_chain(chain),
+	  m_name(name),
+	  database(std::move(database))
     {
-        mweb_wallet = std::make_shared<MWEB::Wallet>(this);
+	mweb_wallet = std::make_shared<MWEB::Wallet>(this);
     }
 
     ~CWallet()
     {
-        // Should not have slots connected at this point.
-        assert(NotifyUnload.empty());
+	// Should not have slots connected at this point.
+	assert(NotifyUnload.empty());
     }
 
     bool IsCrypted() const;
@@ -981,7 +981,7 @@ public:
      * assembled
      */
     bool SelectCoinsMinConf(const CAmount& nTargetValue, const CoinEligibilityFilter& eligibility_filter, std::vector<OutputGroup> groups,
-        std::set<CInputCoin>& setCoinsRet, CAmount& nValueRet, const CoinSelectionParams& coin_selection_params, bool& bnb_used) const;
+	std::set<CInputCoin>& setCoinsRet, CAmount& nValueRet, const CoinSelectionParams& coin_selection_params, bool& bnb_used) const;
 
     bool IsSpent(const OutputIndex& idx) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 
@@ -1063,31 +1063,31 @@ public:
     int64_t RescanFromTime(int64_t startTime, const WalletRescanReserver& reserver, bool update);
 
     struct ScanResult {
-        enum { SUCCESS, FAILURE, USER_ABORT } status = SUCCESS;
+	enum { SUCCESS, FAILURE, USER_ABORT } status = SUCCESS;
 
-        //! Hash and height of most recent block that was successfully scanned.
-        //! Unset if no blocks were scanned due to read errors or the chain
-        //! being empty.
-        uint256 last_scanned_block;
-        Optional<int> last_scanned_height;
+	//! Hash and height of most recent block that was successfully scanned.
+	//! Unset if no blocks were scanned due to read errors or the chain
+	//! being empty.
+	uint256 last_scanned_block;
+	Optional<int> last_scanned_height;
 
-        //! Height of the most recent block that could not be scanned due to
-        //! read errors or pruning. Will be set if status is FAILURE, unset if
-        //! status is SUCCESS, and may or may not be set if status is
-        //! USER_ABORT.
-        uint256 last_failed_block;
+	//! Height of the most recent block that could not be scanned due to
+	//! read errors or pruning. Will be set if status is FAILURE, unset if
+	//! status is SUCCESS, and may or may not be set if status is
+	//! USER_ABORT.
+	uint256 last_failed_block;
     };
     ScanResult ScanForWalletTransactions(const uint256& start_block, int start_height, Optional<int> max_height, const WalletRescanReserver& reserver, bool fUpdate);
     void transactionRemovedFromMempool(const CTransactionRef& tx, MemPoolRemovalReason reason, uint64_t mempool_sequence) override;
     void ReacceptWalletTransactions() EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
     void ResendWalletTransactions();
     struct Balance {
-        CAmount m_mine_trusted{0};           //!< Trusted, at depth=GetBalance.min_depth or more
-        CAmount m_mine_untrusted_pending{0}; //!< Untrusted, but in mempool (pending)
-        CAmount m_mine_immature{0};          //!< Immature coinbases in the main chain
-        CAmount m_watchonly_trusted{0};
-        CAmount m_watchonly_untrusted_pending{0};
-        CAmount m_watchonly_immature{0};
+	CAmount m_mine_trusted{0};           //!< Trusted, at depth=GetBalance.min_depth or more
+	CAmount m_mine_untrusted_pending{0}; //!< Untrusted, but in mempool (pending)
+	CAmount m_mine_immature{0};          //!< Immature coinbases in the main chain
+	CAmount m_watchonly_trusted{0};
+	CAmount m_watchonly_untrusted_pending{0};
+	CAmount m_watchonly_immature{0};
     };
     Balance GetBalance(int min_depth = 0, bool avoid_reuse = true) const;
     CAmount GetAvailableBalance(const CCoinControl* coinControl = nullptr) const;
@@ -1117,11 +1117,11 @@ public:
      * return error
      */
     TransactionError FillPSBT(PartiallySignedTransaction& psbtx,
-                  bool& complete,
-                  int sighash_type = 1 /* SIGHASH_ALL */,
-                  bool sign = true,
-                  bool bip32derivs = true,
-                  size_t* n_signed = nullptr) const;
+		  bool& complete,
+		  int sighash_type = 1 /* SIGHASH_ALL */,
+		  bool sign = true,
+		  bool bip32derivs = true,
+		  size_t* n_signed = nullptr) const;
 
     /**
      * Create a new transaction paying the recipients with a set of coins
@@ -1142,9 +1142,9 @@ public:
 
     bool DummySignTx(CMutableTransaction &txNew, const std::set<CTxOut> &txouts, bool use_max_sig = false) const
     {
-        std::vector<CTxOut> v_txouts(txouts.size());
-        std::copy(txouts.begin(), txouts.end(), v_txouts.begin());
-        return DummySignTx(txNew, v_txouts, use_max_sig);
+	std::vector<CTxOut> v_txouts(txouts.size());
+	std::copy(txouts.begin(), txouts.end(), v_txouts.begin());
+	return DummySignTx(txNew, v_txouts, use_max_sig);
     }
     bool DummySignTx(CMutableTransaction &txNew, const std::vector<CTxOut> &txouts, bool use_max_sig = false) const;
     bool DummySignInput(CTxIn &tx_in, const CTxOut &txout, bool use_max_sig = false) const;
@@ -1256,16 +1256,16 @@ public:
      * @note called with lock cs_wallet held.
      */
     boost::signals2::signal<void (CWallet *wallet, const CTxDestination
-            &address, const std::string &label, bool isMine,
-            const std::string &purpose,
-            ChangeType status)> NotifyAddressBookChanged;
+	    &address, const std::string &label, bool isMine,
+	    const std::string &purpose,
+	    ChangeType status)> NotifyAddressBookChanged;
 
     /**
      * Wallet transaction added, removed or updated.
      * @note called with lock cs_wallet held.
      */
     boost::signals2::signal<void (CWallet *wallet, const uint256 &hashTx,
-            ChangeType status)> NotifyTransactionChanged;
+	    ChangeType status)> NotifyTransactionChanged;
 
     /** Show progress e.g. for rescan */
     boost::signals2::signal<void (const std::string &title, int nProgress)> ShowProgress;
@@ -1292,6 +1292,12 @@ public:
 
     /* Mark a transaction (and it in-wallet descendants) as abandoned so its inputs may be respent. */
     bool AbandonTransaction(const uint256& hashTx);
+
+    /** Return whether transaction can be rebroadcast */
+    bool TransactionCanBeRebroadcast(const uint256& hashTx) const;
+
+    /* Rebroadcast a transaction. */
+    bool RebroadcastTransaction(const uint256& hashTx);
 
     /** Mark a transaction as replaced by another transaction (e.g., BIP 125). */
     bool MarkReplaced(const uint256& originalHash, const uint256& newHash);
@@ -1341,14 +1347,14 @@ public:
 
     /** Returns a bracketed wallet name for displaying in logs, will return [default wallet] if the wallet has no name */
     const std::string GetDisplayName() const override {
-        std::string wallet_name = GetName().length() == 0 ? "default wallet" : GetName();
-        return strprintf("[%s]", wallet_name);
+	std::string wallet_name = GetName().length() == 0 ? "default wallet" : GetName();
+	return strprintf("[%s]", wallet_name);
     };
 
     /** Prepends the wallet name in logging output to ease debugging in multi-wallet use cases */
     template<typename... Params>
     void WalletLogPrintf(std::string fmt, Params... parameters) const {
-        LogPrintf(("%s " + fmt).c_str(), GetDisplayName(), parameters...);
+	LogPrintf(("%s " + fmt).c_str(), GetDisplayName(), parameters...);
     };
 
     /** Upgrade the wallet */
@@ -1388,22 +1394,22 @@ public:
     /** Get last block processed height */
     int GetLastBlockHeight() const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet)
     {
-        AssertLockHeld(cs_wallet);
-        assert(m_last_block_processed_height >= 0);
-        return m_last_block_processed_height;
+	AssertLockHeld(cs_wallet);
+	assert(m_last_block_processed_height >= 0);
+	return m_last_block_processed_height;
     };
     uint256 GetLastBlockHash() const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet)
     {
-        AssertLockHeld(cs_wallet);
-        assert(m_last_block_processed_height >= 0);
-        return m_last_block_processed;
+	AssertLockHeld(cs_wallet);
+	assert(m_last_block_processed_height >= 0);
+	return m_last_block_processed;
     }
     /** Set last block processed height, currently only use in unit test */
     void SetLastBlockProcessed(int block_height, uint256 block_hash) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet)
     {
-        AssertLockHeld(cs_wallet);
-        m_last_block_processed_height = block_height;
-        m_last_block_processed = block_hash;
+	AssertLockHeld(cs_wallet);
+	m_last_block_processed_height = block_height;
+	m_last_block_processed = block_hash;
     };
 
     //! Connect the signals from ScriptPubKeyMans to the signals in CWallet
@@ -1466,26 +1472,26 @@ public:
 
     bool reserve()
     {
-        assert(!m_could_reserve);
-        if (m_wallet.fScanningWallet.exchange(true)) {
-            return false;
-        }
-        m_wallet.m_scanning_start = GetTimeMillis();
-        m_wallet.m_scanning_progress = 0;
-        m_could_reserve = true;
-        return true;
+	assert(!m_could_reserve);
+	if (m_wallet.fScanningWallet.exchange(true)) {
+	    return false;
+	}
+	m_wallet.m_scanning_start = GetTimeMillis();
+	m_wallet.m_scanning_progress = 0;
+	m_could_reserve = true;
+	return true;
     }
 
     bool isReserved() const
     {
-        return (m_could_reserve && m_wallet.fScanningWallet);
+	return (m_could_reserve && m_wallet.fScanningWallet);
     }
 
     ~WalletRescanReserver()
     {
-        if (m_could_reserve) {
-            m_wallet.fScanningWallet = false;
-        }
+	if (m_could_reserve) {
+	    m_wallet.fScanningWallet = false;
+	}
     }
 };
 

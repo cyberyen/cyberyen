@@ -52,7 +52,8 @@ void CCoinsViewDB::ResizeCache(size_t new_cache_size)
     // filesystem lock.
     m_db.reset();
     m_db = MakeUnique<CDBWrapper>(
-        m_ldb_path, new_cache_size, m_is_memory, /*fWipe*/ false, /*obfuscate*/ true);
+	m_ldb_path, new_cache_size, m_is_memory, /*fWipe*/ false, /*obfuscate*/ true);
+    GetMWEBView()->SetDatabase(std::make_shared<MWEB::DBWrapper>(GetDB()));
 }
 
 bool CCoinsViewDB::GetCoin(const COutPoint &outpoint, Coin &coin) const {
@@ -61,17 +62,17 @@ bool CCoinsViewDB::GetCoin(const COutPoint &outpoint, Coin &coin) const {
 
 bool CCoinsViewDB::HaveCoin(const OutputIndex& index) const {
     if (index.type() == typeid(mw::Hash)) {
-        return GetMWEBView()->HasCoin(boost::get<mw::Hash>(index));
+	return GetMWEBView()->HasCoin(boost::get<mw::Hash>(index));
     } else {
-        return m_db->Exists(CoinEntry(boost::get<COutPoint>(&index)));
+	return m_db->Exists(CoinEntry(boost::get<COutPoint>(&index)));
     }
 }
 
 bool CCoinsViewDB::GetMWEBCoin(const mw::Hash& output_id, Output& coin) const {
     UTXO::CPtr pUTXO = GetMWEBView()->GetUTXO(output_id);
     if (pUTXO != nullptr) {
-        coin = pUTXO->GetOutput();
-        return true;
+	coin = pUTXO->GetOutput();
+	return true;
     }
 
     return false;
@@ -80,14 +81,14 @@ bool CCoinsViewDB::GetMWEBCoin(const mw::Hash& output_id, Output& coin) const {
 uint256 CCoinsViewDB::GetBestBlock() const {
     uint256 hashBestChain;
     if (!m_db->Read(DB_BEST_BLOCK, hashBestChain))
-        return uint256();
+	return uint256();
     return hashBestChain;
 }
 
 std::vector<uint256> CCoinsViewDB::GetHeadBlocks() const {
     std::vector<uint256> vhashHeadBlocks;
     if (!m_db->Read(DB_HEAD_BLOCKS, vhashHeadBlocks)) {
-        return std::vector<uint256>();
+	return std::vector<uint256>();
     }
     return vhashHeadBlocks;
 }
@@ -102,12 +103,12 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock, con
 
     uint256 old_tip = GetBestBlock();
     if (old_tip.IsNull()) {
-        // We may be in the middle of replaying.
-        std::vector<uint256> old_heads = GetHeadBlocks();
-        if (old_heads.size() == 2) {
-            assert(old_heads[0] == hashBlock);
-            old_tip = old_heads[1];
-        }
+	// We may be in the middle of replaying.
+	std::vector<uint256> old_heads = GetHeadBlocks();
+	if (old_heads.size() == 2) {
+	    assert(old_heads[0] == hashBlock);
+	    old_tip = old_heads[1];
+	}
     }
 
     // In the first batch, mark the database as being in the middle of a
@@ -118,29 +119,29 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock, con
     batch->Write(DB_HEAD_BLOCKS, Vector(hashBlock, old_tip));
 
     for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end();) {
-        if (it->second.flags & CCoinsCacheEntry::DIRTY) {
-            CoinEntry entry(&it->first);
-            if (it->second.coin.IsSpent())
-                batch->Erase(entry);
-            else
-                batch->Write(entry, it->second.coin);
-            changed++;
-        }
-        count++;
-        CCoinsMap::iterator itOld = it++;
-        mapCoins.erase(itOld);
-        if (batch->SizeEstimate() > batch_size) {
-            LogPrint(BCLog::COINDB, "Writing partial batch of %.2f MiB\n", batch->SizeEstimate() * (1.0 / 1048576.0));
-            m_db->WriteBatch(*batch);
-            batch->Clear();
-            if (crash_simulate) {
-                static FastRandomContext rng;
-                if (rng.randrange(crash_simulate) == 0) {
-                    LogPrintf("Simulating a crash. Goodbye.\n");
-                    _Exit(0);
-                }
-            }
-        }
+	if (it->second.flags & CCoinsCacheEntry::DIRTY) {
+	    CoinEntry entry(&it->first);
+	    if (it->second.coin.IsSpent())
+		batch->Erase(entry);
+	    else
+		batch->Write(entry, it->second.coin);
+	    changed++;
+	}
+	count++;
+	CCoinsMap::iterator itOld = it++;
+	mapCoins.erase(itOld);
+	if (batch->SizeEstimate() > batch_size) {
+	    LogPrint(BCLog::COINDB, "Writing partial batch of %.2f MiB\n", batch->SizeEstimate() * (1.0 / 1048576.0));
+	    m_db->WriteBatch(*batch);
+	    batch->Clear();
+	    if (crash_simulate) {
+		static FastRandomContext rng;
+		if (rng.randrange(crash_simulate) == 0) {
+		    LogPrintf("Simulating a crash. Goodbye.\n");
+		    _Exit(0);
+		}
+	    }
+	}
     }
 
     // MWEB: Flushes MWEB coins & MMRs
@@ -171,9 +172,9 @@ bool CBlockTreeDB::ReadBlockFileInfo(int nFile, CBlockFileInfo &info) {
 
 bool CBlockTreeDB::WriteReindexing(bool fReindexing) {
     if (fReindexing)
-        return Write(DB_REINDEX_FLAG, '1');
+	return Write(DB_REINDEX_FLAG, '1');
     else
-        return Erase(DB_REINDEX_FLAG);
+	return Erase(DB_REINDEX_FLAG);
 }
 
 void CBlockTreeDB::ReadReindexing(bool &fReindexing) {
@@ -193,11 +194,11 @@ CCoinsViewCursor *CCoinsViewDB::Cursor() const
     i->pcursor->Seek(DB_COIN);
     // Cache key of first record
     if (i->pcursor->Valid()) {
-        CoinEntry entry(&i->keyTmp.second);
-        i->pcursor->GetKey(entry);
-        i->keyTmp.first = entry.key;
+	CoinEntry entry(&i->keyTmp.second);
+	i->pcursor->GetKey(entry);
+	i->keyTmp.first = entry.key;
     } else {
-        i->keyTmp.first = 0; // Make sure Valid() and GetKey() return false
+	i->keyTmp.first = 0; // Make sure Valid() and GetKey() return false
     }
     return i;
 }
@@ -206,8 +207,8 @@ bool CCoinsViewDBCursor::GetKey(COutPoint &key) const
 {
     // Return cached key
     if (keyTmp.first == DB_COIN) {
-        key = keyTmp.second;
-        return true;
+	key = keyTmp.second;
+	return true;
     }
     return false;
 }
@@ -232,20 +233,20 @@ void CCoinsViewDBCursor::Next()
     pcursor->Next();
     CoinEntry entry(&keyTmp.second);
     if (!pcursor->Valid() || !pcursor->GetKey(entry)) {
-        keyTmp.first = 0; // Invalidate cached key after last record so that Valid() and GetKey() return false
+	keyTmp.first = 0; // Invalidate cached key after last record so that Valid() and GetKey() return false
     } else {
-        keyTmp.first = entry.key;
+	keyTmp.first = entry.key;
     }
 }
 
 bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockFileInfo*> >& fileInfo, int nLastFile, const std::vector<const CBlockIndex*>& blockinfo) {
     CDBBatch batch(*this);
     for (std::vector<std::pair<int, const CBlockFileInfo*> >::const_iterator it=fileInfo.begin(); it != fileInfo.end(); it++) {
-        batch.Write(std::make_pair(DB_BLOCK_FILES, it->first), *it->second);
+	batch.Write(std::make_pair(DB_BLOCK_FILES, it->first), *it->second);
     }
     batch.Write(DB_LAST_BLOCK, nLastFile);
     for (std::vector<const CBlockIndex*>::const_iterator it=blockinfo.begin(); it != blockinfo.end(); it++) {
-        batch.Write(std::make_pair(DB_BLOCK_INDEX, (*it)->GetBlockHash()), CDiskBlockIndex(*it));
+	batch.Write(std::make_pair(DB_BLOCK_INDEX, (*it)->GetBlockHash()), CDiskBlockIndex(*it));
     }
     return WriteBatch(batch, true);
 }
@@ -257,7 +258,7 @@ bool CBlockTreeDB::WriteFlag(const std::string &name, bool fValue) {
 bool CBlockTreeDB::ReadFlag(const std::string &name, bool &fValue) {
     char ch;
     if (!Read(std::make_pair(DB_FLAG, name), ch))
-        return false;
+	return false;
     fValue = ch == '1';
     return true;
 }
@@ -270,45 +271,45 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, 
 
     // Load m_block_index
     while (pcursor->Valid()) {
-        if (ShutdownRequested()) return false;
-        std::pair<char, uint256> key;
-        if (pcursor->GetKey(key) && key.first == DB_BLOCK_INDEX) {
-            CDiskBlockIndex diskindex;
-            if (pcursor->GetValue(diskindex)) {
-                // Construct block index object
-                CBlockIndex* pindexNew = insertBlockIndex(diskindex.GetBlockHash());
-                pindexNew->pprev          = insertBlockIndex(diskindex.hashPrev);
-                pindexNew->nHeight        = diskindex.nHeight;
-                pindexNew->nFile          = diskindex.nFile;
-                pindexNew->nDataPos       = diskindex.nDataPos;
-                pindexNew->nUndoPos       = diskindex.nUndoPos;
-                pindexNew->nVersion       = diskindex.nVersion;
-                pindexNew->hashMerkleRoot = diskindex.hashMerkleRoot;
-                pindexNew->nTime          = diskindex.nTime;
-                pindexNew->nBits          = diskindex.nBits;
-                pindexNew->nNonce         = diskindex.nNonce;
-                pindexNew->nStatus        = diskindex.nStatus;
-                pindexNew->nTx            = diskindex.nTx;
-                pindexNew->mweb_header    = diskindex.mweb_header;
-                pindexNew->hogex_hash     = diskindex.hogex_hash;
-                pindexNew->mweb_amount    = diskindex.mweb_amount;
+	if (ShutdownRequested()) return false;
+	std::pair<char, uint256> key;
+	if (pcursor->GetKey(key) && key.first == DB_BLOCK_INDEX) {
+	    CDiskBlockIndex diskindex;
+	    if (pcursor->GetValue(diskindex)) {
+		// Construct block index object
+		CBlockIndex* pindexNew = insertBlockIndex(diskindex.GetBlockHash());
+		pindexNew->pprev          = insertBlockIndex(diskindex.hashPrev);
+		pindexNew->nHeight        = diskindex.nHeight;
+		pindexNew->nFile          = diskindex.nFile;
+		pindexNew->nDataPos       = diskindex.nDataPos;
+		pindexNew->nUndoPos       = diskindex.nUndoPos;
+		pindexNew->nVersion       = diskindex.nVersion;
+		pindexNew->hashMerkleRoot = diskindex.hashMerkleRoot;
+		pindexNew->nTime          = diskindex.nTime;
+		pindexNew->nBits          = diskindex.nBits;
+		pindexNew->nNonce         = diskindex.nNonce;
+		pindexNew->nStatus        = diskindex.nStatus;
+		pindexNew->nTx            = diskindex.nTx;
+		pindexNew->mweb_header    = diskindex.mweb_header;
+		pindexNew->hogex_hash     = diskindex.hogex_hash;
+		pindexNew->mweb_amount    = diskindex.mweb_amount;
 
-                // Cyberyen: Disable PoW Sanity check while loading block index from disk.
-                // We use the sha256 hash for the block index for performance reasons, which is recorded for later use.
-                // CheckProofOfWork() uses the scrypt hash which is discarded after a block is accepted.
-                // While it is technically feasible to verify the PoW, doing so takes several minutes as it
-                // requires recomputing every PoW hash during every Cyberyen startup.
-                // We opt instead to simply trust the data that is on your local disk.
-                //if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams))
-                //    return error("%s: CheckProofOfWork failed: %s", __func__, pindexNew->ToString());
+		// Cyberyen: Disable PoW Sanity check while loading block index from disk.
+		// We use the sha256 hash for the block index for performance reasons, which is recorded for later use.
+		// CheckProofOfWork() uses the scrypt hash which is discarded after a block is accepted.
+		// While it is technically feasible to verify the PoW, doing so takes several minutes as it
+		// requires recomputing every PoW hash during every Cyberyen startup.
+		// We opt instead to simply trust the data that is on your local disk.
+		//if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams))
+		//    return error("%s: CheckProofOfWork failed: %s", __func__, pindexNew->ToString());
 
-                pcursor->Next();
-            } else {
-                return error("%s: failed to read value", __func__);
-            }
-        } else {
-            break;
-        }
+		pcursor->Next();
+	    } else {
+		return error("%s: failed to read value", __func__);
+	    }
+	} else {
+	    break;
+	}
     }
 
     return true;
@@ -334,36 +335,36 @@ public:
 
     template<typename Stream>
     void Unserialize(Stream &s) {
-        unsigned int nCode = 0;
-        // version
-        unsigned int nVersionDummy = 0;
-        ::Unserialize(s, VARINT(nVersionDummy));
-        // header code
-        ::Unserialize(s, VARINT(nCode));
-        fCoinBase = nCode & 1;
-        std::vector<bool> vAvail(2, false);
-        vAvail[0] = (nCode & 2) != 0;
-        vAvail[1] = (nCode & 4) != 0;
-        unsigned int nMaskCode = (nCode / 8) + ((nCode & 6) != 0 ? 0 : 1);
-        // spentness bitmask
-        while (nMaskCode > 0) {
-            unsigned char chAvail = 0;
-            ::Unserialize(s, chAvail);
-            for (unsigned int p = 0; p < 8; p++) {
-                bool f = (chAvail & (1 << p)) != 0;
-                vAvail.push_back(f);
-            }
-            if (chAvail != 0)
-                nMaskCode--;
-        }
-        // txouts themself
-        vout.assign(vAvail.size(), CTxOut());
-        for (unsigned int i = 0; i < vAvail.size(); i++) {
-            if (vAvail[i])
-                ::Unserialize(s, Using<TxOutCompression>(vout[i]));
-        }
-        // coinbase height
-        ::Unserialize(s, VARINT_MODE(nHeight, VarIntMode::NONNEGATIVE_SIGNED));
+	unsigned int nCode = 0;
+	// version
+	unsigned int nVersionDummy = 0;
+	::Unserialize(s, VARINT(nVersionDummy));
+	// header code
+	::Unserialize(s, VARINT(nCode));
+	fCoinBase = nCode & 1;
+	std::vector<bool> vAvail(2, false);
+	vAvail[0] = (nCode & 2) != 0;
+	vAvail[1] = (nCode & 4) != 0;
+	unsigned int nMaskCode = (nCode / 8) + ((nCode & 6) != 0 ? 0 : 1);
+	// spentness bitmask
+	while (nMaskCode > 0) {
+	    unsigned char chAvail = 0;
+	    ::Unserialize(s, chAvail);
+	    for (unsigned int p = 0; p < 8; p++) {
+		bool f = (chAvail & (1 << p)) != 0;
+		vAvail.push_back(f);
+	    }
+	    if (chAvail != 0)
+		nMaskCode--;
+	}
+	// txouts themself
+	vout.assign(vAvail.size(), CTxOut());
+	for (unsigned int i = 0; i < vAvail.size(); i++) {
+	    if (vAvail[i])
+		::Unserialize(s, Using<TxOutCompression>(vout[i]));
+	}
+	// coinbase height
+	::Unserialize(s, VARINT_MODE(nHeight, VarIntMode::NONNEGATIVE_SIGNED));
     }
 };
 
@@ -377,7 +378,7 @@ bool CCoinsViewDB::Upgrade() {
     std::unique_ptr<CDBIterator> pcursor(m_db->NewIterator());
     pcursor->Seek(std::make_pair(DB_COINS, uint256()));
     if (!pcursor->Valid()) {
-        return true;
+	return true;
     }
 
     int64_t count = 0;
@@ -390,44 +391,44 @@ bool CCoinsViewDB::Upgrade() {
     std::pair<unsigned char, uint256> key;
     std::pair<unsigned char, uint256> prev_key = {DB_COINS, uint256()};
     while (pcursor->Valid()) {
-        if (ShutdownRequested()) {
-            break;
-        }
-        if (pcursor->GetKey(key) && key.first == DB_COINS) {
-            if (count++ % 256 == 0) {
-                uint32_t high = 0x100 * *key.second.begin() + *(key.second.begin() + 1);
-                int percentageDone = (int)(high * 100.0 / 65536.0 + 0.5);
-                uiInterface.ShowProgress(_("Upgrading UTXO database").translated, percentageDone, true);
-                if (reportDone < percentageDone/10) {
-                    // report max. every 10% step
-                    LogPrintf("[%d%%]...", percentageDone); /* Continued */
-                    reportDone = percentageDone/10;
-                }
-            }
-            CCoins old_coins;
-            if (!pcursor->GetValue(old_coins)) {
-                return error("%s: cannot parse CCoins record", __func__);
-            }
-            COutPoint outpoint(key.second, 0);
-            for (size_t i = 0; i < old_coins.vout.size(); ++i) {
-                if (!old_coins.vout[i].IsNull() && !old_coins.vout[i].scriptPubKey.IsUnspendable()) {
-                    Coin newcoin(std::move(old_coins.vout[i]), old_coins.nHeight, old_coins.fCoinBase, false);
-                    outpoint.n = i;
-                    CoinEntry entry(&outpoint);
-                    batch.Write(entry, newcoin);
-                }
-            }
-            batch.Erase(key);
-            if (batch.SizeEstimate() > batch_size) {
-                m_db->WriteBatch(batch);
-                batch.Clear();
-                m_db->CompactRange(prev_key, key);
-                prev_key = key;
-            }
-            pcursor->Next();
-        } else {
-            break;
-        }
+	if (ShutdownRequested()) {
+	    break;
+	}
+	if (pcursor->GetKey(key) && key.first == DB_COINS) {
+	    if (count++ % 256 == 0) {
+		uint32_t high = 0x100 * *key.second.begin() + *(key.second.begin() + 1);
+		int percentageDone = (int)(high * 100.0 / 65536.0 + 0.5);
+		uiInterface.ShowProgress(_("Upgrading UTXO database").translated, percentageDone, true);
+		if (reportDone < percentageDone/10) {
+		    // report max. every 10% step
+		    LogPrintf("[%d%%]...", percentageDone); /* Continued */
+		    reportDone = percentageDone/10;
+		}
+	    }
+	    CCoins old_coins;
+	    if (!pcursor->GetValue(old_coins)) {
+		return error("%s: cannot parse CCoins record", __func__);
+	    }
+	    COutPoint outpoint(key.second, 0);
+	    for (size_t i = 0; i < old_coins.vout.size(); ++i) {
+		if (!old_coins.vout[i].IsNull() && !old_coins.vout[i].scriptPubKey.IsUnspendable()) {
+		    Coin newcoin(std::move(old_coins.vout[i]), old_coins.nHeight, old_coins.fCoinBase, false);
+		    outpoint.n = i;
+		    CoinEntry entry(&outpoint);
+		    batch.Write(entry, newcoin);
+		}
+	    }
+	    batch.Erase(key);
+	    if (batch.SizeEstimate() > batch_size) {
+		m_db->WriteBatch(batch);
+		batch.Clear();
+		m_db->CompactRange(prev_key, key);
+		prev_key = key;
+	    }
+	    pcursor->Next();
+	} else {
+	    break;
+	}
     }
     m_db->WriteBatch(batch);
     m_db->CompactRange({DB_COINS, uint256()}, key);

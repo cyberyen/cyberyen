@@ -68,7 +68,7 @@ protected:
 
     /** helper function to efficiently calculate the number of nodes at given height in the merkle tree */
     unsigned int CalcTreeWidth(int height) const {
-        return (nTransactions+(1 << height)-1) >> height;
+	return (nTransactions+(1 << height)-1) >> height;
     }
 
     /** calculate the hash of a node in the merkle tree (at leaf level: the txid's themselves) */
@@ -87,12 +87,12 @@ public:
 
     SERIALIZE_METHODS(CPartialMerkleTree, obj)
     {
-        READWRITE(obj.nTransactions, obj.vHash);
-        std::vector<unsigned char> bytes;
-        SER_WRITE(obj, bytes = BitsToBytes(obj.vBits));
-        READWRITE(bytes);
-        SER_READ(obj, obj.vBits = BytesToBits(bytes));
-        SER_READ(obj, obj.fBad = false);
+	READWRITE(obj.nTransactions, obj.vHash);
+	std::vector<unsigned char> bytes;
+	SER_WRITE(obj, bytes = BitsToBytes(obj.vBits));
+	READWRITE(bytes);
+	SER_READ(obj, obj.vBits = BytesToBits(bytes));
+	SER_READ(obj, obj.fBad = false);
     }
 
     /** Construct a partial merkle tree from a list of transaction ids, and a mask that selects a subset of them */
@@ -153,6 +153,55 @@ public:
 private:
     // Combined constructor to consolidate code
     CMerkleBlock(const CBlock& block, CBloomFilter* filter, const std::set<uint256>* txids);
+};
+
+
+/**
+ * Can be requested by MWEB light clients to retrieve and verify MWEB headers.
+ *
+ * Serializes as merkleblock + tx (HogEx) + MWEB header:
+ *
+ * Merkle Block
+ *  - uint32         version (4 bytes)
+ *  - uint256        prev_block (32 bytes)
+ *  - uint256        merkle_root (32 bytes)
+ *  - uint32         timestamp (4 bytes)
+ *  - uint32         bits (4 bytes)
+ *  - uint32         nonce (4 bytes)
+ *  - uint32         total_transactions (4 bytes)
+ *  - varint         number of hashes   (1-3 bytes)
+ *  - uint256[]      hashes in depth-first order (<= 32*N bytes)
+ *  - varint         number of bytes of flag bits (1-3 bytes)
+ *  - byte[]         flag bits, packed per 8 in a byte, least significant bit first (<= 2*N-1 bits)
+ *
+ * HogEx Transaction
+ *  - CTransaction   hogex transaction (? bytes)
+ *
+ * MWEB Header
+ *  - int32          height (4 bytes)
+ *  - uint256        output_root (32 bytes)
+ *  - uint256        kernel_root (32 bytes)
+ *  - uint256        leafset_root (32 bytes)
+ *  - uint256        kernel_offset (32 bytes)
+ *  - uint256        stealth_offset (32 bytes)
+ *  - uint64         output_mmr_size (8 bytes)
+ *  - uint64         kernel_mmr_size (8 bytes)
+ *
+ * NOTE: The class assumes that the given CBlock contains a hogex transaction and MWEB block data.
+ * If it does not, an assertion will be hit.
+ */
+class CMerkleBlockWithMWEB
+{
+private:
+    CMerkleBlock merkle;
+    CTransactionRef hogex;
+    mw::Header::CPtr mweb_header;
+
+public:
+    CMerkleBlockWithMWEB() { }
+    CMerkleBlockWithMWEB(const CBlock& block);
+
+    SERIALIZE_METHODS(CMerkleBlockWithMWEB, obj) { READWRITE(obj.merkle, obj.hogex, obj.mweb_header); }
 };
 
 #endif // BITCOIN_MERKLEBLOCK_H

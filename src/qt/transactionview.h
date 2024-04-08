@@ -41,22 +41,22 @@ public:
     // Date ranges for filter
     enum DateEnum
     {
-        All,
-        Today,
-        ThisWeek,
-        ThisMonth,
-        LastMonth,
-        ThisYear,
-        Range
+	All,
+	Today,
+	ThisWeek,
+	ThisMonth,
+	LastMonth,
+	ThisYear,
+	Range
     };
 
     enum ColumnWidths {
-        STATUS_COLUMN_WIDTH = 30,
-        WATCHONLY_COLUMN_WIDTH = 23,
-        DATE_COLUMN_WIDTH = 120,
-        TYPE_COLUMN_WIDTH = 113,
-        AMOUNT_MINIMUM_COLUMN_WIDTH = 120,
-        MINIMUM_COLUMN_WIDTH = 23
+	STATUS_COLUMN_WIDTH = 30,
+	WATCHONLY_COLUMN_WIDTH = 23,
+	DATE_COLUMN_WIDTH = 120,
+	TYPE_COLUMN_WIDTH = 113,
+	AMOUNT_MINIMUM_COLUMN_WIDTH = 120,
+	MINIMUM_COLUMN_WIDTH = 23
     };
 
 private:
@@ -77,6 +77,7 @@ private:
     QDateTimeEdit *dateTo;
     QAction *abandonAction{nullptr};
     QAction *bumpFeeAction{nullptr};
+    QAction *rebroadcastAction{nullptr};
     QAction *copyAddressAction{nullptr};
     QAction *copyLabelAction{nullptr};
 
@@ -103,6 +104,7 @@ private Q_SLOTS:
     void updateWatchOnlyColumn(bool fHaveWatchOnly);
     void abandonTx();
     void bumpFee();
+    void rebroadcastTx();
 
 Q_SIGNALS:
     void doubleClicked(const QModelIndex&);

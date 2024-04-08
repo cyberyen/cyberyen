@@ -17,11 +17,11 @@
 static void AssembleBlock(benchmark::Bench& bench)
 {
     TestingSetup test_setup{
-        CBaseChainParams::REGTEST,
-        /* extra_args */ {
-            "-nodebuglogfile",
-            "-nodebug",
-        },
+	CBaseChainParams::REGTEST,
+	/* extra_args */ {
+	    "-nodebuglogfile",
+	    "-nodebug",
+	},
     };
 
     const std::vector<unsigned char> op_true{OP_TRUE};
@@ -37,25 +37,25 @@ static void AssembleBlock(benchmark::Bench& bench)
     constexpr size_t NUM_BLOCKS{200};
     std::array<CTransactionRef, NUM_BLOCKS - COINBASE_MATURITY + 1> txs;
     for (size_t b{0}; b < NUM_BLOCKS; ++b) {
-        CMutableTransaction tx;
-        tx.vin.push_back(MineBlock(test_setup.m_node, SCRIPT_PUB));
-        tx.vin.back().scriptWitness = witness;
-        tx.vout.emplace_back(1337, SCRIPT_PUB);
-        if (NUM_BLOCKS - b >= COINBASE_MATURITY)
-            txs.at(b) = MakeTransactionRef(tx);
+	CMutableTransaction tx;
+	tx.vin.push_back(MineBlock(test_setup.m_node, SCRIPT_PUB));
+	tx.vin.back().scriptWitness = witness;
+	tx.vout.emplace_back(13370, SCRIPT_PUB);
+	if (NUM_BLOCKS - b >= COINBASE_MATURITY)
+	    txs.at(b) = MakeTransactionRef(tx);
     }
     {
-        LOCK(::cs_main); // Required for ::AcceptToMemoryPool.
+	LOCK(::cs_main); // Required for ::AcceptToMemoryPool.
 
-        for (const auto& txr : txs) {
-            TxValidationState state;
-            bool ret{::AcceptToMemoryPool(*test_setup.m_node.mempool, state, txr, nullptr /* plTxnReplaced */, false /* bypass_limits */)};
-            assert(ret);
-        }
+	for (const auto& txr : txs) {
+	    TxValidationState state;
+	    bool ret{::AcceptToMemoryPool(*test_setup.m_node.mempool, state, txr, nullptr /* plTxnReplaced */, false /* bypass_limits */)};
+	    assert(ret);
+	}
     }
 
     bench.run([&] {
-        PrepareBlock(test_setup.m_node, SCRIPT_PUB);
+	PrepareBlock(test_setup.m_node, SCRIPT_PUB);
     });
 }
 
