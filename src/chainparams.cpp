@@ -128,8 +128,7 @@ public:
 	// This is fine at runtime as we'll fall back to using them as an addrfetch if they don't support the
 	// service bits we want, but we should get them updated to support all service bits wanted by any
 	// release ASAP to avoid it where possible.
-	vSeeds.emplace_back("dnsseed.cyberyen.work");
-	vSeeds.emplace_back("cy-dnsseed.ruaxxx.com");
+	vSeeds.emplace_back("cyberyen.work");
 
 	base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,28);
 	base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,77);
@@ -154,26 +153,25 @@ public:
 	    {  1,      uint256S("0x47cb4e21c076575a197a977198282397f97dbe0e62f0a731bd226f0d800211de")},
 	    {  1000,   uint256S("0xc8c20736dde8af32b54aaa28add2a9c80f57f76e54a636a90ad6fcb4753b1759")},
 	    {  2880,   uint256S("0x57ddbe24d1bef052b153cd987eb4be3ae7e976cbf5bf134e653ce21e08f71d9e")},
-	    {  10000,  uint256S("0x9eed8d9996a4ef6902c3bb796d7a2a0145ca78cf00628ee5cd728033d5e87ac8")},
-	    {  55000,  uint256S("0x414f111bb6729571bc178e5560164f9daa6056c003314e851d6123ab0fbefb3d")},
-	    {  80000,  uint256S("0x32ae090c0d343663ada5c9a5e29057325a0445207461cc67d6b2063dea71f602")},
 	    {  90000,  uint256S("0x84686fb34c249133aa155c04f7bbc6035bdb71f9fc845444137b7535fed69cdb")},
-	    {  100005, uint256S("0xe08f6b3a18a2092139916b5994f15b93ac4a5ffc0d27ce09c1a8da3e16e24138")},
-	    {  120000, uint256S("0x977d00a8bc7022e6fba57c10b01b8eb868f94ed5fe4c3dd430cedf6f3af36e45")},
 	    {  144999, uint256S("0xcf88b7b476697e040ce836c3b68a6e6bde7d434649426a4a4e17bc7887f4e53d")}, // fix GetBlockSubsidy, commit 2931510
-	    {  145000, uint256S("0x9e6bec0dc608dc51d181c1cafc07bd26554eba9119b8a2c9692d17b0446dd424")},
 	    {  149999, uint256S("0x1afa7bcfedb1fe0799b7dac2feea3ba13d58cd2cce1c4814f03db130a79687f5")}, // LWMA3 activation
-	    {  160900, uint256S("0x6e2a4407bc590782662697f76999f9649e774a2103a6ca5777b030fac28f2fef")},
-	    // {  200000, uint256S("0x")}, // Future Block
+	    {  200000, uint256S("0x665fd8d4901c1524d73362186b98989974682a1002ca1181c88d89813734d41a")},
+	    {  300000, uint256S("0x24676ff40c004077eae9fa0ec6b3f708313471b02d8a4ea2cb8254681034251a")},
+	    {  400000, uint256S("0x1513d02c79b14bae676d49581182e25164cdb8afa8cac9124b2b8ffec95a6bf3")},
+	    {  500000, uint256S("0x9176ad15a493e5db78f653c4fb6bc6585dc2e06869e2aa7390eb22ea5e33cbcb")},
+	    {  600000, uint256S("0x56fe35f53fcfb1333adc1c1b405cc7e0416eec1e105dae7d9935ecd6b953fe28")},
+	    {  677904, uint256S("0x555dbcc33b7b382b76bdb81a50c075849193192507476c8957f5e3287dff2e76")},
+	    // {  700000, uint256S("0x")}, // Future Block
 	  }
 	};
 
 
 	chainTxData = ChainTxData{
-	  // Data from rpc: getchaintxstats 4096 3327645cbf39b2fa454eb0c501130a645128baef61d031c7995257ae9f1b26a2
-	  /* nTime    */ 1685438019,
-	  /* nTxCount */ 330697,
-	  /* dTxRate  */ 0.02464631037413013
+	  // Data from rpc: getchaintxstats 4096 555dbcc33b7b382b76bdb81a50c075849193192507476c8957f5e3287dff2e76
+	  /* nTime    */ 1724915317,
+	  /* nTxCount */ 1396087,
+	  /* dTxRate  */ 0.03225707727620505
 	};
     }
 };
@@ -242,7 +240,7 @@ public:
 	vFixedSeeds.clear();
 	vSeeds.clear();
 	// nodes with support for servicebits filtering should be at the top
-	vSeeds.emplace_back("dnsseed.cyberyen.work");
+	vSeeds.emplace_back("cyberyen.work");
 
 	base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,112);
 	base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196);
