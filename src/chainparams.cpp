@@ -101,8 +101,8 @@ public:
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartHeight = 0;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeoutHeight = 0;
 
-	consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000138b3481fcbd3b7f");
-	consensus.defaultAssumeValid = uint256S("0xbbe90317c76a7369c203b91d141e9e1924ab5f025e88493f058d55b3dab5f748"); // 708217
+	consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000036f913d86526204e");
+	consensus.defaultAssumeValid = uint256S("0x9d521139a818119dfccc09c5c751d55d6803a22640250c350902c066f89f6f74"); // 775954
 
 	/**
 	 * The message start string is designed to be unlikely to occur in normal data.
@@ -168,10 +168,10 @@ public:
 
 
 	chainTxData = ChainTxData{
-	  // Data from rpc: getchaintxstats 4096 bbe90317c76a7369c203b91d141e9e1924ab5f025e88493f058d55b3dab5f748
-	  /* nTime    */ 1726811497,
-	  /* nTxCount */ 1458591,
-	  /* dTxRate  */ 0.03174208800599305
+	  // Data from rpc: getchaintxstats 17280 9d521139a818119dfccc09c5c751d55d6803a22640250c350902c066f89f6f74
+	  /* nTime    */ 1731046595,
+	  /* nTxCount */ 1597920,
+	  /* dTxRate  */ 0.03297122678257543
 	};
     }
 };

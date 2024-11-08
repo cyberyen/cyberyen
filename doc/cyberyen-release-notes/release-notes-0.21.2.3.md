@@ -32,4 +32,4 @@ Thanks to everyone who directly contributed to this release:
 
 - [The Bitcoin Core Developers](https://github.com/bitcoin/bitcoin/tree/master/doc/release-notes)
 - [The Litecoin Core Developers](https://github.com/litecoin-project/litecoin/tree/master/doc/release-notes)
-- [teh Cyberyen Core](https://github.com/cyberyen/cyberyen/tree/master/doc/release-notes)
+- [The Cyberyen Core Developers](https://github.com/cyberyen/cyberyen/tree/master/doc/release-notes)
