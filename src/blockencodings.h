@@ -7,8 +7,13 @@
 
 #include <primitives/block.h>
 
+#include <functional>
 
 class CTxMemPool;
+class BlockValidationState;
+namespace Consensus {
+struct Params;
+};
 
 // Transaction compression schemes for compact block relay can be introduced by writing
 // an actual formatter here.
@@ -22,17 +27,17 @@ public:
     template<typename Stream, typename I>
     void Ser(Stream& s, I v)
     {
-        if (v < m_shift || v >= std::numeric_limits<uint64_t>::max()) throw std::ios_base::failure("differential value overflow");
-        WriteCompactSize(s, v - m_shift);
-        m_shift = uint64_t(v) + 1;
+	if (v < m_shift || v >= std::numeric_limits<uint64_t>::max()) throw std::ios_base::failure("differential value overflow");
+	WriteCompactSize(s, v - m_shift);
+	m_shift = uint64_t(v) + 1;
     }
     template<typename Stream, typename I>
     void Unser(Stream& s, I& v)
     {
-        uint64_t n = ReadCompactSize(s);
-        m_shift += n;
-        if (m_shift < n || m_shift >= std::numeric_limits<uint64_t>::max() || m_shift < std::numeric_limits<I>::min() || m_shift > std::numeric_limits<I>::max()) throw std::ios_base::failure("differential value overflow");
-        v = I(m_shift++);
+	uint64_t n = ReadCompactSize(s);
+	m_shift += n;
+	if (m_shift < n || m_shift >= std::numeric_limits<uint64_t>::max() || m_shift < std::numeric_limits<I>::min() || m_shift > std::numeric_limits<I>::max()) throw std::ios_base::failure("differential value overflow");
+	v = I(m_shift++);
     }
 };
 
@@ -44,7 +49,7 @@ public:
 
     SERIALIZE_METHODS(BlockTransactionsRequest, obj)
     {
-        READWRITE(obj.blockhash, Using<VectorFormatter<DifferenceFormatter>>(obj.indexes));
+	READWRITE(obj.blockhash, Using<VectorFormatter<DifferenceFormatter>>(obj.indexes));
     }
 };
 
@@ -56,11 +61,11 @@ public:
 
     BlockTransactions() {}
     explicit BlockTransactions(const BlockTransactionsRequest& req) :
-        blockhash(req.blockhash), txn(req.indexes.size()) {}
+	blockhash(req.blockhash), txn(req.indexes.size()) {}
 
     SERIALIZE_METHODS(BlockTransactions, obj)
     {
-        READWRITE(obj.blockhash, Using<VectorFormatter<TransactionCompression>>(obj.txn));
+	READWRITE(obj.blockhash, Using<VectorFormatter<TransactionCompression>>(obj.txn));
     }
 };
 
@@ -80,7 +85,7 @@ typedef enum ReadStatus_t
     READ_STATUS_INVALID, // Invalid object, peer is sending bogus crap
     READ_STATUS_FAILED, // Failed to process object
     READ_STATUS_CHECKBLOCK_FAILED, // Used only by FillBlock to indicate a
-                                   // failure in CheckBlock.
+				   // failure in CheckBlock.
 } ReadStatus;
 
 class CBlockHeaderAndShortTxIDs {
@@ -113,19 +118,19 @@ public:
 
     SERIALIZE_METHODS(CBlockHeaderAndShortTxIDs, obj)
     {
-        const bool fAllowMWEB = !(s.GetVersion() & SERIALIZE_NO_MWEB);
-		
-        READWRITE(obj.header, obj.nonce, Using<VectorFormatter<CustomUintFormatter<SHORTTXIDS_LENGTH>>>(obj.shorttxids), obj.prefilledtxn);
-        if (fAllowMWEB) {
-            READWRITE(obj.mweb_block);
-        }
+	const bool fAllowMWEB = !(s.GetVersion() & SERIALIZE_NO_MWEB);
 
-        if (ser_action.ForRead()) {
-            if (obj.BlockTxCount() > std::numeric_limits<uint16_t>::max()) {
-                throw std::ios_base::failure("indexes overflowed 16 bits");
-            }
-            obj.FillShortTxIDSelector();
-        }
+	READWRITE(obj.header, obj.nonce, Using<VectorFormatter<CustomUintFormatter<SHORTTXIDS_LENGTH>>>(obj.shorttxids), obj.prefilledtxn);
+	if (fAllowMWEB) {
+	    READWRITE(obj.mweb_block);
+	}
+
+	if (ser_action.ForRead()) {
+	    if (obj.BlockTxCount() > std::numeric_limits<uint16_t>::max()) {
+		throw std::ios_base::failure("indexes overflowed 16 bits");
+	    }
+	    obj.FillShortTxIDSelector();
+	}
     }
 };
 
@@ -137,6 +142,11 @@ protected:
 public:
     CBlockHeader header;
     MWEB::Block mweb_block;
+
+    // Can be overriden for testing
+    using CheckBlockFn = std::function<bool(const CBlock&, BlockValidationState&, const Consensus::Params&, bool, bool)>;
+    CheckBlockFn m_check_block_mock{nullptr};
+
     explicit PartiallyDownloadedBlock(CTxMemPool* poolIn, const MWEB::Block& mweb_blockIn) : pool(poolIn), mweb_block(mweb_blockIn) {}
 
     // extra_txn is a list of extra transactions to look at, in <witness hash, reference> form
