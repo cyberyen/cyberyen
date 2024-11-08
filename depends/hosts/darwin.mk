@@ -60,7 +60,7 @@ $(foreach TOOL,$(cctools_TOOLS),$(eval darwin_$(TOOL) = $$(build_prefix)/bin/$$(
 #         Explicitly point to our binaries (e.g. cctools) so that they are
 #         ensured to be found and preferred over other possibilities.
 #
-# -stdlib=libc++ -stdlib++-isystem$(OSX_SDK)/usr/include/c++/v1
+#     -stdlib=libc++ -stdlib++-isystem$(OSX_SDK)/usr/include/c++/v1
 #
 #         Forces clang to use the libc++ headers from our SDK and completely
 #         forget about the libc++ headers from the standard directories
@@ -117,12 +117,5 @@ darwin_release_CXXFLAGS=$(darwin_release_CFLAGS)
 
 darwin_debug_CFLAGS=-O1
 darwin_debug_CXXFLAGS=$(darwin_debug_CFLAGS)
-
-darwin_native_binutils=native_cctools
-ifeq ($(strip $(FORCE_USE_SYSTEM_CLANG)),)
-darwin_native_toolchain=native_cctools
-else
-darwin_native_toolchain=
-endif
 
 darwin_cmake_system=Darwin
