@@ -1,0 +1,4 @@
+# Force LF endings for Makefile and shell scripts
+Makefile text eol=lf
+*.sh text eol=lf
+*.md text eol=lf  # Optional, for Markdown files
