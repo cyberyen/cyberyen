@@ -202,27 +202,27 @@ $(host_prefix)/.stamp_$(final_build_id): $(native_packages) $(packages)
 $(host_prefix)/share/config.site : config.site.in $(host_prefix)/.stamp_$(final_build_id)
 	$(AT)@mkdir -p $(@D)
 	$(AT)sed -e 's|@HOST@|$(host)|' \
-	    -e 's|@CC@|$(host_CC)|' \
-	    -e 's|@CXX@|$(host_CXX)|' \
-	    -e 's|@AR@|$(host_AR)|' \
-	    -e 's|@RANLIB@|$(host_RANLIB)|' \
-	    -e 's|@NM@|$(host_NM)|' \
-	    -e 's|@STRIP@|$(host_STRIP)|' \
-	    -e 's|@build_os@|$(build_os)|' \
-	    -e 's|@host_os@|$(host_os)|' \
-	    -e 's|@CFLAGS@|$(strip $(host_CFLAGS) $(host_$(release_type)_CFLAGS))|' \
-	    -e 's|@CXXFLAGS@|$(strip $(host_CXXFLAGS) $(host_$(release_type)_CXXFLAGS))|' \
-	    -e 's|@CPPFLAGS@|$(strip $(host_CPPFLAGS) $(host_$(release_type)_CPPFLAGS))|' \
-	    -e 's|@LDFLAGS@|$(strip $(host_LDFLAGS) $(host_$(release_type)_LDFLAGS))|' \
-	    -e 's|@allow_host_packages@|$(ALLOW_HOST_PACKAGES)|' \
-	    -e 's|@no_qt@|$(NO_QT)|' \
-	    -e 's|@no_qr@|$(NO_QR)|' \
-	    -e 's|@no_zmq@|$(NO_ZMQ)|' \
-	    -e 's|@no_wallet@|$(NO_WALLET)|' \
-	    -e 's|@no_upnp@|$(NO_UPNP)|' \
-	    -e 's|@multiprocess@|$(MULTIPROCESS)|' \
-	    -e 's|@debug@|$(DEBUG)|' \
-	    $< > $@
+            -e 's|@CC@|$(host_CC)|' \
+            -e 's|@CXX@|$(host_CXX)|' \
+            -e 's|@AR@|$(host_AR)|' \
+            -e 's|@RANLIB@|$(host_RANLIB)|' \
+            -e 's|@NM@|$(host_NM)|' \
+            -e 's|@STRIP@|$(host_STRIP)|' \
+            -e 's|@build_os@|$(build_os)|' \
+            -e 's|@host_os@|$(host_os)|' \
+            -e 's|@CFLAGS@|$(strip $(host_CFLAGS) $(host_$(release_type)_CFLAGS))|' \
+            -e 's|@CXXFLAGS@|$(strip $(host_CXXFLAGS) $(host_$(release_type)_CXXFLAGS))|' \
+            -e 's|@CPPFLAGS@|$(strip $(host_CPPFLAGS) $(host_$(release_type)_CPPFLAGS))|' \
+            -e 's|@LDFLAGS@|$(strip $(host_LDFLAGS) $(host_$(release_type)_LDFLAGS))|' \
+            -e 's|@allow_host_packages@|$(ALLOW_HOST_PACKAGES)|' \
+            -e 's|@no_qt@|$(NO_QT)|' \
+            -e 's|@no_qr@|$(NO_QR)|' \
+            -e 's|@no_zmq@|$(NO_ZMQ)|' \
+            -e 's|@no_wallet@|$(NO_WALLET)|' \
+            -e 's|@no_upnp@|$(NO_UPNP)|' \
+            -e 's|@multiprocess@|$(MULTIPROCESS)|' \
+            -e 's|@debug@|$(DEBUG)|' \
+            $< > $@
 	$(AT)touch $@
 
 

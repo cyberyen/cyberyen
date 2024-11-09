@@ -9,15 +9,15 @@ $(1)_ranlib=$$($$($(1)_type)_RANLIB)
 $(1)_libtool=$$($$($(1)_type)_LIBTOOL)
 $(1)_nm=$$($$($(1)_type)_NM)
 $(1)_cflags=$$($$($(1)_type)_CFLAGS) \
-	    $$($$($(1)_type)_$$(release_type)_CFLAGS)
+            $$($$($(1)_type)_$$(release_type)_CFLAGS)
 $(1)_cxxflags=$$($$($(1)_type)_CXXFLAGS) \
-	      $$($$($(1)_type)_$$(release_type)_CXXFLAGS)
+              $$($$($(1)_type)_$$(release_type)_CXXFLAGS)
 $(1)_ldflags=$$($$($(1)_type)_LDFLAGS) \
-	     $$($$($(1)_type)_$$(release_type)_LDFLAGS) \
-	     -L$$($($(1)_type)_prefix)/lib
+             $$($$($(1)_type)_$$(release_type)_LDFLAGS) \
+             -L$$($($(1)_type)_prefix)/lib
 $(1)_cppflags=$$($$($(1)_type)_CPPFLAGS) \
-	      $$($$($(1)_type)_$$(release_type)_CPPFLAGS) \
-	      -I$$($$($(1)_type)_prefix)/include
+              $$($$($(1)_type)_$$(release_type)_CPPFLAGS) \
+              -I$$($$($(1)_type)_prefix)/include
 $(1)_recipe_hash:=
 endef
 
@@ -164,11 +164,11 @@ $(1)_autoconf += LDFLAGS="$$($(1)_ldflags)"
 endif
 
 $(1)_cmake=env CC="$$($(1)_cc)" \
-	       CFLAGS="$$($(1)_cppflags) $$($(1)_cflags)" \
-	       CXX="$$($(1)_cxx)" \
-	       CXXFLAGS="$$($(1)_cppflags) $$($(1)_cxxflags)" \
-	       LDFLAGS="$$($(1)_ldflags)" \
-	     cmake -DCMAKE_INSTALL_PREFIX:PATH="$$($($(1)_type)_prefix)"
+               CFLAGS="$$($(1)_cppflags) $$($(1)_cflags)" \
+               CXX="$$($(1)_cxx)" \
+               CXXFLAGS="$$($(1)_cppflags) $$($(1)_cxxflags)" \
+               LDFLAGS="$$($(1)_ldflags)" \
+             cmake -DCMAKE_INSTALL_PREFIX:PATH="$$($($(1)_type)_prefix)"
 ifneq ($($(1)_type),build)
 ifneq ($(host),$(build))
 $(1)_cmake += -DCMAKE_SYSTEM_NAME=$($(host_os)_cmake_system)
@@ -238,8 +238,8 @@ stages = fetched extracted preprocessed configured built staged postprocessed ca
 
 define ext_add_stages
 $(foreach stage,$(stages),
-	  $(1)_$(stage): $($(1)_$(stage))
-	  .PHONY: $(1)_$(stage))
+          $(1)_$(stage): $($(1)_$(stage))
+          .PHONY: $(1)_$(stage))
 endef
 
 # These functions create the build targets for each package. They must be
