@@ -195,6 +195,7 @@ endef
 define $(package)_preprocess_cmds
   patch -p1 -i $($(package)_patch_dir)/qt_numeric.patch && \
   patch -p1 -i $($(package)_patch_dir)/freetype_back_compat.patch && \
+  patch -p1 -i $($(package)_patch_dir)/qt_numeric.patch && \
   patch -p1 -i $($(package)_patch_dir)/fix_powerpc_libpng.patch && \
   sed -i.old "s|updateqm.commands = \$$$$\$$$$LRELEASE|updateqm.commands = $($(package)_extract_dir)/qttools/bin/lrelease|" qttranslations/translations/translations.pro && \
   patch -p1 -i $($(package)_patch_dir)/drop_lrelease_dependency.patch && \
