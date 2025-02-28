@@ -193,11 +193,6 @@ define $(package)_extract_cmds
 endef
 
 define $(package)_preprocess_cmds
-<<<<<<< HEAD
-  patch -p1 -i $($(package)_patch_dir)/qt_numeric.patch && \
-  patch -p1 -i $($(package)_patch_dir)/freetype_back_compat.patch && \
-=======
->>>>>>> 023eb73b8 ([DEV] Fix)
   patch -p1 -i $($(package)_patch_dir)/qt_numeric.patch && \
   patch -p1 -i $($(package)_patch_dir)/freetype_back_compat.patch && \
   patch -p1 -i $($(package)_patch_dir)/fix_powerpc_libpng.patch && \
