@@ -12,7 +12,7 @@
 #include <string>
 
 const std::string CURRENCY_UNIT = "CY"; // One formatted unit
-const std::string CURRENCY_ATOM = "rin"; // One indivisible minimum value unit
+const std::string CURRENCY_ATOM = "sat"; // One indivisible minimum value unit
 
 /* Used to determine type of fee estimation requested */
 enum class FeeEstimateMode {
