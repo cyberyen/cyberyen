@@ -129,6 +129,7 @@ public:
 	// service bits we want, but we should get them updated to support all service bits wanted by any
 	// release ASAP to avoid it where possible.
 	vSeeds.emplace_back("cyberyen.work");
+	vSeeds.emplace_back("dnsseed.cyberyen.work");
 
 	base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,28);
 	base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,77);
