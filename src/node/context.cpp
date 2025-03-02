@@ -11,5 +11,5 @@
 #include <scheduler.h>
 #include <txmempool.h>
 
-NodeContext::NodeContext() {}
-NodeContext::~NodeContext() {}
+node::NodeContext::NodeContext() {}
+node::NodeContext::~NodeContext() {}

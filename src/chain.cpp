@@ -45,7 +45,7 @@ CBlockLocator CChain::GetLocator(const CBlockIndex *pindex) const {
 	    nStep *= 2;
     }
 
-    return CBlockLocator(vHave);
+    return CBlockLocator(std::move(vHave));
 }
 
 const CBlockIndex *CChain::FindFork(const CBlockIndex *pindex) const {

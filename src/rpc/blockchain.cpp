@@ -45,6 +45,8 @@
 #include <memory>
 #include <mutex>
 
+using namespace node;
+
 struct CUpdatedBlock
 {
     uint256 hash;

@@ -28,6 +28,8 @@ void DeleteAuthCookie();
 /** Parse JSON-RPC batch reply into a vector */
 std::vector<UniValue> JSONRPCProcessBatchReply(const UniValue& in);
 
+namespace node {
+    struct NodeContext;
 class JSONRPCRequest
 {
 public:
@@ -53,5 +55,5 @@ public:
 
     void parse(const UniValue& valRequest);
 };
-
+}
 #endif // BITCOIN_RPC_REQUEST_H

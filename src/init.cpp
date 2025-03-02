@@ -163,6 +163,8 @@ static std::thread g_load_block;
 
 static boost::thread_group threadGroup;
 
+using NodeContex = node::NodeContext;
+
 void Interrupt(NodeContext& node)
 {
     InterruptHTTPServer();

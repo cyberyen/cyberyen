@@ -473,7 +473,7 @@ private:
     size_t SocketSendData(CNode *pnode) const;
     void DumpAddresses();
 
-    // Network stats
+// Network stats
     void RecordBytesRecv(uint64_t bytes);
     void RecordBytesSent(uint64_t bytes);
 
