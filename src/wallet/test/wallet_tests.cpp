@@ -24,6 +24,8 @@
 #include <boost/test/unit_test.hpp>
 #include <univalue.h>
 
+using NodeContext = node::NodeContext;
+
 RPCHelpMan importmulti();
 RPCHelpMan dumpwallet();
 RPCHelpMan importwallet();
@@ -83,7 +85,7 @@ BOOST_FIXTURE_TEST_CASE(scan_for_wallet_transactions, TestChain100Setup)
     CreateAndProcessBlock({}, GetScriptForRawPubKey(coinbaseKey.GetPubKey()));
     CBlockIndex* newTip = ::ChainActive().Tip();
 
-    node::NodeContext node;
+    NodeContext node;
     auto chain = interfaces::MakeChain(node);
 
     // Verify ScanForWalletTransactions fails to read an unknown start block.
@@ -183,7 +185,7 @@ BOOST_FIXTURE_TEST_CASE(importmulti_rescan, TestChain100Setup)
     CreateAndProcessBlock({}, GetScriptForRawPubKey(coinbaseKey.GetPubKey()));
     CBlockIndex* newTip = ::ChainActive().Tip();
 
-    node::NodeContext node;
+    NodeContext node;
     auto chain = interfaces::MakeChain(node);
 
     // Prune the older block file.
@@ -255,7 +257,7 @@ BOOST_FIXTURE_TEST_CASE(importwallet_rescan, TestChain100Setup)
     SetMockTime(KEY_TIME);
     m_coinbase_txns.emplace_back(CreateAndProcessBlock({}, GetScriptForRawPubKey(coinbaseKey.GetPubKey())).vtx[0]);
 
-    node::NodeContext node;
+    NodeContext node;
     auto chain = interfaces::MakeChain(node);
 
     std::string backup_file = (GetDataDir() / "wallet.backup").string();
@@ -317,7 +319,7 @@ BOOST_FIXTURE_TEST_CASE(importwallet_rescan, TestChain100Setup)
 // debit functions.
 BOOST_FIXTURE_TEST_CASE(coin_mark_dirty_immature_credit, TestChain100Setup)
 {
-    node::NodeContext node;
+    NodeContext node;
     auto chain = interfaces::MakeChain(node);
 
     CWallet wallet(chain.get(), "", CreateDummyWalletDatabase());
@@ -615,7 +617,7 @@ BOOST_FIXTURE_TEST_CASE(ListCoins, ListCoinsTestingSetup)
 
 BOOST_FIXTURE_TEST_CASE(wallet_disableprivkeys, TestChain100Setup)
 {
-    node::NodeContext node;
+    NodeContext node;
     auto chain = interfaces::MakeChain(node);
     std::shared_ptr<CWallet> wallet = std::make_shared<CWallet>(chain.get(), "", CreateDummyWalletDatabase());
     wallet->SetupLegacyScriptPubKeyMan();

@@ -27,7 +27,6 @@
 #include <script/sign.h>
 #include <script/signingprovider.h>
 #include <script/standard.h>
-#include <uint256.h>
 #include <util/bip32.h>
 #include <util/moneystr.h>
 #include <util/strencodings.h>
@@ -41,7 +40,7 @@
 
 #include <univalue.h>
 
-static void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
+void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 {
     // Call into TxToUniv() in bitcoin-common to decode the transaction hex.
     //

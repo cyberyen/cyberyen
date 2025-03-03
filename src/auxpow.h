@@ -63,7 +63,7 @@ private:
                                     const std::vector<uint256>& vMerkleBranch,
                                     int nIndex);
 
-  friend UniValue AuxpowToJSON(const CAuxPow& auxpow, Chainstate& chainstate);
+  friend UniValue AuxpowToJSON(const CAuxPow& auxpow);
   friend class auxpow_tests::CAuxPowForTest;
 
 public:

@@ -165,7 +165,7 @@ static boost::thread_group threadGroup;
 
 using NodeContex = node::NodeContext;
 
-void Interrupt(node::NodeContext& node)
+void Interrupt(NodeContext& node)
 {
     InterruptHTTPServer();
     InterruptHTTPRPC();
@@ -181,7 +181,7 @@ void Interrupt(node::NodeContext& node)
     ForEachBlockFilterIndex([](BlockFilterIndex& index) { index.Interrupt(); });
 }
 
-void Shutdown(node::NodeContext& node)
+void Shutdown(NodeContext& node)
 {
     static Mutex g_shutdown_mutex;
     TRY_LOCK(g_shutdown_mutex, lock_shutdown);
@@ -374,7 +374,7 @@ static void OnRPCStopped()
     LogPrint(BCLog::RPC, "RPC stopped.\n");
 }
 
-void SetupServerArgs(node::NodeContext& node)
+void SetupServerArgs(NodeContext& node)
 {
     assert(!node.args);
     node.args = &gArgs;
@@ -789,7 +789,7 @@ static bool InitSanityCheck()
     return true;
 }
 
-static bool AppInitServers(const util::Ref& context, node::NodeContext& node)
+static bool AppInitServers(const util::Ref& context, NodeContext& node)
 {
     const ArgsManager& args = *Assert(node.args);
     RPCServer::OnStarted(&OnRPCStarted);
@@ -1268,7 +1268,7 @@ bool AppInitLockDataDirectory()
     return true;
 }
 
-bool AppInitInterfaces(node::NodeContext& node)
+bool AppInitInterfaces(NodeContext& node)
 {
     node.chain = interfaces::MakeChain(node);
     // Create client interfaces for wallets that are supposed to be loaded
@@ -1279,7 +1279,7 @@ bool AppInitInterfaces(node::NodeContext& node)
     return true;
 }
 
-bool AppInitMain(const util::Ref& context, node::NodeContext& node, interfaces::BlockAndHeaderTipInfo* tip_info)
+bool AppInitMain(const util::Ref& context, NodeContext& node, interfaces::BlockAndHeaderTipInfo* tip_info)
 {
     const ArgsManager& args = *Assert(node.args);
     const CChainParams& chainparams = Params();

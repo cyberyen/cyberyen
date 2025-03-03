@@ -27,6 +27,8 @@
 
 #include <univalue.h>
 
+using NodeContext = node::NodeContext;
+
 static const size_t MAX_GETUTXOS_OUTPOINTS = 15; //allow a max of 15 outpoints to be queried at once
 
 enum class RetFormat {
@@ -74,9 +76,9 @@ static bool RESTERR(HTTPRequest* req, enum HTTPStatusCode status, std::string me
  *                  context is not found.
  * @returns         Pointer to the node context or nullptr if not found.
  */
-static node::NodeContext* GetNodeContext(const util::Ref& context, HTTPRequest* req)
+static NodeContext* GetNodeContext(const util::Ref& context, HTTPRequest* req)
 {
-    node::NodeContext* node = context.Has<NodeContext>() ? &context.Get<NodeContext>() : nullptr;
+    NodeContext* node = context.Has<NodeContext>() ? &context.Get<NodeContext>() : nullptr;
     if (!node) {
         RESTERR(req, HTTP_INTERNAL_SERVER_ERROR,
                 strprintf("%s:%d (%s)\n"
@@ -97,7 +99,7 @@ static node::NodeContext* GetNodeContext(const util::Ref& context, HTTPRequest* 
  */
 static CTxMemPool* GetMemPool(const util::Ref& context, HTTPRequest* req)
 {
-    node::NodeContext* node = context.Has<NodeContext>() ? &context.Get<NodeContext>() : nullptr;
+    NodeContext* node = context.Has<NodeContext>() ? &context.Get<NodeContext>() : nullptr;
     if (!node || !node->mempool) {
         RESTERR(req, HTTP_NOT_FOUND, "Mempool disabled or instance not found");
         return nullptr;
@@ -390,7 +392,7 @@ static bool rest_tx(const util::Ref& context, HTTPRequest* req, const std::strin
         g_txindex->BlockUntilSyncedToCurrentChain();
     }
 
-    const node::NodeContext* const node = GetNodeContext(context, req);
+    const NodeContext* const node = GetNodeContext(context, req);
     if (!node) return false;
     uint256 hashBlock = uint256();
     const CTransactionRef tx = GetTransaction(/* block_index */ nullptr, node->mempool.get(), hash, Params().GetConsensus(), hashBlock);

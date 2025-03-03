@@ -11,8 +11,6 @@
 #include <stdint.h>
 #include <vector>
 
-#include <any>
-
 extern RecursiveMutex cs_main;
 
 class CBlock;

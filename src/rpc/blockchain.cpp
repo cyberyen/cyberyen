@@ -23,6 +23,7 @@
 #include <primitives/transaction.h>
 #include <rpc/server.h>
 #include <rpc/util.h>
+#include <rpc/rawtransaction_util.h>
 #include <script/descriptor.h>
 #include <streams.h>
 #include <sync.h>
@@ -58,6 +59,40 @@ static Mutex cs_blockchange;
 static std::condition_variable cond_blockchange;
 static CUpdatedBlock latestblock GUARDED_BY(cs_blockchange);
 
+UniValue AuxpowToJSON(const CAuxPow& auxpow)
+{
+    UniValue result(UniValue::VOBJ);
+
+    {
+        UniValue tx(UniValue::VOBJ);
+        tx.pushKV("hex", EncodeHexTx(*auxpow.coinbaseTx));
+        TxToJSON(*auxpow.coinbaseTx, auxpow.parentBlock.GetHash(), tx);
+        result.pushKV("tx", tx);
+    }
+
+     result.pushKV("chainindex", auxpow.nChainIndex);
+
+     {
+        UniValue branch(UniValue::VARR);
+        for (const auto& node : auxpow.vMerkleBranch)
+            branch.push_back(node.GetHex());
+        result.pushKV("merklebranch", branch);
+    }
+
+     {
+        UniValue branch(UniValue::VARR);
+        for (const auto& node : auxpow.vChainMerkleBranch)
+            branch.push_back(node.GetHex());
+        result.pushKV("chainmerklebranch", branch);
+    }
+
+    CDataStream ssParent(SER_NETWORK, PROTOCOL_VERSION);
+    ssParent << auxpow.parentBlock;
+    const std::string strHex = HexStr(ssParent);
+    result.pushKV("parentblock", strHex);
+
+    return result;
+}
 
 node::NodeContext& EnsureAnyNodeContext(const std::any& context)
 {

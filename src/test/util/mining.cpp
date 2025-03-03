@@ -27,7 +27,7 @@ CTxIn MineBlock(const node::NodeContext& node, const CScript& coinbase_scriptPub
 {
     auto block = PrepareBlock(node, coinbase_scriptPubKey);
 
-    while (!CheckProofOfWork(block->GetHash(), block->nBits, Params().GetConsensus())) {
+    while (!CheckProofOfWork(block->GetPoWHash(), block->nBits, Params().GetConsensus())) {
         ++block->nNonce;
         assert(block->nNonce);
     }

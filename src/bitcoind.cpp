@@ -30,13 +30,13 @@
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 UrlDecodeFn* const URL_DECODE = urlDecode;
 
-static void WaitForShutdown(node::NodeContext& contextNode)
+static void WaitForShutdown(node::NodeContext& node)
 {
     while (!ShutdownRequested())
     {
         UninterruptibleSleep(std::chrono::milliseconds{200});
     }
-    Interrupt(contextNode);
+    Interrupt(node);
 }
 
 static bool AppInit(int argc, char* argv[])
