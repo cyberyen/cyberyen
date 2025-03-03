@@ -1302,8 +1302,8 @@ static const CRPCCommand commands[] =
     { "mining",             "submitblock",            &submitblock,            {"hexdata","dummy"} },
     { "mining",             "submitheader",           &submitheader,           {"hexdata"} },
 
-	{"mining",				"createauxblock",		  &createauxblock, 		   {} },
-	{"mining",				"submitauxblock",		  &submitauxblock,  	   {} },
+	{"mining",				"createauxblock",		  &createauxblock, 		   {"address"} },
+	{"mining",				"submitauxblock",		  &submitauxblock,  	   {"hash","auxpow"} },
 
     { "generating",         "generatetoaddress",      &generatetoaddress,      {"nblocks","address","maxtries"} },
     { "generating",         "generatetodescriptor",   &generatetodescriptor,   {"num_blocks","descriptor","maxtries"} },
