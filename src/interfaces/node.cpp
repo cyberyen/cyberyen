@@ -48,7 +48,7 @@ namespace {
 class NodeImpl : public Node
 {
 public:
-    NodeImpl(NodeContext* context) { setContext(context); }
+    NodeImpl(node::NodeContext* context) { setContext(context); }
     void initLogging() override { InitLogging(*Assert(m_context->args)); }
     void initParameterInteraction() override { InitParameterInteraction(*Assert(m_context->args)); }
     bilingual_str getWarnings() override { return GetWarnings(true); }
@@ -297,8 +297,8 @@ public:
                     /* verification progress is unused when a header was received */ 0);
             }));
     }
-    NodeContext* context() override { return m_context; }
-    void setContext(NodeContext* context) override
+    node::NodeContext* context() override { return m_context; }
+    void setContext(node::NodeContext* context) override
     {
         m_context = context;
         if (context) {
@@ -307,12 +307,12 @@ public:
             m_context_ref.Clear();
         }
     }
-    NodeContext* m_context{nullptr};
+    node::NodeContext* m_context{nullptr};
     util::Ref m_context_ref;
 };
 
 } // namespace
 
-std::unique_ptr<Node> MakeNode(NodeContext* context) { return MakeUnique<NodeImpl>(context); }
+std::unique_ptr<Node> MakeNode(node::NodeContext* context) { return MakeUnique<NodeImpl>(context); }
 
 } // namespace interfaces

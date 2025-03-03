@@ -42,6 +42,9 @@ public:
     std::string peerAddr;
     const util::Ref& context;
 
+    // CYBERYEN
+    NodeContext *nodeContext{nullptr};
+
     JSONRPCRequest(const util::Ref& context) : id(NullUniValue), params(NullUniValue), fHelp(false), context(context) {}
 
     //! Initializes request information from another request object and the

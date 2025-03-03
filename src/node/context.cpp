@@ -8,8 +8,11 @@
 #include <interfaces/chain.h>
 #include <net.h>
 #include <net_processing.h>
+#include <policy/fees.h>
 #include <scheduler.h>
 #include <txmempool.h>
 
-node::NodeContext::NodeContext() {}
-node::NodeContext::~NodeContext() {}
+namespace node {
+NodeContext::NodeContext() = default;
+NodeContext::~NodeContext() = default;
+}

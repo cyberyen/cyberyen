@@ -12,6 +12,8 @@
 
 class ArgsManager;
 class BanMan;
+class CAddrMan;
+class CBlockPolicyEstimator;
 class CConnman;
 class CScheduler;
 class CTxMemPool;
@@ -50,6 +52,8 @@ struct NodeContext {
     std::unique_ptr<CScheduler> scheduler;
     std::function<void()> rpc_interruption_point = [] {};
 
+    std::unique_ptr<CAddrMan> addrman;
+    std::unique_ptr<CBlockPolicyEstimator> fee_estimator;
     //! Declare default constructor and destructor that are not inline, so code
     //! instantiating the NodeContext struct doesn't need to #include class
     //! definitions for all the unique_ptr members.

@@ -17,25 +17,25 @@
 #include <node/context.h>
 #include <cassert>
 #include <util/check.h>
-#include <rpc/server_util.h>
+#include <../netbase.h>
 
 namespace
 {
-void auxMiningCheck(const JSONRPCRequest& request)
+void auxMiningCheck(const node::JSONRPCRequest& request)
 {
-  node::NodeContext& node = request.nodeContext? *request.nodeContext: EnsureAnyNodeContext (request.context);
+  node::NodeContext& node = request.nodeContext? *request.nodeContext: EnsureNodeContext (request.context);
   if (!node.connman)
     throw JSONRPCError (RPC_CLIENT_P2P_DISABLED,
                         "Error: Peer-to-peer functionality missing or"
                         " disabled");
 
-  if (node.connman->GetNodeCount (ConnectionDirection::Both) == 0
-        && !GlobParams ().MineBlocksOnDemand ())
+  if (node.connman->GetNodeCount (CConnman::NumConnections::CONNECTIONS_ALL) == 0
+        && !Params ().MineBlocksOnDemand ())
     throw JSONRPCError (RPC_CLIENT_NOT_CONNECTED,
                         "Bellscoin is not connected!");
 
-  if (node.chainman->IsInitialBlockDownload ()
-        && !GlobParams ().MineBlocksOnDemand ())
+  if (node.chainman->ActiveChainstate ().IsInitialBlockDownload ()
+        && !Params ().MineBlocksOnDemand ())
     throw JSONRPCError (RPC_CLIENT_IN_INITIAL_DOWNLOAD,
                         "Bellscoin is downloading blocks...");
 
@@ -43,7 +43,7 @@ void auxMiningCheck(const JSONRPCRequest& request)
      past the point of merge-mining start.  Check nevertheless.  */
   {
     LOCK (cs_main);
-    const auto auxpowStart = GlobParams ().GetConsensus ().nAuxpowStartHeight;
+    const auto auxpowStart = Params ().GetConsensus ().nAuxpowStartHeight;
     if (node.chainman->ActiveChain().Height () + 1 < auxpowStart)
       throw std::runtime_error ("mining auxblock method is not yet available");
   }
@@ -80,7 +80,7 @@ AuxpowMiner::getCurrentBlock (ChainstateManager &chainman, const CTxMemPool& mem
 
         /* Create new block with nonce = 0 and extraNonce = 1.  */
         std::unique_ptr<CBlockTemplate> newBlock
-            = BlockAssembler (chainman.ActiveChainstate(), &mempool).CreateNewBlock (scriptPubKey);
+            = BlockAssembler (mempool, Params()).CreateNewBlock (scriptPubKey);
         if (newBlock == nullptr)
           throw JSONRPCError (RPC_OUT_OF_MEMORY, "out of memory");
 
@@ -134,14 +134,14 @@ AuxpowMiner::lookupSavedBlock (const std::string& hashHex) const
 }
 
 UniValue
-AuxpowMiner::createAuxBlock (const JSONRPCRequest& request,
+AuxpowMiner::createAuxBlock (const node::JSONRPCRequest& request,
                              const CScript& scriptPubKey)
 {
   auxMiningCheck (request);
   LOCK (cs);
 
-  const auto& mempool = EnsureAnyMemPool (request.nodeContext? request.nodeContext: request.context);
-  const node::NodeContext& node = request.nodeContext? *request.nodeContext: EnsureAnyNodeContext(request.context);
+  const auto& mempool = request.nodeContext? EnsureMemPool (*request.nodeContext): EnsureRefMemPool (request.context);
+  const node::NodeContext& node = request.nodeContext? *request.nodeContext: EnsureNodeContext(request.context);
   uint256 target;
   const CBlock* pblock = getCurrentBlock (*node.chainman, mempool, scriptPubKey, target);
 
@@ -159,12 +159,12 @@ AuxpowMiner::createAuxBlock (const JSONRPCRequest& request,
 }
 
 bool
-AuxpowMiner::submitAuxBlock (const JSONRPCRequest& request,
+AuxpowMiner::submitAuxBlock (const node::JSONRPCRequest& request,
                              const std::string& hashHex,
                              const std::string& auxpowHex) const
 {
   auxMiningCheck (request);
-  auto& chainman = EnsureAnyChainman (request.nodeContext? request.nodeContext: request.context);
+  auto& chainman = request.nodeContext? EnsureChainman (*request.nodeContext): EnsureRefChainman (request.context);
 
   std::shared_ptr<CBlock> shared_block;
   {
@@ -179,8 +179,7 @@ AuxpowMiner::submitAuxBlock (const JSONRPCRequest& request,
   ss >> *pow;
   shared_block->SetAuxpow (std::move (pow));
   CHECK_NONFATAL(shared_block->GetHash ().GetHex () == hashHex);
-
-  return chainman.ProcessNewBlock(shared_block, true, true, nullptr);
+  return chainman.ProcessNewBlock(Params(), shared_block, true, nullptr);
 }
 
 AuxpowMiner&

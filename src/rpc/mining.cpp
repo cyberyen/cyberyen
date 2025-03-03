@@ -236,8 +236,8 @@ static RPCHelpMan generatetodescriptor()
 	throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, error);
     }
 
-    const CTxMemPool& mempool = EnsureMemPool(request.context);
-    ChainstateManager& chainman = EnsureChainman(request.context);
+    const CTxMemPool& mempool = EnsureRefMemPool(request.context);
+    ChainstateManager& chainman = EnsureRefChainman(request.context);
 
     return generateBlocks(chainman, mempool, coinbase_script, num_blocks, max_tries);
 },
@@ -286,8 +286,8 @@ static RPCHelpMan generatetoaddress()
 	throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Error: Invalid address");
     }
 
-    const CTxMemPool& mempool = EnsureMemPool(request.context);
-    ChainstateManager& chainman = EnsureChainman(request.context);
+    const CTxMemPool& mempool = EnsureRefMemPool(request.context);
+    ChainstateManager& chainman = EnsureRefChainman(request.context);
 
     CScript coinbase_script = GetScriptForDestination(destination);
 
@@ -335,7 +335,7 @@ static RPCHelpMan generateblock()
 	coinbase_script = GetScriptForDestination(destination);
     }
 
-    const CTxMemPool& mempool = EnsureMemPool(request.context);
+    const CTxMemPool& mempool = EnsureRefMemPool(request.context);
 
     std::vector<CTransactionRef> txs;
     const auto raw_txs_or_txids = request.params[1].get_array();
@@ -394,7 +394,7 @@ static RPCHelpMan generateblock()
     uint64_t max_tries{DEFAULT_MAX_TRIES};
     unsigned int extra_nonce{0};
 
-    if (!GenerateBlock(EnsureChainman(request.context), block, max_tries, extra_nonce, block_hash) || block_hash.IsNull()) {
+    if (!GenerateBlock(EnsureRefChainman(request.context), block, max_tries, extra_nonce, block_hash) || block_hash.IsNull()) {
 	throw JSONRPCError(RPC_MISC_ERROR, "Failed to make block.");
     }
 
@@ -429,7 +429,7 @@ static RPCHelpMan getmininginfo()
 	[&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
     LOCK(cs_main);
-    const CTxMemPool& mempool = EnsureMemPool(request.context);
+    const CTxMemPool& mempool = EnsureRefMemPool(request.context);
 
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("blocks",           (int)::ChainActive().Height());
@@ -478,7 +478,7 @@ static RPCHelpMan prioritisetransaction()
 	throw JSONRPCError(RPC_INVALID_PARAMETER, "Priority is no longer supported, dummy argument to prioritisetransaction must be 0.");
     }
 
-    EnsureMemPool(request.context).PrioritiseTransaction(hash, nAmount);
+    EnsureRefMemPool(request.context).PrioritiseTransaction(hash, nAmount);
     return true;
 },
     };
@@ -667,7 +667,7 @@ static RPCHelpMan getblocktemplate()
     if (strMode != "template")
 	throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
-    NodeContext& node = EnsureNodeContext(request.context);
+    node::NodeContext& node = EnsureNodeContext(request.context);
     if(!node.connman)
 	throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
 
@@ -680,7 +680,7 @@ static RPCHelpMan getblocktemplate()
     }
 
     static unsigned int nTransactionsUpdatedLast;
-    const CTxMemPool& mempool = EnsureMemPool(request.context);
+    const CTxMemPool& mempool = EnsureRefMemPool(request.context);
 
     if (!lpval.isNull())
     {
@@ -988,7 +988,7 @@ static RPCHelpMan submitblock()
     bool new_block;
     auto sc = std::make_shared<submitblock_StateCatcher>(block.GetHash());
     RegisterSharedValidationInterface(sc);
-    bool accepted = EnsureChainman(request.context).ProcessNewBlock(Params(), blockptr, /* fForceProcessing */ true, /* fNewBlock */ &new_block);
+    bool accepted = EnsureRefChainman(request.context).ProcessNewBlock(Params(), blockptr, /* fForceProcessing */ true, /* fNewBlock */ &new_block);
     UnregisterSharedValidationInterface(sc);
     if (!new_block && accepted) {
 	return "duplicate";
@@ -1029,7 +1029,7 @@ static RPCHelpMan submitheader()
     }
 
     BlockValidationState state;
-    EnsureChainman(request.context).ProcessNewBlockHeaders({h}, state, Params());
+    EnsureRefChainman(request.context).ProcessNewBlockHeaders({h}, state, Params());
     if (state.IsValid()) return NullUniValue;
     if (state.IsError()) {
 	throw JSONRPCError(RPC_VERIFY_ERROR, state.ToString());

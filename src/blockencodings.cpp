@@ -16,7 +16,7 @@
 
 #include <unordered_map>
 
-// SYSCOIN
+// CYBERYEN
 CBlockHeaderAndShortTxIDs::CBlockHeaderAndShortTxIDs(const CBlock& block, bool fUseWTXID) :
         nonce(GetRand(std::numeric_limits<uint64_t>::max())),
 		mweb_block(block.mweb_block),

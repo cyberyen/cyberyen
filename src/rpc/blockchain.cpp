@@ -29,6 +29,7 @@
 #include <txdb.h>
 #include <txmempool.h>
 #include <undo.h>
+#include <util/any.h>
 #include <util/ref.h>
 #include <util/strencodings.h>
 #include <util/system.h>
@@ -57,6 +58,16 @@ static Mutex cs_blockchange;
 static std::condition_variable cond_blockchange;
 static CUpdatedBlock latestblock GUARDED_BY(cs_blockchange);
 
+
+node::NodeContext& EnsureAnyNodeContext(const std::any& context)
+{
+    auto node_context = util::AnyPtr<node::NodeContext>(context);
+    if (!node_context) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Node context not found");
+    }
+    return *node_context;
+}
+
 NodeContext& EnsureNodeContext(const util::Ref& context)
 {
     if (!context.Has<NodeContext>()) {
@@ -65,18 +76,27 @@ NodeContext& EnsureNodeContext(const util::Ref& context)
     return context.Get<NodeContext>();
 }
 
-CTxMemPool& EnsureMemPool(const util::Ref& context)
+CTxMemPool& EnsureRefMemPool(const util::Ref& context)
 {
-    NodeContext& node = EnsureNodeContext(context);
+    node::NodeContext& node = EnsureNodeContext(context);
+    return EnsureMemPool(node);
+}
+
+CTxMemPool& EnsureMemPool(const node::NodeContext& node)
+{
     if (!node.mempool) {
 	throw JSONRPCError(RPC_CLIENT_MEMPOOL_DISABLED, "Mempool disabled or instance not found");
     }
     return *node.mempool;
 }
 
-ChainstateManager& EnsureChainman(const util::Ref& context)
+ChainstateManager& EnsureRefChainman(const util::Ref& context) {
+	NodeContext& node = EnsureNodeContext(context);
+	return EnsureChainman(node);
+}
+
+ChainstateManager& EnsureChainman(const node::NodeContext& node)
 {
-    NodeContext& node = EnsureNodeContext(context);
     if (!node.chainman) {
 	throw JSONRPCError(RPC_INTERNAL_ERROR, "Node chainman not found");
     }
@@ -85,7 +105,7 @@ ChainstateManager& EnsureChainman(const util::Ref& context)
 
 CConnman& EnsureConnman(const util::Ref& context)
 {
-    NodeContext& node = EnsureNodeContext(context);
+    node::NodeContext& node = EnsureNodeContext(context);
     if (!node.connman) {
 	throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
     }
@@ -764,7 +784,7 @@ static RPCHelpMan getrawmempool()
 	include_mempool_sequence = request.params[1].get_bool();
     }
 
-    return MempoolToJSON(EnsureMemPool(request.context), fVerbose, include_mempool_sequence);
+    return MempoolToJSON(EnsureRefMemPool(request.context), fVerbose, include_mempool_sequence);
 },
     };
 }
@@ -799,7 +819,7 @@ static RPCHelpMan getmempoolancestors()
 
     uint256 hash = ParseHashV(request.params[0], "parameter 1");
 
-    const CTxMemPool& mempool = EnsureMemPool(request.context);
+    const CTxMemPool& mempool = EnsureRefMemPool(request.context);
     LOCK(mempool.cs);
 
     CTxMemPool::txiter it = mempool.mapTx.find(hash);
@@ -863,7 +883,7 @@ static RPCHelpMan getmempooldescendants()
 
     uint256 hash = ParseHashV(request.params[0], "parameter 1");
 
-    const CTxMemPool& mempool = EnsureMemPool(request.context);
+    const CTxMemPool& mempool = EnsureRefMemPool(request.context);
     LOCK(mempool.cs);
 
     CTxMemPool::txiter it = mempool.mapTx.find(hash);
@@ -915,7 +935,7 @@ static RPCHelpMan getmempoolentry()
 {
     uint256 hash = ParseHashV(request.params[0], "parameter 1");
 
-    const CTxMemPool& mempool = EnsureMemPool(request.context);
+    const CTxMemPool& mempool = EnsureRefMemPool(request.context);
     LOCK(mempool.cs);
 
     CTxMemPool::txiter it = mempool.mapTx.find(hash);
@@ -1248,7 +1268,7 @@ static RPCHelpMan gettxoutsetinfo()
     const CoinStatsHashType hash_type = ParseHashType(request.params[0], CoinStatsHashType::HASH_SERIALIZED);
 
     CCoinsView* coins_view = WITH_LOCK(cs_main, return &ChainstateActive().CoinsDB());
-    NodeContext& node = EnsureNodeContext(request.context);
+    node::NodeContext& node = EnsureNodeContext(request.context);
     if (GetUTXOStats(coins_view, stats, hash_type, node.rpc_interruption_point)) {
 	ret.pushKV("height", (int64_t)stats.nHeight);
 	ret.pushKV("bestblock", stats.hashBlock.GetHex());
@@ -1319,7 +1339,7 @@ static RPCHelpMan gettxout()
     CCoinsViewCache* coins_view = &::ChainstateActive().CoinsTip();
 
     if (fMempool) {
-	const CTxMemPool& mempool = EnsureMemPool(request.context);
+	const CTxMemPool& mempool = EnsureRefMemPool(request.context);
 	LOCK(mempool.cs);
 	CCoinsViewMemPool view(coins_view, mempool);
 	if (!view.GetCoin(out, coin) || mempool.isSpent(out)) {
@@ -1596,7 +1616,7 @@ static RPCHelpMan getchaintips()
 		},
 	[&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
-    ChainstateManager& chainman = EnsureChainman(request.context);
+    ChainstateManager& chainman = EnsureRefChainman(request.context);
     LOCK(cs_main);
 
     /*
@@ -1706,7 +1726,7 @@ static RPCHelpMan getmempoolinfo()
 		},
 	[&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
-    return MempoolInfoToJSON(EnsureMemPool(request.context));
+    return MempoolInfoToJSON(EnsureRefMemPool(request.context));
 },
     };
 }
@@ -2237,7 +2257,7 @@ static RPCHelpMan savemempool()
 		},
 	[&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
-    const CTxMemPool& mempool = EnsureMemPool(request.context);
+    const CTxMemPool& mempool = EnsureRefMemPool(request.context);
 
     if (!mempool.IsLoaded()) {
 	throw JSONRPCError(RPC_MISC_ERROR, "The mempool was not loaded yet");
@@ -2591,7 +2611,7 @@ static RPCHelpMan dumptxoutset()
     std::unique_ptr<CCoinsViewCursor> pcursor;
     CCoinsStats stats;
     CBlockIndex* tip;
-    NodeContext& node = EnsureNodeContext(request.context);
+    node::NodeContext& node = EnsureNodeContext(request.context);
 
     {
 	// We need to lock cs_main to ensure that the coinsdb isn't written to

@@ -313,7 +313,7 @@ BOOST_FIXTURE_TEST_CASE (check_auxpow, BasicTestingSetup)
   BOOST_CHECK (!builder2.get ().check (hashAux, ourChainId, params));
 
   /* Build a non-header legacy version and check that it should be rejected, no backwards compat auxpow unlike NMC, 
-  because bridge smart contracts validates auxpow and doesn't have compat fallback, so syscoin consensus needs to enforce.  */
+  because bridge smart contracts validates auxpow and doesn't have compat fallback, so cyberyen consensus needs to enforce.  */
   builder2 = builder;
   index = CAuxPow::getExpectedIndex (nonce, ourChainId, height);
   auxRoot = builder2.buildAuxpowChain (hashAux, height, index);

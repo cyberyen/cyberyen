@@ -16,6 +16,10 @@
 
 #include <algorithm>
 #include <logging.h>
+#include <util/system.h>
+
+typedef std::vector<unsigned char> valtype;
+
 namespace
 {
 
@@ -44,7 +48,7 @@ CAuxPow::check (const uint256& hashAuxBlock, int nChainId,
         const int32_t &nChainIDParent = parentBlock.GetChainId();
         if(nChainIDParent > 0) {
             if(nChainIDParent == params.nAuxpowChainId)
-                return error("Aux POW parent has our chain ID");
+                 return error("Aux POW parent has our chain ID");
         } else {
             const int32_t &nOldChainIDParent = parentBlock.GetOldChainId();
             if(nOldChainIDParent == params.nAuxpowOldChainId)

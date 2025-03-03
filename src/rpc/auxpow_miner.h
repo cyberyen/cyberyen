@@ -6,7 +6,7 @@
 #define RPC_AUXPOW_MINER_H
 
 #include <miner.h>
-#include <script/script.h>
+#include <../script/standard.h>
 #include <txmempool.h>
 #include <uint256.h>
 #include <univalue.h>
@@ -82,7 +82,7 @@ public:
    * to work on with the given address for the block reward and return the
    * necessary information for the miner to construct an auxpow for it.
    */
-  UniValue createAuxBlock (const JSONRPCRequest& request,
+  UniValue createAuxBlock (const node::JSONRPCRequest& request,
                            const CScript& scriptPubKey);
 
   /**
@@ -91,7 +91,7 @@ public:
    * and try to submit it.  Returns true if all was successful and the block
    * was accepted.
    */
-  bool submitAuxBlock (const JSONRPCRequest& request,
+  bool submitAuxBlock (const node::JSONRPCRequest& request,
                        const std::string& hashHex,
                        const std::string& auxpowHex) const;
 

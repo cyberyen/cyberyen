@@ -145,7 +145,7 @@ using NodeContext = node::NodeContext;
 class ChainImpl : public Chain
 {
 public:
-    explicit ChainImpl(NodeContext& node) : m_node(node) {}
+    explicit ChainImpl(node::NodeContext& node) : m_node(node) {}
     Optional<int> getHeight() override
     {
         LOCK(::cs_main);
@@ -413,6 +413,6 @@ public:
 };
 } // namespace
 
-std::unique_ptr<Chain> MakeChain(NodeContext& node) { return MakeUnique<ChainImpl>(node); }
+std::unique_ptr<Chain> MakeChain(node::NodeContext& node) { return MakeUnique<ChainImpl>(node); }
 
 } // namespace interfaces

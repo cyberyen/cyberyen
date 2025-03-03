@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <vector>
 
+#include <any>
+
 extern RecursiveMutex cs_main;
 
 class CBlock;
@@ -55,8 +57,10 @@ UniValue blockheaderToJSON(const CBlockIndex* tip, const CBlockIndex* blockindex
 void CalculatePercentilesByWeight(CAmount result[NUM_GETBLOCKSTATS_PERCENTILES], std::vector<std::pair<CAmount, int64_t>>& scores, int64_t total_weight);
 
 node::NodeContext& EnsureNodeContext(const util::Ref& context);
-CTxMemPool& EnsureMemPool(const util::Ref& context);
-ChainstateManager& EnsureChainman(const util::Ref& context);
+CTxMemPool& EnsureRefMemPool(const util::Ref& context);
+CTxMemPool& EnsureMemPool(const node::NodeContext& node);
+ChainstateManager& EnsureRefChainman(const util::Ref& context);
+ChainstateManager& EnsureChainman(const node::NodeContext& node);
 CConnman& EnsureConnman(const util::Ref& context);
 
 #endif

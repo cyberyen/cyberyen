@@ -16,6 +16,7 @@
 #include <hash.h>
 #include <net_permissions.h>
 #include <netaddress.h>
+#include <netbase.h>
 #include <optional.h>
 #include <policy/feerate.h>
 #include <protocol.h>
@@ -623,6 +624,17 @@ private:
     friend struct CConnmanTest;
     friend struct ConnmanTestMsg;
 };
+
+static inline CConnman::NumConnections& operator|=(CConnman::NumConnections& a, CConnman::NumConnections b) {
+    using underlying = typename std::underlying_type<CConnman::NumConnections>::type;
+    a = CConnman::NumConnections(underlying(a) | underlying(b));
+    return a;
+}
+static inline bool operator&(CConnman::NumConnections a, CConnman::NumConnections b) {
+    using underlying = typename std::underlying_type<CConnman::NumConnections>::type;
+    return (underlying(a) & underlying(b));
+}
+
 void Discover();
 void StartMapPort();
 void InterruptMapPort();
