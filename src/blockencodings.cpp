@@ -18,9 +18,9 @@
 
 // CYBERYEN
 CBlockHeaderAndShortTxIDs::CBlockHeaderAndShortTxIDs(const CBlock& block, bool fUseWTXID) :
-        nonce(GetRand(std::numeric_limits<uint64_t>::max())),
-		mweb_block(block.mweb_block),
-        shorttxids(block.vtx.size() - 1), prefilledtxn(1), header(block) {
+	nonce(GetRand(std::numeric_limits<uint64_t>::max())), header(block), mweb_block(block.mweb_block) 
+{
+	FillShortTxIDSelector();
     //TODO: Use our mempool prior to block acceptance to predictively fill more than just the coinbase
     prefilledtxn.push_back({0, block.vtx[0]});
 

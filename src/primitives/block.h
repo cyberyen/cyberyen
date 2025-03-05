@@ -108,7 +108,13 @@ public:
 
     SERIALIZE_METHODS(CBlock, obj)
     {
-        READWRITE(AsBase<CBlockHeader>(obj), obj.vtx);
+        READWRITEAS(CBlockHeader, obj);
+        READWRITE(obj.vtx);
+        if (!(s.GetVersion() & SERIALIZE_NO_MWEB)) {
+            if (obj.vtx.size() >= 2 && obj.vtx.back()->IsHogEx()) {
+                READWRITE(obj.mweb_block);
+            }
+        }
     }
 
     void SetNull()
@@ -161,8 +167,9 @@ struct CBlockLocator
 
     SERIALIZE_METHODS(CBlockLocator, obj)
     {
-        int nVersion = DUMMY_VERSION;
-        READWRITE(nVersion);
+        int nVersion = s.GetVersion();
+        if (!(s.GetType() & SER_GETHASH))
+            READWRITE(nVersion);
         READWRITE(obj.vHave);
     }
 

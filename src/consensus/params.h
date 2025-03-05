@@ -111,7 +111,6 @@ struct Params {
     int32_t nAuxpowOldChainId;
     int nAuxpowStartHeight;
     bool fStrictChainId;
-    int nLegacyBlocksBefore; // -1 for "always allow"
 };
 } // namespace Consensus
 
