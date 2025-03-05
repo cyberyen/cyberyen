@@ -1151,123 +1151,7 @@ CTransactionRef GetTransaction(const CBlockIndex* const block_index, const CTxMe
 //
 // CBlock and CBlockIndex
 //
-
-static bool WriteBlockToDisk(const CBlock& block, FlatFilePos& pos, const CMessageHeader::MessageStartChars& messageStart)
-{
-    // Open history file to append
-    CAutoFile fileout(OpenBlockFile(pos), SER_DISK, CLIENT_VERSION);
-    if (fileout.IsNull())
-	return error("WriteBlockToDisk: OpenBlockFile failed");
-
-    // Write index header
-    unsigned int nSize = GetSerializeSize(block, fileout.GetVersion());
-    fileout << messageStart << nSize;
-
-    // Write block
-    long fileOutPos = ftell(fileout.Get());
-    if (fileOutPos < 0)
-	return error("WriteBlockToDisk: ftell failed");
-    pos.nPos = (unsigned int)fileOutPos;
-    fileout << block;
-
-    return true;
-}
-
-bool ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos, const Consensus::Params& consensusParams)
-{
-    block.SetNull();
-
-    // Open history file to read
-    CAutoFile filein(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
-    if (filein.IsNull())
-	return error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
-
-    // Read block
-    try {
-	filein >> block;
-    }
-    catch (const std::exception& e) {
-	return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
-    }
-
-    // Check the header
-    if (!CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams))
-	return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
-
-    // Signet only: check block solution
-    if (consensusParams.signet_blocks && !CheckSignetBlockSolution(block, consensusParams)) {
-	return error("ReadBlockFromDisk: Errors in block solution at %s", pos.ToString());
-    }
-
-    return true;
-}
-
-bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams)
-{
-    FlatFilePos blockPos;
-    {
-	LOCK(cs_main);
-	blockPos = pindex->GetBlockPos();
-    }
-
-    if (!ReadBlockFromDisk(block, blockPos, consensusParams))
-	return false;
-    if (block.GetHash() != pindex->GetBlockHash())
-	return error("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for %s at %s",
-		pindex->ToString(), pindex->GetBlockPos().ToString());
-    return true;
-}
-
-bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const FlatFilePos& pos, const CMessageHeader::MessageStartChars& message_start)
-{
-    FlatFilePos hpos = pos;
-    hpos.nPos -= 8; // Seek back 8 bytes for meta header
-    CAutoFile filein(OpenBlockFile(hpos, true), SER_DISK, CLIENT_VERSION);
-    if (filein.IsNull()) {
-	return error("%s: OpenBlockFile failed for %s", __func__, pos.ToString());
-    }
-
-    try {
-	CMessageHeader::MessageStartChars blk_start;
-	unsigned int blk_size;
-
-	filein >> blk_start >> blk_size;
-
-	if (memcmp(blk_start, message_start, CMessageHeader::MESSAGE_START_SIZE)) {
-	    return error("%s: Block magic mismatch for %s: %s versus expected %s", __func__, pos.ToString(),
-		    HexStr(blk_start),
-		    HexStr(message_start));
-	}
-
-	if (blk_size > MAX_SIZE) {
-	    return error("%s: Block data is larger than maximum deserialization size for %s: %s versus %s", __func__, pos.ToString(),
-		    blk_size, MAX_SIZE);
-	}
-
-	block.resize(blk_size); // Zeroing of memory is intentional here
-	filein.read((char*)block.data(), blk_size);
-    } catch(const std::exception& e) {
-	return error("%s: Read from block file failed: %s for %s", __func__, e.what(), pos.ToString());
-    }
-
-    return true;
-}
-
-bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const CBlockIndex* pindex, const CMessageHeader::MessageStartChars& message_start)
-{
-    FlatFilePos block_pos;
-    {
-	LOCK(cs_main);
-	block_pos = pindex->GetBlockPos();
-    }
-
-    return ReadRawBlockFromDisk(block, block_pos, message_start);
-}
-
 //////////////////////////////////////////////////////////////////////////////
-//
-// CBlock and CBlockIndex
-//
 bool CheckProofOfWork(const CBlockHeader& block, const Consensus::Params& params)
 {
     /* Except for legacy blocks with full version 1, ensure that
@@ -1313,8 +1197,165 @@ bool CheckProofOfWork(const CBlockHeader& block, const Consensus::Params& params
     if (!CheckProofOfWork(block.auxpow->getParentBlockHash(), block.nBits, params))
         return error("%s : AUX proof of work failed", __func__);
 
+    return true;
+}
+
+static bool WriteBlockToDisk(const CBlock& block, FlatFilePos& pos, const CMessageHeader::MessageStartChars& messageStart)
+{
+    // Open history file to append
+    CAutoFile fileout(OpenBlockFile(pos), SER_DISK, CLIENT_VERSION);
+    if (fileout.IsNull())
+	return error("WriteBlockToDisk: OpenBlockFile failed");
+
+    // Write index header
+    unsigned int nSize = GetSerializeSize(block, fileout.GetVersion());
+    fileout << messageStart << nSize;
+
+    // Write block
+    long fileOutPos = ftell(fileout.Get());
+    if (fileOutPos < 0)
+	return error("WriteBlockToDisk: ftell failed");
+    pos.nPos = (unsigned int)fileOutPos;
+    fileout << block;
 
     return true;
+}
+
+bool ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos, const Consensus::Params& consensusParams, bool fCheckPOW)
+{
+    block.SetNull();
+
+    // Open history file to read
+    CAutoFile filein(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
+    if (filein.IsNull())
+		return error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
+
+    // Read block
+    try {
+		filein >> block;
+    }
+    catch (const std::exception& e) {
+		return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
+    }
+
+    // Check the header
+    if (!CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams))
+		return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+
+    // Signet only: check block solution
+    if (consensusParams.signet_blocks && !CheckSignetBlockSolution(block, consensusParams)) {
+		return error("ReadBlockFromDisk: Errors in block solution at %s", pos.ToString());
+    }
+
+    return true;
+}
+
+bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams)
+{
+    FlatFilePos blockPos;
+    {
+		LOCK(cs_main);
+		blockPos = pindex->GetBlockPos();
+    }
+
+    if (!ReadBlockFromDisk(block, blockPos, consensusParams))
+		return false;
+
+    if (block.GetHash() != pindex->GetBlockHash())
+		return error("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for %s at %s",
+			pindex->ToString(), pindex->GetBlockPos().ToString());
+
+    return true;
+}
+
+bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const FlatFilePos& pos, const CMessageHeader::MessageStartChars& message_start)
+{
+    FlatFilePos hpos = pos;
+    hpos.nPos -= 8; // Seek back 8 bytes for meta header
+    CAutoFile filein(OpenBlockFile(hpos, true), SER_DISK, CLIENT_VERSION);
+    if (filein.IsNull()) {
+		return error("%s: OpenBlockFile failed for %s", __func__, pos.ToString());
+    }
+
+    try {
+		CMessageHeader::MessageStartChars blk_start;
+		unsigned int blk_size;
+
+		filein >> blk_start >> blk_size;
+
+		if (memcmp(blk_start, message_start, CMessageHeader::MESSAGE_START_SIZE)) {
+			return error("%s: Block magic mismatch for %s: %s versus expected %s", __func__, pos.ToString(),
+				HexStr(blk_start),
+				HexStr(message_start));
+		}
+
+		if (blk_size > MAX_SIZE) {
+			return error("%s: Block data is larger than maximum deserialization size for %s: %s versus %s", __func__, pos.ToString(),
+				blk_size, MAX_SIZE);
+		}
+
+		block.resize(blk_size); // Zeroing of memory is intentional here
+		filein.read((char*)block.data(), blk_size);
+    } catch(const std::exception& e) {
+		return error("%s: Read from block file failed: %s for %s", __func__, e.what(), pos.ToString());
+    }
+
+    return true;
+}
+
+bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const CBlockIndex* pindex, const CMessageHeader::MessageStartChars& message_start)
+{
+    FlatFilePos block_pos;
+    {
+	LOCK(cs_main);
+	block_pos = pindex->GetBlockPos();
+    }
+
+    return ReadRawBlockFromDisk(block, block_pos, message_start);
+}
+
+template<typename T>
+static bool ReadBlockOrHeader(T& block, const FlatFilePos& pos, const Consensus::Params& consensusParams, bool fCheckPOW)
+{
+    block.SetNull();
+
+    CAutoFile filein(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
+    if (filein.IsNull())
+        return error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
+
+    try {
+        filein >> block;
+    } catch (const std::exception& e) {
+        return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
+    }
+
+    if (fCheckPOW && !CheckProofOfWork(block, consensusParams))
+        return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+
+    return true;
+}
+
+template<typename T>
+static bool ReadBlockOrHeader(T& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams, bool fCheckPOW)
+{
+    FlatFilePos blockPos;
+    {
+        LOCK(cs_main);
+        blockPos = pindex->GetBlockPos();
+    }
+
+    if (!ReadBlockOrHeader(block, blockPos, consensusParams, fCheckPOW))
+        return false;
+
+    if (block.GetHash() != pindex->GetBlockHash())
+        return error("ReadBlockFromDisk: GetHash() doesn't match index for %s at %s",
+                     pindex->ToString(), pindex->GetBlockPos().ToString());
+    return true;
+}
+
+bool ReadBlockHeaderFromDisk(CBlockHeader& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams, bool fCheckPOW)
+{
+    return ReadBlockOrHeader(block, pindex, consensusParams, fCheckPOW);
 }
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
