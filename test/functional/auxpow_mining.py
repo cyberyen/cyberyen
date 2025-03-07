@@ -32,7 +32,11 @@ class AuxpowMiningTest (BitcoinTestFramework):
   def set_test_params (self):
     self.num_nodes = 2
     # Must set '-dip3params=9000:9000' to create pre-dip3 blocks only
-    self.extra_args = [[],[]]
+    self.extra_args = [["-keypool=90"],["-keypool=90"]]
+
+  def setup_network(self):
+      self.add_nodes(self.num_nodes, extra_args=self.extra_args)
+      self.start_nodes(extra_args=self.extra_args)
 
   def add_options (self, parser):
     self.add_wallet_options(parser)
@@ -41,11 +45,27 @@ class AuxpowMiningTest (BitcoinTestFramework):
                          help="Test behaviour with SegWit active")
 
   def run_test (self):
-    # Activate segwit if requested.
-    if self.options.segwit:
-      self.generate(self.nodes[0], 500)
+    # if not self.nodes[0].listwallets():
+    #   print("---> CREATEWALLET")
+    #   self.nodes[0].createwallet("default_wallet1")
+    #   self.nodes[1].createwallet("default_wallet2")
+    #   print("---> END CREATEWALLET")
 
-    # Test with getauxblock and createauxblock/submitauxblock.
+    #   info = self.nodes[0].getwalletinfo()
+    #   print("Keypool size:", info["keypoolsize"])
+
+    # Activate segwit if requested.
+    self.nodes[0].createwallet(wallet_name="default_wallet12")
+    self.nodes[1].createwallet(wallet_name="default_wallet22")
+    new_addr1 = self.nodes[0].getnewaddress()
+    new_addr2 = self.nodes[1].getnewaddress()
+    info = self.nodes[0].getwalletinfo()
+    info2 = self.nodes[0].createwallet("default_wallet1")
+    print(f"WALLET INFO2 ==== {info2}")
+    print(f"WALLET INFO ==== {info}")
+    self.nodes[0].generate(500)
+    self.nodes[0].keypoolrefill(100)
+    self.nodes[1].keypoolrefill(100)
     self.test_getauxblock ()
     self.test_create_submit_auxblock ()
 
@@ -54,7 +74,6 @@ class AuxpowMiningTest (BitcoinTestFramework):
     Common test code that is shared between the tests for getauxblock and the
     createauxblock / submitauxblock method pair.
     """
-
     # Verify data that can be found in another way.
     auxblock = create ()
     assert_equal (auxblock['chainid'], CHAIN_ID)

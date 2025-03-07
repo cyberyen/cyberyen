@@ -1359,9 +1359,7 @@ public:
     auto op_dest = rdest.GetReservedDestination(false);
     rdest.KeepDestination ();
     if (!op_dest) {
-         throw JSONRPCError (RPC_WALLET_KEYPOOL_RAN_OUT,
-                          "Error: Keypool ran out,"
-                          " please call keypoolrefill first");
+         throw JSONRPCError (RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
     } else {
         dest = *op_dest;
         CScript res = GetScriptForDestination (dest);

@@ -297,11 +297,6 @@ class TestNode():
         self.log.debug("TestNode.generate() dispatches `generate` call to `generatetoaddress`")
         return self.generatetoaddress(nblocks=nblocks, address=self.get_deterministic_priv_key().address, maxtries=maxtries)
 
-    def generatetoaddress(self, nblocks, address, maxtries=1000000):
-        """Generate blocks to a given address."""
-        return self.__getattr__('generatetoaddress')(nblocks, address, maxtries)
-
-
     def get_wallet_rpc(self, wallet_name):
         if self.use_cli:
             return RPCOverloadWrapper(self.cli("-rpcwallet={}".format(wallet_name)), True, self.descriptors)
