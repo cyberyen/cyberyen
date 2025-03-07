@@ -29,7 +29,6 @@ import socket
 import struct
 import time
 
-import cyberyen_scrypt
 from test_framework.siphash import siphash256
 from test_framework.util import hex_str_to_bytes, assert_equal
 
@@ -74,6 +73,13 @@ MSG_MWEB_BLOCK = MSG_BLOCK | MSG_WITNESS_FLAG | MSG_MWEB_FLAG
 MSG_MWEB_TX = MSG_WITNESS_TX | MSG_MWEB_FLAG
 MSG_MWEB_HEADER = 8 | MSG_MWEB_FLAG
 MSG_MWEB_LEAFSET = 9 | MSG_MWEB_FLAG
+
+# Constants for the auxpow block version.
+VERSION_AUXPOW = (1 << 8)
+VERSION_START_BIT = 16
+VERSION_CHAIN_START = (1 << VERSION_START_BIT)
+VERSIONAUXPOW_TOP_MASK = (1 << 28) + (1 << 29) + (1 << 30)
+CHAIN_ID = 16
 
 FILTER_TYPE_BASIC = 0
 
@@ -2157,7 +2163,7 @@ class MWEBOutput:
         return self.hash.to_hex()
 
     class MWEBCompactOutput:
-    __slots__ = ("commitment", "sender_pubkey", "receiver_pubkey", "message",
+        __slots__ = ("commitment", "sender_pubkey", "receiver_pubkey", "message",
                 "proof_hash", "signature", "hash")
 
     def __init__(self):

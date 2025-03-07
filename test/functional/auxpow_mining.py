@@ -6,7 +6,7 @@
 # Test the merge-mining RPC interface:
 # getauxblock, createauxblock, submitauxblock
 
-from test_framework.test_framework import CyberyenTestFramework
+from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
   assert_equal,
   assert_greater_than_or_equal,
@@ -25,14 +25,14 @@ from test_framework.messages import (
 )
 from decimal import Decimal
 
-class AuxpowMiningTest (CyberyenTestFramework):
+class AuxpowMiningTest (BitcoinTestFramework):
   def skip_test_if_missing_module(self):
     self.skip_if_no_wallet()
 
   def set_test_params (self):
     self.num_nodes = 2
     # Must set '-dip3params=9000:9000' to create pre-dip3 blocks only
-    self.extra_args = [['-dip3params=9000:9000'],['-dip3params=9000:9000']]
+    self.extra_args = [[],[]]
 
   def add_options (self, parser):
     self.add_wallet_options(parser)
