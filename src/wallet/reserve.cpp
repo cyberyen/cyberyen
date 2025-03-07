@@ -42,3 +42,22 @@ void ReserveDestination::ReturnDestination()
     nIndex = -1;
     address = CNoDestination();
 }
+
+util::Result<CTxDestination> ReserveDestination::GetReservedDestination(bool internal)
+{
+    m_spk_man = pwallet->GetScriptPubKeyMan(type, internal);
+    if (!m_spk_man) {
+        return util::Error{strprintf(_("Error: No %s addresses available."), FormatOutputType(type))};
+    }
+
+    if (nIndex == -1) {
+        CKeyPool keypool;
+        int64_t index;
+        auto op_address = m_spk_man->GetReservedDestination(type, internal, index, keypool);
+        if (!op_address) return op_address;
+        nIndex = index;
+        address = *op_address;
+        fInternal = keypool.fInternal;
+    }
+    return address;
+}

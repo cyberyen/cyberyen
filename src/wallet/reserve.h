@@ -2,11 +2,11 @@
 
 #include <outputtype.h>
 #include <script/standard.h>
+#include <util/result.h>
 
 // Forward Declarations
 class CWallet;
 class ScriptPubKeyMan;
-
 /** A wrapper to reserve an address from a wallet
  *
  * ReserveDestination is used to reserve an address.
@@ -53,6 +53,8 @@ public:
 
     //! Reserve an address
     bool GetReservedDestination(CTxDestination& pubkey, bool internal);
+    //! Reserve an address
+    util::Result<CTxDestination> GetReservedDestination(bool internal);
     //! Return reserved address
     void ReturnDestination();
     //! Keep the address. Do not return it's key to the keypool when this object goes out of scope
