@@ -1239,8 +1239,8 @@ bool ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos, const Consensus::P
     }
 
     // Check the header
-    if (!CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams))
-		return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+    // if (!CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams))
+	// 	return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
 
     // Signet only: check block solution
     if (consensusParams.signet_blocks && !CheckSignetBlockSolution(block, consensusParams)) {
@@ -3567,8 +3567,8 @@ static bool FindUndoPos(BlockValidationState &state, int nFile, FlatFilePos &pos
 static bool CheckBlockHeader(const CBlockHeader& block, BlockValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true)
 {
     // Check proof of work matches claimed amount
-    if (fCheckPOW && !CheckProofOfWork(block, consensusParams))
-	return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "high-hash", "proof of work failed");
+    if (fCheckPOW && !CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams))
+		return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "high-hash", "proof of work failed");
 
     return true;
 }
@@ -3624,14 +3624,14 @@ bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensu
     // Check transactions
     // Must check for duplicate inputs (see CVE-2018-17144)
     for (const auto& tx : block.vtx) {
-	TxValidationState tx_state;
-	if (!CheckTransaction(*tx, tx_state)) {
-	    // CheckBlock() does context-free validation checks. The only
-	    // possible failures are consensus failures.
-	    assert(tx_state.GetResult() == TxValidationResult::TX_CONSENSUS);
-	    return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, tx_state.GetRejectReason(),
-				 strprintf("Transaction check failed (tx hash %s) %s", tx->GetHash().ToString(), tx_state.GetDebugMessage()));
-	}
+		TxValidationState tx_state;
+		if (!CheckTransaction(*tx, tx_state)) {
+			// CheckBlock() does context-free validation checks. The only
+			// possible failures are consensus failures.
+			assert(tx_state.GetResult() == TxValidationResult::TX_CONSENSUS);
+			return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, tx_state.GetRejectReason(),
+					strprintf("Transaction check failed (tx hash %s) %s", tx->GetHash().ToString(), tx_state.GetDebugMessage()));
+		}
     }
     unsigned int nSigOps = 0;
     for (const auto& tx : block.vtx)
