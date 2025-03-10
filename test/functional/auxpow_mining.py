@@ -24,6 +24,7 @@ from test_framework.messages import (
     CHAIN_ID,
 )
 from decimal import Decimal
+from test_framework.authproxy import JSONRPCException
 
 class AuxpowMiningTest (BitcoinTestFramework):
   def skip_test_if_missing_module(self):
@@ -32,7 +33,7 @@ class AuxpowMiningTest (BitcoinTestFramework):
   def set_test_params (self):
     self.num_nodes = 2
     # Must set '-dip3params=9000:9000' to create pre-dip3 blocks only
-    self.extra_args = [["-keypool=90"],["-keypool=90"]]
+    self.extra_args = [["-keypool=1000"],["-keypool=1000"]]
 
   def setup_network(self):
       self.add_nodes(self.num_nodes, extra_args=self.extra_args)
@@ -45,27 +46,42 @@ class AuxpowMiningTest (BitcoinTestFramework):
                          help="Test behaviour with SegWit active")
 
   def run_test (self):
-    # if not self.nodes[0].listwallets():
-    #   print("---> CREATEWALLET")
-    #   self.nodes[0].createwallet("default_wallet1")
-    #   self.nodes[1].createwallet("default_wallet2")
-    #   print("---> END CREATEWALLET")
+    self.nodes[0].createwallet(wallet_name="default_wallet12", disable_private_keys=False)
+    self.nodes[1].createwallet(wallet_name="default_wallet22", disable_private_keys=False)
 
-    #   info = self.nodes[0].getwalletinfo()
-    #   print("Keypool size:", info["keypoolsize"])
+    self.nodes[0].importprivkey('cShn2dZmfaBVciRLWikeKW5MdERtje2S2HtnUgtTL5gtUhDqxNX6')
+    self.nodes[1].importprivkey('cShn2dZmfaBVciRLWikeKW5MdERtje2S2HtnUgtTL5gtUhDqxNX6')
 
-    # Activate segwit if requested.
-    self.nodes[0].createwallet(wallet_name="default_wallet12")
-    self.nodes[1].createwallet(wallet_name="default_wallet22")
-    new_addr1 = self.nodes[0].getnewaddress()
-    new_addr2 = self.nodes[1].getnewaddress()
-    info = self.nodes[0].getwalletinfo()
-    info2 = self.nodes[0].createwallet("default_wallet1")
-    print(f"WALLET INFO2 ==== {info2}")
-    print(f"WALLET INFO ==== {info}")
-    self.nodes[0].generate(500)
-    self.nodes[0].keypoolrefill(100)
-    self.nodes[1].keypoolrefill(100)
+    received_addresses = self.nodes[1].listreceivedbyaddress(minconf=0, include_empty=True, include_watchonly=True)
+
+    ADDRESS = received_addresses[2]["address"]
+    BURNADDRESS = received_addresses[1]["address"]
+    MWEBADDRESS = received_addresses[3]["address"]
+
+    self.nodes[0].generatetoaddress(1, ADDRESS)
+    self.nodes[1].generatetoaddress(1, ADDRESS)
+
+    try:
+      self.nodes[0].generatetoaddress(500, BURNADDRESS)
+    except JSONRPCException as e:
+      print("Expected fail: ", e.error)
+
+    try:
+      self.nodes[1].generatetoaddress(500, BURNADDRESS)
+    except JSONRPCException as e:
+      print("Expected fail: ", e.error)
+
+    self.nodes[0].sendtoaddress(MWEBADDRESS, 1)
+    self.nodes[1].sendtoaddress(MWEBADDRESS, 1)
+
+    self.nodes[0].generatetoaddress(10, BURNADDRESS)
+    self.nodes[1].generatetoaddress(10, BURNADDRESS)
+
+    print("Node[0] height: ", self.nodes[0].getblockcount())
+    print("Node[1] height: ", self.nodes[1].getblockcount())
+
+    self.nodes[1].keypoolrefill(1000)
+    self.nodes[1].keypoolrefill(1000)
     self.test_getauxblock ()
     self.test_create_submit_auxblock ()
 
