@@ -53,8 +53,6 @@ public:
 
     //! Reserve an address
     bool GetReservedDestination(CTxDestination& pubkey, bool internal);
-    //! Reserve an address
-    util::Result<CTxDestination> GetReservedDestination(bool internal);
     //! Return reserved address
     void ReturnDestination();
     //! Keep the address. Do not return it's key to the keypool when this object goes out of scope

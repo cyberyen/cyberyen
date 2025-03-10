@@ -2,28 +2,6 @@
 #include <wallet/scriptpubkeyman.h>
 #include <wallet/wallet.h>
 
-bool ReserveDestination::GetReservedDestination(CTxDestination& dest, bool internal)
-{
-    m_spk_man = pwallet->GetScriptPubKeyMan(type, internal);
-    if (!m_spk_man) {
-        return false;
-    }
-
-    if (nIndex == -1) {
-        m_spk_man->TopUp();
-
-        CKeyPool keypool;
-        int64_t reserved_index;
-        if (!m_spk_man->GetReservedDestination(type, internal, address, reserved_index, keypool)) {
-            return false;
-        }
-        nIndex = reserved_index;
-        fInternal = keypool.fInternal;
-    }
-    dest = address;
-    return true;
-}
-
 void ReserveDestination::KeepDestination()
 {
     if (nIndex != -1) {
@@ -43,21 +21,25 @@ void ReserveDestination::ReturnDestination()
     address = CNoDestination();
 }
 
-util::Result<CTxDestination> ReserveDestination::GetReservedDestination(bool internal)
+bool ReserveDestination::GetReservedDestination(CTxDestination& dest, bool internal)
 {
     m_spk_man = pwallet->GetScriptPubKeyMan(type, internal);
     if (!m_spk_man) {
-        return util::Error{strprintf(_("Error: No %s addresses available."), FormatOutputType(type))};
+        printf("Error: No %s addresses available.", FormatOutputType(type));
+        return false;
     }
 
-    if (nIndex == -1) {
+
+    if (nIndex == -1)
+    {
+        m_spk_man->TopUp();
+
         CKeyPool keypool;
-        int64_t index;
-        auto op_address = m_spk_man->GetReservedDestination(type, internal, index, keypool);
-        if (!op_address) return op_address;
-        nIndex = index;
-        address = *op_address;
+        if (!m_spk_man->GetReservedDestination(type, internal, address, nIndex, keypool)) {
+            return false;
+        }
         fInternal = keypool.fInternal;
     }
-    return address;
+    dest = address;
+    return true;
 }

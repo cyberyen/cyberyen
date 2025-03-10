@@ -24,6 +24,7 @@ from test_framework.messages import (
     CHAIN_ID,
 )
 from decimal import Decimal
+from test_framework.authproxy import JSONRPCException
 
 class AuxpowMiningTest (BitcoinTestFramework):
   def skip_test_if_missing_module(self):
@@ -35,8 +36,8 @@ class AuxpowMiningTest (BitcoinTestFramework):
     self.extra_args = [["-keypool=90"],["-keypool=90"]]
 
   def setup_network(self):
-      self.add_nodes(self.num_nodes, extra_args=self.extra_args)
-      self.start_nodes(extra_args=self.extra_args)
+    self.add_nodes(self.num_nodes, extra_args=self.extra_args)
+    self.start_nodes(extra_args=self.extra_args)
 
   def add_options (self, parser):
     self.add_wallet_options(parser)
@@ -45,27 +46,81 @@ class AuxpowMiningTest (BitcoinTestFramework):
                          help="Test behaviour with SegWit active")
 
   def run_test (self):
-    # if not self.nodes[0].listwallets():
-    #   print("---> CREATEWALLET")
-    #   self.nodes[0].createwallet("default_wallet1")
-    #   self.nodes[1].createwallet("default_wallet2")
-    #   print("---> END CREATEWALLET")
+    print("START1")
+    print("Node[0] height: ", self.nodes[0].getblockcount())
+    self.nodes[0].createwallet(wallet_name="default_wallet12", 
+                               disable_private_keys=False,
+                               blank=False,
+                               passphrase='',
+                               avoid_reuse=False,
+                               descriptors=False)
+    self.nodes[1].createwallet(wallet_name="default_wallet22", 
+                               disable_private_keys=False,
+                               blank=False,
+                               passphrase='',
+                               avoid_reuse=False,
+                               descriptors=False)
 
-    #   info = self.nodes[0].getwalletinfo()
-    #   print("Keypool size:", info["keypoolsize"])
+    print("START2")
+    self.nodes[0].importprivkey('cShn2dZmfaBVciRLWikeKW5MdERtje2S2HtnUgtTL5gtUhDqxNX6')
+    self.nodes[1].importprivkey('cShn2dZmfaBVciRLWikeKW5MdERtje2S2HtnUgtTL5gtUhDqxNX6')
 
-    # Activate segwit if requested.
-    self.nodes[0].createwallet(wallet_name="default_wallet12")
-    self.nodes[1].createwallet(wallet_name="default_wallet22")
-    new_addr1 = self.nodes[0].getnewaddress()
-    new_addr2 = self.nodes[1].getnewaddress()
-    info = self.nodes[0].getwalletinfo()
-    info2 = self.nodes[0].createwallet("default_wallet1")
-    print(f"WALLET INFO2 ==== {info2}")
-    print(f"WALLET INFO ==== {info}")
-    self.nodes[0].generate(500)
-    self.nodes[0].keypoolrefill(100)
-    self.nodes[1].keypoolrefill(100)
+    print("START3")
+    self.nodes[0].keypoolrefill()
+    self.nodes[1].keypoolrefill()
+    received_addresses = self.nodes[0].listreceivedbyaddress(minconf=0, include_empty=True, include_watchonly=True)
+    received_addresses = self.nodes[1].listreceivedbyaddress(minconf=0, include_empty=True, include_watchonly=True)
+
+    print("START4")
+    ADDRESS = received_addresses[2]["address"]
+    BURNADDRESS = received_addresses[1]["address"]
+    MWEBADDRESS = received_addresses[3]["address"]
+    ADDRESS2 = received_addresses[2]["address"]
+    BURNADDRESS2 = received_addresses[1]["address"]
+    MWEBADDRESS2 = received_addresses[3]["address"]
+    print(f"MWEB - {MWEBADDRESS}")
+    print(f"BURNADDRESS - {BURNADDRESS}")
+    print(f"ADDRESS - {ADDRESS}")
+    print(f"MWEB - {MWEBADDRESS2}")
+    print(f"BURNADDRESS - {BURNADDRESS2}")
+    print(f"ADDRESS - {ADDRESS2}")
+    print(f"List addrs - {received_addresses}")
+    self.nodes[0].generatetoaddress(1, ADDRESS)
+
+    self.nodes[0].keypoolrefill()
+    self.nodes[1].keypoolrefill()
+    try:
+      self.nodes[0].keypoolrefill()
+      self.nodes[1].keypoolrefill()
+      self.nodes[1].generatetoaddress(431, BURNADDRESS2)
+    except JSONRPCException as e:
+      print("Expected fail")
+    try:
+      self.nodes[0].keypoolrefill()
+      self.nodes[1].keypoolrefill()
+      self.nodes[0].generatetoaddress(431, BURNADDRESS)
+    except JSONRPCException as e:
+      print("Expected fail")
+
+    self.nodes[0].keypoolrefill()
+    self.nodes[1].keypoolrefill()
+    self.nodes[0].sendtoaddress(MWEBADDRESS, 1)
+    self.nodes[1].sendtoaddress(MWEBADDRESS2, 1)
+
+    self.nodes[0].generatetoaddress(10, BURNADDRESS)
+    print("Node[0] height: ", self.nodes[0].getblockcount())
+
+    self.nodes[0].keypoolrefill()
+    self.nodes[1].keypoolrefill()
+    self.nodes[1].generatetoaddress(10, BURNADDRESS2)
+    print("Node[1] height: ", self.nodes[1].getblockcount())
+
+    self.nodes[0].keypoolrefill()
+    self.nodes[1].keypoolrefill()
+    self.nodes[0].keypoolrefill(2000)
+    self.nodes[1].keypoolrefill(2000)
+    self.nodes[0].keypoolrefill()
+    self.nodes[1].keypoolrefill()
     self.test_getauxblock ()
     self.test_create_submit_auxblock ()
 
@@ -75,6 +130,10 @@ class AuxpowMiningTest (BitcoinTestFramework):
     createauxblock / submitauxblock method pair.
     """
     # Verify data that can be found in another way.
+    print("Node[0] height: ", self.nodes[0].getblockcount())
+    print("Node[1] height: ", self.nodes[1].getblockcount())
+    print("Node[0] w: ", self.nodes[0].getwalletinfo())
+    print("Node[1] w: ", self.nodes[1].getwalletinfo())
     auxblock = create ()
     assert_equal (auxblock['chainid'], CHAIN_ID)
     assert_equal (auxblock['height'], self.nodes[0].getblockcount () + 1)
