@@ -7,7 +7,12 @@
 # This is mostly about actually *solving* an auxpow block (with regtest
 # difficulty) or inspecting the information for verification.
 
+# This module requires a built and installed version of the ltc_scrypt
+# package, which can be downloaded from:
+# https://pypi.python.org/packages/source/l/ltc_scrypt/ltc_scrypt-1.0.tar.gz
+
 import binascii
+import ltc_scrypt
 
 from test_framework import auxpow
 
@@ -18,7 +23,7 @@ def computeAuxpow (block, target, ok):
   """
 
   (tx, header) = auxpow.constructAuxpow (block)
-  (header, _) = mineBlock (header, target, ok)
+  (header, _) = mineBlock2 (header, target, ok)
   return auxpow.finishAuxpow (tx, header)
 
 def mineAuxpowBlock (node, wallet):
@@ -83,3 +88,65 @@ def mineBlock (header, target, ok):
       break
 
   return (hexData, blockhash)
+
+def mineBlock2 (header, target, ok):
+  """
+  Given a block header, update the nonce until it is ok (or not)
+  for the given target.
+  """
+  print("OK == ", ok)
+  print("TARGET == ", target)
+  data = bytearray (binascii.unhexlify(header))
+  while True:
+    assert data[79] < 255
+    data[79] += 1
+    hexData = binascii.hexlify(data)
+
+    scrypt = getScryptPoW(hexData)
+    print("SCRYPT == ", scrypt)
+    if (ok and scrypt < target) or ((not ok) and scrypt > target):
+      break
+
+  blockhash = auxpow.doubleHashHex (hexData)
+  return (hexData, blockhash)
+
+# for now, just offer hashes to rpc until it matches the work we need
+def mineScryptAux (node, ok):
+  """
+  Mine an auxpow block on the given RPC connection.
+  """
+
+  auxblock = node.getauxblock ()
+  target =  auxpow.reverseHex (auxblock['_target'])
+
+  apow = computeAuxpow (auxblock['hash'], target, ok)
+  res = node.getauxblock (auxblock['hash'], apow)
+  return res
+
+def mineScryptBlock (header, target, ok):
+  """
+  Given a block header, update the nonce until it is ok (or not)
+  for the given target.
+  """
+
+  data = bytearray (binascii.unhexlify(header))
+  while True:
+    assert data[79] < 255
+    data[79] += 1
+    hexData = binascii.hexlify(data).decode("ascii")
+
+    scrypt = getScryptPoW(hexData)
+    if (ok and scrypt < target) or ((not ok) and scrypt > target):
+      break
+
+  blockhash = auxpow.doubleHashHex (hexData)
+  return (hexData, blockhash)
+
+def getScryptPoW(hexData):
+  """
+  Actual scrypt pow calculation
+  """
+
+  data = binascii.unhexlify(hexData)
+
+  return  auxpow.reverseHex(binascii.hexlify(ltc_scrypt.getPoWHash(data)))

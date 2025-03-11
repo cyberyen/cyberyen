@@ -225,6 +225,10 @@ public:
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartHeight = 0;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeoutHeight = 0;
 
+	consensus.fStrictChainId = true;
+	consensus.nAuxpowChainId = 16;
+	consensus.nAuxpowStartHeight = 0;
+
 	consensus.nMinimumChainWork = uint256S("0x00");
 	consensus.defaultAssumeValid = uint256S("0x00");
 
@@ -323,6 +327,10 @@ public:
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].bit = 4;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartTime = 0;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+
+	consensus.fStrictChainId = true;
+	consensus.nAuxpowChainId = 16;
+	consensus.nAuxpowStartHeight = 0;
 	
 	//consensus.nMinimumChainWork = uint256();
 	//consensus.defaultAssumeValid = uint256();

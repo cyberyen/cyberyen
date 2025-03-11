@@ -41,9 +41,10 @@ class AuxpowMiningTest (BitcoinTestFramework):
 
   def add_options (self, parser):
     self.add_wallet_options(parser)
-    parser.add_argument ("--segwit", dest="segwit", default=False,
-                         action="store_true",
-                         help="Test behaviour with SegWit active")
+    parser.add_argument("--segwit", dest="segwit", action="store_true", 
+                    help="Test behaviour with SegWit active")
+    parser.add_argument("--mweb", dest="mweb", action="store_true", 
+                    help="Test behaviour with MWEB active")
 
   def run_test (self):
     print("START1")
@@ -60,6 +61,9 @@ class AuxpowMiningTest (BitcoinTestFramework):
                                passphrase='',
                                avoid_reuse=False,
                                descriptors=False)
+
+    print("--Connecting--")
+    self.connect_nodes(0,1)
 
     print("START2")
     self.nodes[0].importprivkey('cShn2dZmfaBVciRLWikeKW5MdERtje2S2HtnUgtTL5gtUhDqxNX6')
@@ -122,19 +126,22 @@ class AuxpowMiningTest (BitcoinTestFramework):
     self.nodes[0].keypoolrefill()
     self.nodes[1].keypoolrefill()
     self.test_getauxblock ()
-    self.test_create_submit_auxblock ()
+    self.tetest_getauxblockst_create_submit_auxblock ()
 
   def test_common (self, create, submit):
     """
     Common test code that is shared between the tests for getauxblock and the
     createauxblock / submitauxblock method pair.
     """
-    print("PeerInfo1 Node[0]: ", self.nodes[0].getpeerinfo())
-    print("PeerInfo Node[1]: ", self.nodes[1].getpeerinfo())
+    print("--PeerInfo--")
+    print("Node[0] PeerInfo: ", self.nodes[0].getpeerinfo())
+    print("Node[1] PeerInfo: ", self.nodes[1].getpeerinfo())
 
+    print("--BestBlockHash--")
     print("Node[0] BestBlockHash: ", self.nodes[0].getbestblockhash())
     print("Node[1] BestBlockHash: ", self.nodes[1].getbestblockhash())
 
+    print("--Info--")
     # Verify data that can be found in another way.
     print("Node[0] height: ", self.nodes[0].getblockcount())
     print("Node[1] height: ", self.nodes[1].getblockcount())
@@ -150,11 +157,8 @@ class AuxpowMiningTest (BitcoinTestFramework):
     auxblock2 = create ()
     assert_equal (auxblock2, auxblock)
 
-    print("PeerInfo2 Node[0]: ", self.nodes[0].getpeerinfo())
-    print("PeerInfo Node[1]: ", self.nodes[1].getpeerinfo())
-
     # If we receive a new block, the old hash will be replaced.
-    self.sync_all ()
+    self.sync_blocks()
     self.generate(self.nodes[1], 1)
     auxblock2 = create ()
     assert auxblock['hash'] != auxblock2['hash']
@@ -178,7 +182,7 @@ class AuxpowMiningTest (BitcoinTestFramework):
     # Cross-check target value with GBT to make explicitly sure that it is
     # correct (not just implicitly by successfully mining blocks for it
     # later on).
-    gbt = self.nodes[0].getblocktemplate ({"rules": ["segwit"]})
+    gbt = self.nodes[0].getblocktemplate ({"rules": ["segwit", "mweb"]})
     assert_equal (target, gbt['target'].encode ("ascii"))
 
     # Compute invalid auxpow.
