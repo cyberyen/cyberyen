@@ -129,6 +129,12 @@ class AuxpowMiningTest (BitcoinTestFramework):
     Common test code that is shared between the tests for getauxblock and the
     createauxblock / submitauxblock method pair.
     """
+    print("PeerInfo1 Node[0]: ", self.nodes[0].getpeerinfo())
+    print("PeerInfo Node[1]: ", self.nodes[1].getpeerinfo())
+
+    print("Node[0] BestBlockHash: ", self.nodes[0].getbestblockhash())
+    print("Node[1] BestBlockHash: ", self.nodes[1].getbestblockhash())
+
     # Verify data that can be found in another way.
     print("Node[0] height: ", self.nodes[0].getblockcount())
     print("Node[1] height: ", self.nodes[1].getblockcount())
@@ -143,6 +149,9 @@ class AuxpowMiningTest (BitcoinTestFramework):
     # Calling again should give the same block.
     auxblock2 = create ()
     assert_equal (auxblock2, auxblock)
+
+    print("PeerInfo2 Node[0]: ", self.nodes[0].getpeerinfo())
+    print("PeerInfo Node[1]: ", self.nodes[1].getpeerinfo())
 
     # If we receive a new block, the old hash will be replaced.
     self.sync_all ()

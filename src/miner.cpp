@@ -125,7 +125,10 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     assert(pindexPrev != nullptr);
     nHeight = pindexPrev->nHeight + 1;
 
-    pblock->nVersion = ComputeBlockVersion(pindexPrev, chainparams.GetConsensus());
+    const int32_t nChainId = chainparams.GetConsensus ().nAuxpowChainId;
+    const int32_t nVersion = ComputeBlockVersion(pindexPrev, chainparams.GetConsensus());
+    pblock->SetBaseVersion(nVersion, nChainId);
+
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
     if (chainparams.MineBlocksOnDemand())
@@ -157,7 +160,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     int nPackagesSelected = 0;
     int nDescendantsUpdated = 0;
     addPackageTxs(nPackagesSelected, nDescendantsUpdated);
-
     if (fIncludeMWEB) {
         mweb_miner.AddHogExTransaction(pindexPrev, pblock, pblocktemplate.get(), nFees);
     }

@@ -87,12 +87,8 @@ public:
     {
         return GetBaseVersion(nVersion);
     }
-    inline int32_t GetOldBaseVersion() const
-    {
-        return GetOldBaseVersion(nVersion);
-    }
+
     static int32_t GetBaseVersion(const int32_t &ver);
-    static int32_t GetOldBaseVersion(const int32_t &ver);
 
     static inline bool IsValidBaseVersion(const int32_t &nBaseVersion) {
         return (nBaseVersion & ~VERSIONAUXPOW_TOP_MASK) < VERSION_CHAIN_START;

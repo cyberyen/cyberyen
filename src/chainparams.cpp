@@ -323,7 +323,7 @@ public:
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].bit = 4;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartTime = 0;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
-
+	
 	//consensus.nMinimumChainWork = uint256();
 	//consensus.defaultAssumeValid = uint256();
 

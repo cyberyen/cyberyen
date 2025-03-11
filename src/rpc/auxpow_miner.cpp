@@ -44,8 +44,11 @@ void auxMiningCheck(const node::JSONRPCRequest& request)
   {
     LOCK (cs_main);
     const auto auxpowStart = Params ().GetConsensus ().nAuxpowStartHeight;
-    if (node.chainman->ActiveChain().Height () + 1 < auxpowStart)
-      throw std::runtime_error ("mining auxblock method is not yet available");
+    if (node.chainman->ActiveChain().Height() + 1 < auxpowStart) {
+      std::string err_msg = "mining auxblock method is not yet available: method will be available at height ";
+      err_msg += std::to_string(auxpowStart);
+      throw std::runtime_error(err_msg);
+    }
   }
 }
 

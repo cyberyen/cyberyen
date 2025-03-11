@@ -21,7 +21,6 @@ class CBlock;
 class CBlockHeader;
 class CBlockIndex;
 class UniValue;
-class Chainstate;
 namespace auxpow_tests
 {
 class CAuxPowForTest;
