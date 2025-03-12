@@ -310,6 +310,9 @@ public:
 	consensus.fSimplifiedRewards = true;
 	consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
 	consensus.nMinerConfirmationWindow = 144;
+	consensus.nAuxpowStartHeight = 434;
+	consensus.nAuxpowChainId = 16;
+	consensus.fStrictChainId = true;
 
 	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
 	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 0;
