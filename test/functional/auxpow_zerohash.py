@@ -9,7 +9,7 @@
 # always been the case, but the test just makes sure this is explicitly
 # tested for the future as well.)
 
-from test_framework.test_framework import CyberyenTestFramework
+from test_framework.test_framework import BitcoinTestFramework
 from test_framework.blocktools import (
   create_block,
   create_coinbase,
@@ -52,7 +52,7 @@ class P2PBlockGetter (P2PInterface):
     return self.block
 
 
-class AuxpowZeroHashTest (CyberyenTestFramework):
+class AuxpowZeroHashTest (BitcoinTestFramework):
 
   def set_test_params (self):
     self.num_nodes = 1
