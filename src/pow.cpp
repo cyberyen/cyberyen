@@ -242,6 +242,12 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     assert(pblock != nullptr);
     const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
 
+    // Regtest
+    if (params.fPowNoRetargeting)
+    {
+        return pindexLast->nBits;
+    }
+
     if (pindexLast->nHeight + 1 < params.nPowKGWHeight) {
 	return GetNextWorkRequiredBTC(pindexLast, pblock, params);
     }

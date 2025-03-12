@@ -82,6 +82,7 @@ class AuxpowMiningTest (BitcoinTestFramework):
     ADDRESS2 = received_addresses[2]["address"]
     BURNADDRESS2 = received_addresses[1]["address"]
     MWEBADDRESS2 = received_addresses[3]["address"]
+    print("----")
     print(f"MWEB - {MWEBADDRESS}")
     print(f"BURNADDRESS - {BURNADDRESS}")
     print(f"ADDRESS - {ADDRESS}")
@@ -89,6 +90,7 @@ class AuxpowMiningTest (BitcoinTestFramework):
     print(f"BURNADDRESS - {BURNADDRESS2}")
     print(f"ADDRESS - {ADDRESS2}")
     print(f"List addrs - {received_addresses}")
+    print("----")
     self.nodes[0].generatetoaddress(1, ADDRESS)
 
     self.nodes[0].keypoolrefill()
@@ -112,12 +114,15 @@ class AuxpowMiningTest (BitcoinTestFramework):
     self.nodes[1].sendtoaddress(MWEBADDRESS2, 1)
 
     self.nodes[0].generatetoaddress(10, BURNADDRESS)
-    print("Node[0] height: ", self.nodes[0].getblockcount())
 
     self.nodes[0].keypoolrefill()
     self.nodes[1].keypoolrefill()
     self.nodes[1].generatetoaddress(10, BURNADDRESS2)
+    
+    print("----")
+    print("Node[0] height: ", self.nodes[0].getblockcount())
     print("Node[1] height: ", self.nodes[1].getblockcount())
+    print("----")
 
     self.nodes[0].keypoolrefill()
     self.nodes[1].keypoolrefill()
@@ -133,13 +138,6 @@ class AuxpowMiningTest (BitcoinTestFramework):
     Common test code that is shared between the tests for getauxblock and the
     createauxblock / submitauxblock method pair.
     """
-    print("--PeerInfo--")
-    print("Node[0] PeerInfo: ", self.nodes[0].getpeerinfo())
-    print("Node[1] PeerInfo: ", self.nodes[1].getpeerinfo())
-
-    print("--BestBlockHash--")
-    print("Node[0] BestBlockHash: ", self.nodes[0].getbestblockhash())
-    print("Node[1] BestBlockHash: ", self.nodes[1].getbestblockhash())
 
     print("--Info--")
     # Verify data that can be found in another way.

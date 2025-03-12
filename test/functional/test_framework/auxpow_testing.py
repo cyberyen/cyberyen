@@ -24,6 +24,8 @@ def computeAuxpow (block, target, ok):
 
   (tx, header) = auxpow.constructAuxpow (block)
   (header, _) = mineBlock2 (header, target, ok)
+  print("TX == ", tx)
+  print("HEADER == ", header)
   return auxpow.finishAuxpow (tx, header)
 
 def mineAuxpowBlock (node, wallet):
@@ -94,8 +96,7 @@ def mineBlock2 (header, target, ok):
   Given a block header, update the nonce until it is ok (or not)
   for the given target.
   """
-  print("OK == ", ok)
-  print("TARGET == ", target)
+
   data = bytearray (binascii.unhexlify(header))
   while True:
     assert data[79] < 255
@@ -103,11 +104,12 @@ def mineBlock2 (header, target, ok):
     hexData = binascii.hexlify(data)
 
     scrypt = getScryptPoW(hexData)
-    print("SCRYPT == ", scrypt)
     if (ok and scrypt < target) or ((not ok) and scrypt > target):
       break
 
   blockhash = auxpow.doubleHashHex (hexData)
+  print("BLOCKHASH IN MINEBLOCK: ", blockhash)
+  print("HEX DATA IN MINEBLOCK: ", hexData)
   return (hexData, blockhash)
 
 # for now, just offer hashes to rpc until it matches the work we need
