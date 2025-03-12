@@ -3771,6 +3771,14 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, BlockValidatio
 	return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, strprintf("bad-version(0x%08x)", block.nVersion),
 				 strprintf("rejected nVersion=0x%08x block", block.nVersion));
 
+	const auto& baseVer = block.GetBaseVersion();
+	const int32_t& nChainID = block.GetChainId();
+	if(nHeight > consensusParams.nAuxpowStartHeight)
+	{
+		if((!CPureBlockHeader::IsValidBaseVersion(baseVer) || (nChainID > 0 && nChainID != consensusParams.nAuxpowChainId)))
+				return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, strprintf("bad-version(0x%08x)", baseVer),
+									strprintf("rejected nVersion=0x%08x block", block.nVersion));
+	}
     return true;
 }
 

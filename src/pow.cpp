@@ -242,6 +242,12 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     assert(pblock != nullptr);
     const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
 
+    // Regtest
+    if (params.fPowNoRetargeting)
+    {
+        return pindexLast->nBits;
+    }
+
     if (pindexLast->nHeight + 1 < params.nPowKGWHeight) {
 	return GetNextWorkRequiredBTC(pindexLast, pblock, params);
     }
@@ -256,17 +262,17 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // so we only apply this to post-BTC algos.
     if (params.fPowAllowMinDifficultyBlocks) {
 	// recent block is more than 2 hours old
-	if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + 2 * 60 * 60) {
-	    return bnPowLimit.GetCompact();
-	}
-	// recent block is more than 10 minutes old
-	if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing * 4) {
-	    arith_uint256 bnNew = arith_uint256().SetCompact(pindexLast->nBits) * 10;
-	    if (bnNew > bnPowLimit) {
-		return bnPowLimit.GetCompact();
-	    }
-	    return bnNew.GetCompact();
-	}
+        if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + 2 * 60 * 60) {
+            return bnPowLimit.GetCompact();
+        }
+        // recent block is more than 10 minutes old
+        if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing * 4) {
+            arith_uint256 bnNew = arith_uint256().SetCompact(pindexLast->nBits) * 10;
+            if (bnNew > bnPowLimit) {
+            return bnPowLimit.GetCompact();
+            }
+            return bnNew.GetCompact();
+        }
     }
 
     if (pindexLast->nHeight + 1 < params.nPowDGWHeight) {
@@ -279,7 +285,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nFirstBlockTime, const Consensus::Params& params)
 {
     if (params.fPowNoRetargeting)
-	return pindexLast->nBits;
+	    return pindexLast->nBits;
 
     // Limit adjustment step
     int64_t nActualTimespan = pindexLast->GetBlockTime() - nFirstBlockTime;
