@@ -33,11 +33,15 @@ class AuxpowMiningTest (BitcoinTestFramework):
   def set_test_params (self):
     self.num_nodes = 2
     # Must set '-dip3params=9000:9000' to create pre-dip3 blocks only
-    self.extra_args = [[],[]]
+    self.extra_args = [['-whitelist=noban@127.0.0.1', '-debug'],['-whitelist=noban@127.0.0.1', '-debug']]
 
   def setup_network(self):
     self.add_nodes(self.num_nodes, extra_args=self.extra_args)
     self.start_nodes(extra_args=self.extra_args)
+    self.connect_nodes(0, 1)
+    self.connect_nodes(1, 0)
+    print(f"PeerINFO ->>>>>> {self.nodes[0].getpeerinfo()}")
+    print(f"PeerINFO ->>>>>> {self.nodes[1].getpeerinfo()}")
 
   def add_options (self, parser):
     self.add_wallet_options(parser)
@@ -63,23 +67,23 @@ class AuxpowMiningTest (BitcoinTestFramework):
     received_addresses = self.nodes[0].listreceivedbyaddress(minconf=0, include_empty=True, include_watchonly=True)
 
     print("START4")
-    ADDRESS = received_addresses[2]["address"]
-    BURNADDRESS = received_addresses[1]["address"]
-    MWEBADDRESS = received_addresses[3]["address"]
-    print(f"MWEB - {MWEBADDRESS}")
-    print(f"BURNADDRESS - {BURNADDRESS}")
-    print(f"ADDRESS - {ADDRESS}")
+    self.ADDRESS = received_addresses[2]["address"]
+    self.BURNADDRESS = received_addresses[1]["address"]
+    self.MWEBADDRESS = received_addresses[3]["address"]
+    print(f"MWEB - {self.MWEBADDRESS}")
+    print(f"BURNADDRESS - {self.BURNADDRESS}")
+    print(f"ADDRESS - {self.ADDRESS}")
     print(f"List addrs - {received_addresses}")
-    self.nodes[0].generatetoaddress(1, ADDRESS)
+    self.nodes[0].generatetoaddress(1, self.ADDRESS)
 
     try:
-      self.nodes[0].generatetoaddress(431, BURNADDRESS)
+      self.nodes[0].generatetoaddress(431, self.BURNADDRESS)
     except JSONRPCException as e:
       print("Expected fail")
 
-    self.nodes[0].sendtoaddress(MWEBADDRESS, 1)
+    self.nodes[0].sendtoaddress(self.MWEBADDRESS, 1)
 
-    self.nodes[0].generatetoaddress(10, BURNADDRESS)
+    self.nodes[0].generatetoaddress(10, self.BURNADDRESS)
     print("Node[0] height: ", self.nodes[0].getblockcount())
     print("Node[1] height: ", self.nodes[1].getblockcount())
 
@@ -106,8 +110,15 @@ class AuxpowMiningTest (BitcoinTestFramework):
 
     # If we receive a new block, the old hash will be replaced.
     self.sync_all ()
-    self.generate(self.nodes[1], 1)
+    print("1Node[0] height: ", self.nodes[0].getblockcount())
+    print("1Node[1] height: ", self.nodes[1].getblockcount())
+    self.nodes[1].generatetoaddress(1, self.ADDRESS)
+    self.sync_all ()
+
+    print("12Node[0] height: ", self.nodes[0].getblockcount())
+    print("12Node[1] height: ", self.nodes[1].getblockcount())
     auxblock2 = create ()
+    print(f"{auxblock['hash']} == {auxblock2['hash']}")
     assert auxblock['hash'] != auxblock2['hash']
     assert_raises_rpc_error (-8, 'block hash unknown', submit,
                              auxblock['hash'], "x")
@@ -118,28 +129,34 @@ class AuxpowMiningTest (BitcoinTestFramework):
 
     # Invalidate the block again, send a transaction and query for the
     # auxblock to solve that contains the transaction.
-    self.generate(self.nodes[0], 1)
+    self.nodes[1].generatetoaddress(1, self.ADDRESS)
     addr = self.nodes[1].get_deterministic_priv_key ().address
     txid = self.nodes[0].sendtoaddress (addr, 1)
     self.sync_all ()
     assert_equal (self.nodes[1].getrawmempool (), [txid])
     auxblock = create ()
     target = reverseHex (auxblock['_target'])
-
+    print(target)
     # Cross-check target value with GBT to make explicitly sure that it is
     # correct (not just implicitly by successfully mining blocks for it
     # later on).
-    gbt = self.nodes[0].getblocktemplate ({"rules": ["segwit"]})
+    gbt = self.nodes[0].getblocktemplate ({"rules": ["mweb", "segwit"]})
     assert_equal (target, gbt['target'].encode ("ascii"))
 
     # Compute invalid auxpow.
+    print("12Node[0] height: ", self.nodes[0].getblockcount())
+    print("12Node[1] height: ", self.nodes[1].getblockcount())
     apow = computeAuxpow (auxblock['hash'], target, False)
     res = submit (auxblock['hash'], apow)
+    self.sync_all ()
+    print("12Node[0] height: ", self.nodes[0].getblockcount())
+    print("12Node[1] height: ", self.nodes[1].getblockcount())
     assert not res
 
     # Compute and submit valid auxpow.
     apow = computeAuxpow (auxblock['hash'], target, True)
     res = submit (auxblock['hash'], apow)
+    self.sync_all ()
     assert res
 
     # Make sure that the block is indeed accepted.

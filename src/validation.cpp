@@ -3567,7 +3567,7 @@ static bool FindUndoPos(BlockValidationState &state, int nFile, FlatFilePos &pos
 static bool CheckBlockHeader(const CBlockHeader& block, BlockValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true)
 {
     // Check proof of work matches claimed amount
-    if (fCheckPOW && !CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams))
+    if (fCheckPOW && !CheckProofOfWork(block, consensusParams))
 		return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "high-hash", "proof of work failed");
 
     return true;
@@ -4108,14 +4108,14 @@ bool ChainstateManager::ProcessNewBlock(const CChainParams& chainparams, const s
 	// Ensure that CheckBlock() passes before calling AcceptBlock, as
 	// belt-and-suspenders.
 	bool ret = CheckBlock(*pblock, state, chainparams.GetConsensus());
-	if (ret) {
-	    // Store to disk
-	    ret = ::ChainstateActive().AcceptBlock(pblock, state, chainparams, &pindex, fForceProcessing, nullptr, fNewBlock);
-	}
-	if (!ret) {
-	    GetMainSignals().BlockChecked(*pblock, state);
-	    return error("%s: AcceptBlock FAILED (%s)", __func__, state.ToString());
-	}
+		if (ret) {
+			// Store to disk
+			ret = ::ChainstateActive().AcceptBlock(pblock, state, chainparams, &pindex, fForceProcessing, nullptr, fNewBlock);
+		}
+		if (!ret) {
+			GetMainSignals().BlockChecked(*pblock, state);
+			return error("%s: AcceptBlock FAILED (%s)", __func__, state.ToString());
+		}
     }
 
     NotifyHeaderTip();

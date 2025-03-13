@@ -108,8 +108,7 @@ public:
 
     SERIALIZE_METHODS(CBlock, obj)
     {
-        READWRITEAS(CBlockHeader, obj);
-        READWRITE(obj.vtx);
+        READWRITE(AsBase<CBlockHeader>(obj), obj.vtx);
         if (!(s.GetVersion() & SERIALIZE_NO_MWEB)) {
             if (obj.vtx.size() >= 2 && obj.vtx.back()->IsHogEx()) {
                 READWRITE(obj.mweb_block);

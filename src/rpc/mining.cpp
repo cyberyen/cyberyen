@@ -39,6 +39,7 @@
 #include <versionbitsinfo.h>
 #include <warnings.h>
 #include <wallet/reserve.h>
+#include <logging.h>
 
 #include <memory>
 #include <stdint.h>
@@ -1459,7 +1460,14 @@ static RPCHelpMan getauxblock()
         = AuxpowMiner::get().submitAuxBlock(request, hash, request.params[1].get_str());
     if (fAccepted)
         g_mining_keys.MarkBlockSubmitted(pwallet, hash);
-
+	if(fAccepted)
+	{
+		LogPrint(BCLog::NET, "ACCEPNED----------------------------_>\n");
+	}
+	else
+	{
+		LogPrint(BCLog::NET, "CANT ACCEPNED----------------------------_>\n");
+	}
     return fAccepted;
 },
     };
