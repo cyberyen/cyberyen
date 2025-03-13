@@ -349,6 +349,9 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* tip, const CBlockIn
 	result.pushKV("mweb", mweb_block);
     }
 
+	if (block.auxpow)
+        result.pushKV("auxpow", AuxpowToJSON(*block.auxpow));
+
     if (blockindex->pprev)
 	result.pushKV("previousblockhash", blockindex->pprev->GetBlockHash().GetHex());
     if (pnext)
@@ -1152,6 +1155,20 @@ static RPCHelpMan getblock()
 		    {RPCResult::Type::NUM, "difficulty", "The difficulty"},
 		    {RPCResult::Type::STR_HEX, "chainwork", "Expected number of hashes required to produce the chain up to this block (in hex)"},
 		    {RPCResult::Type::NUM, "nTx", "The number of transactions in the block"},
+			{RPCResult::Type::OBJ, "auxpow", "The auxpow object attached to this block",
+			{
+				{RPCResult::Type::OBJ, "tx", "The parent chain coinbase tx of this auxpow",
+				{
+					{RPCResult::Type::ELISION, "", ""},
+				}},
+				{RPCResult::Type::NUM, "index", "Merkle index of the parent coinbase"},
+				{RPCResult::Type::ARR, "merklebranch", "Merkle branch's of the parent coinbase",
+					{{RPCResult::Type::STR_HEX, "", "Merkle branch"}}},
+				{RPCResult::Type::NUM, "chainindex", "Index in the auxpow Merkle tree"},
+				{RPCResult::Type::ARR, "chainmerklebranch", "Branch's in the auxpow Merkle tree",
+					{{RPCResult::Type::STR_HEX, "", "auxpow branch"}}},
+				{RPCResult::Type::STR_HEX, "parentblock", "The parent block serialised as hex string"},
+			}},
 		    {RPCResult::Type::STR_HEX, "previousblockhash", "The hash of the previous block"},
 		    {RPCResult::Type::STR_HEX, "nextblockhash", "The hash of the next block"},
 		}},
