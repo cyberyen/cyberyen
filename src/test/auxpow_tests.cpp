@@ -283,7 +283,7 @@ BOOST_FIXTURE_TEST_CASE (check_auxpow, BasicTestingSetup)
   BOOST_CHECK (auxpow.check (hashAux, ourChainId, params));
   auxpow = builder.get (builder.parentBlock.vtx[1]);
   BOOST_CHECK (!auxpow.check (hashAux, ourChainId, params));
-
+ 
   /* The parent chain can't have the same chain ID if its using auxpow.  */
   CAuxpowBuilder builder2(builder);
   builder2.parentBlock.SetChainId (100);
@@ -312,7 +312,7 @@ BOOST_FIXTURE_TEST_CASE (check_auxpow, BasicTestingSetup)
   BOOST_CHECK (!builder2.get ().check (hashAux, ourChainId, params));
 
   /* Build a non-header legacy version and check that it should be rejected, no backwards compat auxpow unlike NMC, 
-  because bridge smart contracts validates auxpow and doesn't have compat fallback, so syscoin consensus needs to enforce.  */
+  because bridge smart contracts validates auxpow and doesn't have compat fallback, so Bellscoin consensus needs to enforce.  */
   builder2 = builder;
   index = CAuxPow::getExpectedIndex (nonce, ourChainId, height);
   auxRoot = builder2.buildAuxpowChain (hashAux, height, index);
@@ -404,17 +404,16 @@ mineBlock (CBlockHeader& block, bool ok, int nBits = -1)
   block.nNonce = 0;
   while (true)
     {
-      const bool nowOk = (UintToArith256 (block.GetHash ()) <= target);
+      const bool nowOk = (UintToArith256 (block.GetPoWHash ()) <= target);
       if ((ok && nowOk) || (!ok && !nowOk))
         break;
 
       ++block.nNonce;
     }
-
   if (ok)
-    BOOST_CHECK (CheckProofOfWork (block.GetHash (), nBits, Params().GetConsensus()));
+    BOOST_CHECK (CheckProofOfWork (block.GetPoWHash (), nBits, Params().GetConsensus()));
   else
-    BOOST_CHECK (!CheckProofOfWork (block.GetHash (), nBits, Params().GetConsensus()));
+    BOOST_CHECK (!CheckProofOfWork (block.GetPoWHash (), nBits, Params().GetConsensus()));
 }
 
 BOOST_FIXTURE_TEST_CASE (auxpow_pow, BasicTestingSetup)
@@ -423,7 +422,7 @@ BOOST_FIXTURE_TEST_CASE (auxpow_pow, BasicTestingSetup)
   SelectParams (CBaseChainParams::REGTEST);
   const Consensus::Params& params = Params ().GetConsensus ();
 
-  const arith_uint256 target = (~arith_uint256 (0) >> 1);
+  const arith_uint256 target = (~arith_uint256 (0) >> 6);
   CBlockHeader block;
   block.nBits = target.GetCompact ();
 
@@ -431,20 +430,21 @@ BOOST_FIXTURE_TEST_CASE (auxpow_pow, BasicTestingSetup)
 
   block.nVersion = 1;
   mineBlock (block, true);
-  BOOST_CHECK (CheckProofOfWork (block, params));
+  BOOST_CHECK (CheckProofOfWork({block}, params));
 
-  block.nVersion = 2;
+  block.nVersion = 3;
   mineBlock (block, true);
-  BOOST_CHECK (CheckProofOfWork (block, params));
+  BOOST_CHECK (CheckProofOfWork({block}, params));
 
   block.SetBaseVersion (2, params.nAuxpowChainId);
+
   mineBlock (block, true);
-  BOOST_CHECK (CheckProofOfWork (block, params));
+  BOOST_CHECK (CheckProofOfWork({block}, params));
 
   block.SetChainId (params.nAuxpowChainId + 1);
   block.SetAuxpowVersion (true);
   mineBlock (block, true);
-  BOOST_CHECK (!CheckProofOfWork (block, params));
+  BOOST_CHECK (!CheckProofOfWork({block}, params));
 
   /* Check the case when the block does not have auxpow (this is true
      right now).  */
@@ -452,13 +452,12 @@ BOOST_FIXTURE_TEST_CASE (auxpow_pow, BasicTestingSetup)
   block.SetChainId (params.nAuxpowChainId);
   block.SetAuxpowVersion (true);
   mineBlock (block, true);
-  BOOST_CHECK (!CheckProofOfWork (block, params));
-
+  BOOST_CHECK (!CheckProofOfWork({block}, params));
   block.SetAuxpowVersion (false);
   mineBlock (block, true);
-  BOOST_CHECK (CheckProofOfWork (block, params));
+  BOOST_CHECK (CheckProofOfWork({block}, params));
   mineBlock (block, false);
-  BOOST_CHECK (!CheckProofOfWork (block, params));
+  BOOST_CHECK (!CheckProofOfWork({block}, params));
 
   /* ****************************************** */
   /* Check the case that the block has auxpow.  */
@@ -478,10 +477,10 @@ BOOST_FIXTURE_TEST_CASE (auxpow_pow, BasicTestingSetup)
   builder.setCoinbase (CScript () << data);
   mineBlock (builder.parentBlock, false, block.nBits);
   block.SetAuxpow (builder.getUnique ());
-  BOOST_CHECK (!CheckProofOfWork (block, params));
+  BOOST_CHECK (!CheckProofOfWork({block}, params));
   mineBlock (builder.parentBlock, true, block.nBits);
   block.SetAuxpow (builder.getUnique ());
-  BOOST_CHECK (CheckProofOfWork (block, params));
+  BOOST_CHECK (CheckProofOfWork({block}, params));
 
   /* Mismatch between auxpow being present and block.nVersion.  Note that
      block.SetAuxpow sets also the version and that we want to ensure
@@ -497,7 +496,7 @@ BOOST_FIXTURE_TEST_CASE (auxpow_pow, BasicTestingSetup)
   BOOST_CHECK (hashAux != block.GetHash ());
   block.SetAuxpowVersion (false);
   BOOST_CHECK (hashAux == block.GetHash ());
-  BOOST_CHECK (!CheckProofOfWork (block, params));
+  BOOST_CHECK (!CheckProofOfWork({block}, params));
 
   /* Modifying the block invalidates the PoW.  */
   block.SetAuxpowVersion (true);
@@ -506,9 +505,9 @@ BOOST_FIXTURE_TEST_CASE (auxpow_pow, BasicTestingSetup)
   builder.setCoinbase (CScript () << data);
   mineBlock (builder.parentBlock, true, block.nBits);
   block.SetAuxpow (builder.getUnique ());
-  BOOST_CHECK (CheckProofOfWork (block, params));
+  BOOST_CHECK (CheckProofOfWork({block}, params));
   tamperWith (block.hashMerkleRoot);
-  BOOST_CHECK (!CheckProofOfWork (block, params));
+  BOOST_CHECK (!CheckProofOfWork({block}, params));
 }
 
 /* ************************************************************************** */
@@ -533,12 +532,17 @@ BOOST_FIXTURE_TEST_CASE (auxpow_miner_blockRegeneration, TestChain100Setup)
 {
   CTxMemPool mempool;
   AuxpowMinerForTest miner;
+  int64_t nMedianTime;
+  {
+      LOCK(cs_main);
+      nMedianTime = m_node.chainman->ActiveTip()->GetMedianTimePast();
+  }
   LOCK (miner.cs);
 
   /* We use mocktime so that we can control GetTime() as it is used in the
      logic that determines whether or not to reconstruct a block.  The "base"
      time is set such that the blocks we have from the fixture are fresh.  */
-  const int64_t baseTime = m_node.chainman->ActiveTip()->GetMedianTimePast () + 1;
+  const int64_t baseTime = nMedianTime + 1;
   SetMockTime (baseTime);
 
   /* Construct a first block.  */
@@ -592,7 +596,7 @@ BOOST_FIXTURE_TEST_CASE (auxpow_miner_blockRegeneration, TestChain100Setup)
 }
 
 BOOST_FIXTURE_TEST_CASE (auxpow_miner_createAndLookupBlock, TestChain100Setup)
-{
+{   
   CTxMemPool mempool;
   AuxpowMinerForTest miner;
   LOCK (miner.cs);
