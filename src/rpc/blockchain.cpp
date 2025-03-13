@@ -353,6 +353,8 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* tip, const CBlockIn
 	result.pushKV("previousblockhash", blockindex->pprev->GetBlockHash().GetHex());
     if (pnext)
 	result.pushKV("nextblockhash", pnext->GetBlockHash().GetHex());
+    if (block.auxpow)
+        result.pushKV("auxpow", AuxpowToJSON(*block.auxpow));
     return result;
 }
 
@@ -1144,7 +1146,7 @@ static RPCHelpMan getblock()
 		    {RPCResult::Type::STR_HEX, "versionHex", "The block version formatted in hexadecimal"},
 		    {RPCResult::Type::STR_HEX, "merkleroot", "The merkle root"},
 		    {RPCResult::Type::ARR, "tx", "The transaction ids",
-			{{RPCResult::Type::STR_HEX, "", "The transaction id"}}},
+				{{RPCResult::Type::STR_HEX, "", "The transaction id"}}},
 		    {RPCResult::Type::NUM_TIME, "time",       "The block time expressed in " + UNIX_EPOCH_TIME},
 		    {RPCResult::Type::NUM_TIME, "mediantime", "The median block time expressed in " + UNIX_EPOCH_TIME},
 		    {RPCResult::Type::NUM, "nonce", "The nonce"},
@@ -1152,21 +1154,35 @@ static RPCHelpMan getblock()
 		    {RPCResult::Type::NUM, "difficulty", "The difficulty"},
 		    {RPCResult::Type::STR_HEX, "chainwork", "Expected number of hashes required to produce the chain up to this block (in hex)"},
 		    {RPCResult::Type::NUM, "nTx", "The number of transactions in the block"},
+			{RPCResult::Type::OBJ, "auxpow", "The auxpow object attached to this block",
+			{
+				{RPCResult::Type::OBJ, "tx", "The parent chain coinbase tx of this auxpow",
+				{
+					{RPCResult::Type::ELISION, "", ""},
+				}},
+				{RPCResult::Type::NUM, "index", "Merkle index of the parent coinbase"},
+				{RPCResult::Type::ARR, "merklebranch", "Merkle branch's of the parent coinbase",
+					{{RPCResult::Type::STR_HEX, "", "Merkle branch"}}},
+				{RPCResult::Type::NUM, "chainindex", "Index in the auxpow Merkle tree"},
+				{RPCResult::Type::ARR, "chainmerklebranch", "Branch's in the auxpow Merkle tree",
+					{{RPCResult::Type::STR_HEX, "", "auxpow branch"}}},
+				{RPCResult::Type::STR_HEX, "parentblock", "The parent block serialised as hex string"},
+			}},
 		    {RPCResult::Type::STR_HEX, "previousblockhash", "The hash of the previous block"},
 		    {RPCResult::Type::STR_HEX, "nextblockhash", "The hash of the next block"},
-		}},
-		    RPCResult{"for verbosity = 2",
-		RPCResult::Type::OBJ, "", "",
-		{
-		    {RPCResult::Type::ELISION, "", "Same output as verbosity = 1"},
-		    {RPCResult::Type::ARR, "tx", "",
-		    {
-			{RPCResult::Type::OBJ, "", "",
-			{
-			    {RPCResult::Type::ELISION, "", "The transactions in the format of the getrawtransaction RPC. Different from verbosity = 1 \"tx\" result"},
 			}},
-		    }},
-		}},
+				RPCResult{"for verbosity = 2",
+			RPCResult::Type::OBJ, "", "",
+			{
+				{RPCResult::Type::ELISION, "", "Same output as verbosity = 1"},
+				{RPCResult::Type::ARR, "tx", "",
+				{
+				{RPCResult::Type::OBJ, "", "",
+				{
+					{RPCResult::Type::ELISION, "", "The transactions in the format of the getrawtransaction RPC. Different from verbosity = 1 \"tx\" result"},
+				}},
+				}},
+			}},
 	},
 		RPCExamples{
 		    HelpExampleCli("getblock", "\"e2acdf2dd19a702e5d12a925f1e984b01e47a933562ca893656d4afb38b44ee3\"")

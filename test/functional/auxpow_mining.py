@@ -202,6 +202,7 @@ class AuxpowMiningTest (BitcoinTestFramework):
       blk = self.nodes[1].getblock (auxblock['hash'])
       tx = self.nodes[1].getrawtransaction (blk['tx'][0], True, blk['hash'])
       coinbase = tx['vin'][0]['coinbase']
+      print(f"coinbase {coinbase}")
       assert_equal ("02%02x00" % auxblock['height'], coinbase[0 : 6])
 
   def test_getauxblock (self):
