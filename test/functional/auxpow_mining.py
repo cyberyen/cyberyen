@@ -26,6 +26,12 @@ from test_framework.messages import (
 from decimal import Decimal
 from test_framework.authproxy import JSONRPCException
 
+def serialize_height(height):
+    """Serialize height of block in format CScriptNum (little-endian)."""
+    hex_height = "%04x" % height
+    little_endian = "".join(reversed([hex_height[i:i+2] for i in range(0, len(hex_height), 2)]))
+    return f"02{little_endian}"
+
 class AuxpowMiningTest (BitcoinTestFramework):
   def skip_test_if_missing_module(self):
     self.skip_if_no_wallet()
@@ -203,7 +209,10 @@ class AuxpowMiningTest (BitcoinTestFramework):
       tx = self.nodes[1].getrawtransaction (blk['tx'][0], True, blk['hash'])
       coinbase = tx['vin'][0]['coinbase']
       print(f"coinbase {coinbase}")
-      assert_equal ("02%02x00" % auxblock['height'], coinbase[0 : 6])
+      expected = serialize_height(auxblock['height'])
+      print(f"Expected serialized height: {expected}")
+      print(f"Actual coinbase: {coinbase[0:6]}")
+      assert_equal(expected, coinbase[0:6])
 
   def test_getauxblock (self):
     """
