@@ -67,7 +67,8 @@ def getCoinbaseAddr (node, blockHash):
     assert len (txData['vout']) >= 1 and len (txData['vin']) == 1
     assert 'coinbase' in txData['vin'][0]
 
-    addr = txData['vout'][0]['scriptPubKey']['address']
+    print(f"----------------- {blockHash} ---> {txData['vout'][0]['scriptPubKey']['addresses']}")
+    addr = txData['vout'][0]['scriptPubKey']['addresses'][0]
     assert len (addr) > 0
     return addr
 

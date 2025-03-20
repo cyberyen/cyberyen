@@ -67,7 +67,6 @@ class AuxpowMiningTest (BitcoinTestFramework):
 
     print("START2")
     self.nodes[0].importprivkey('cShn2dZmfaBVciRLWikeKW5MdERtje2S2HtnUgtTL5gtUhDqxNX6')
-
     print("START3")
     self.nodes[0].keypoolrefill()
     received_addresses = self.nodes[0].listreceivedbyaddress(minconf=0, include_empty=True, include_watchonly=True)
@@ -81,18 +80,19 @@ class AuxpowMiningTest (BitcoinTestFramework):
     print(f"ADDRESS - {self.ADDRESS}")
     print(f"List addrs - {received_addresses}")
     self.nodes[0].generatetoaddress(1, self.ADDRESS)
-
+    self.sync_all()
     try:
       self.nodes[0].generatetoaddress(431, self.BURNADDRESS)
+      self.sync_all()
     except JSONRPCException as e:
       print("Expected fail")
 
     self.nodes[0].sendtoaddress(self.MWEBADDRESS, 1)
 
     self.nodes[0].generatetoaddress(10, self.BURNADDRESS)
-    print("Node[0] height: ", self.nodes[0].getblockcount())
-    print("Node[1] height: ", self.nodes[1].getblockcount())
+    self.sync_all()
 
+    print("Список адресов1:", self.nodes[0].getaddressesbylabel("").keys())
     self.test_getauxblock ()
     self.test_create_submit_auxblock ()
 
@@ -102,8 +102,6 @@ class AuxpowMiningTest (BitcoinTestFramework):
     createauxblock / submitauxblock method pair.
     """
     # Verify data that can be found in another way.
-    print("Node[0] height: ", self.nodes[0].getblockcount())
-    print("Node[0] w: ", self.nodes[0].getwalletinfo())
     auxblock = create ()
     assert_equal (auxblock['chainid'], CHAIN_ID)
     assert_equal (auxblock['height'], self.nodes[0].getblockcount () + 1)
@@ -114,15 +112,11 @@ class AuxpowMiningTest (BitcoinTestFramework):
     auxblock2 = create ()
     assert_equal (auxblock2, auxblock)
 
+    t = self.nodes[0].listtransactions ("*", 1)
+    print(f"LIST Transaction -------------{len(t)}-------------> {t}")
     # If we receive a new block, the old hash will be replaced.
     self.sync_all ()
-    print("1Node[0] height: ", self.nodes[0].getblockcount())
-    print("1Node[1] height: ", self.nodes[1].getblockcount())
-    self.nodes[1].generatetoaddress(1, self.ADDRESS)
-    self.sync_all ()
-
-    print("12Node[0] height: ", self.nodes[0].getblockcount())
-    print("12Node[1] height: ", self.nodes[1].getblockcount())
+    self.generate(self.nodes[1], 1)
     auxblock2 = create ()
     print(f"{auxblock['hash']} == {auxblock2['hash']}")
     assert auxblock['hash'] != auxblock2['hash']
@@ -135,7 +129,7 @@ class AuxpowMiningTest (BitcoinTestFramework):
 
     # Invalidate the block again, send a transaction and query for the
     # auxblock to solve that contains the transaction.
-    self.nodes[1].generatetoaddress(1, self.ADDRESS)
+    self.generate(self.nodes[0], 1)
     addr = self.nodes[1].get_deterministic_priv_key ().address
     txid = self.nodes[0].sendtoaddress (addr, 1)
     self.sync_all ()
@@ -149,20 +143,16 @@ class AuxpowMiningTest (BitcoinTestFramework):
     gbt = self.nodes[0].getblocktemplate ({"rules": ["mweb", "segwit"]})
     assert_equal (target, gbt['target'].encode ("ascii"))
 
+    t = self.nodes[0].listtransactions ("*", 1)
+    print(f"LIST Transaction -------------{len(t)}-------------> {t}")
     # Compute invalid auxpow.
-    print("12Node[0] height: ", self.nodes[0].getblockcount())
-    print("12Node[1] height: ", self.nodes[1].getblockcount())
     apow = computeAuxpow (auxblock['hash'], target, False)
     res = submit (auxblock['hash'], apow)
-    self.sync_all ()
-    print("12Node[0] height: ", self.nodes[0].getblockcount())
-    print("12Node[1] height: ", self.nodes[1].getblockcount())
     assert not res
 
     # Compute and submit valid auxpow.
     apow = computeAuxpow (auxblock['hash'], target, True)
     res = submit (auxblock['hash'], apow)
-    self.sync_all ()
     assert res
 
     # Make sure that the block is indeed accepted.
@@ -189,9 +179,11 @@ class AuxpowMiningTest (BitcoinTestFramework):
     assert 'auxpow' not in data
 
     # Check that it paid correctly to the first node.
-    t = self.nodes[0].listtransactions ("*", 1)
-    assert_equal (len (t), 1)
+    t = self.nodes[0].listtransactions ("*", 2)
+    print(f"LIST Transaction --------------------------> {t}")
+    assert_equal (len (t), 2)
     t = t[0]
+    print(f"Transaction: {auxblock['hash']}\n{t}")
     assert_equal (t['category'], "immature")
     assert_equal (t['blockhash'], auxblock['hash'])
     assert t['generated']

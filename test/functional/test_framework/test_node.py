@@ -102,9 +102,6 @@ class TestNode():
             "-uacomment=testnode%d" % i,
         ]
 
-        if self.descriptors is None:
-            print("DISABLE WALLETS")
-
         if use_valgrind:
             default_suppressions_file = os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
