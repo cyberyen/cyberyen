@@ -122,7 +122,7 @@ class AuxpowMiningTest (BitcoinTestFramework):
     assert_equal (self.nodes[1].getrawmempool (), [txid])
     auxblock = create ()
     target = reverseHex (auxblock['_target'])
-  
+
     # Cross-check target value with GBT to make explicitly sure that it is
     # correct (not just implicitly by successfully mining blocks for it
     # later on).
