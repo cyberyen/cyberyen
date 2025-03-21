@@ -607,9 +607,9 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
         self.sync_all()
 
     def generate(self, generator, *args, sync_fun=None, **kwargs):
-            blocks = generator.generate(*args, **kwargs)
-            sync_fun() if sync_fun else self.sync_all()
-            return blocks
+        blocks = generator.generate(*args, **kwargs)
+        sync_fun() if sync_fun else self.sync_all()
+        return blocks
 
     def sync_blocks(self, nodes=None, wait=1, timeout=60):
         """

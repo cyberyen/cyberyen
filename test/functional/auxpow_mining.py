@@ -46,8 +46,6 @@ class AuxpowMiningTest (BitcoinTestFramework):
     self.start_nodes(extra_args=self.extra_args)
     self.connect_nodes(0, 1)
     self.connect_nodes(1, 0)
-    print(f"PeerINFO ->>>>>> {self.nodes[0].getpeerinfo()}")
-    print(f"PeerINFO ->>>>>> {self.nodes[1].getpeerinfo()}")
 
   def add_options (self, parser):
     self.add_wallet_options(parser)
@@ -56,8 +54,6 @@ class AuxpowMiningTest (BitcoinTestFramework):
                          help="Test behaviour with SegWit active")
 
   def run_test (self):
-    print("START1")
-    print("Node[0] height: ", self.nodes[0].getblockcount())
     self.nodes[0].createwallet(wallet_name="default_wallet12", 
                                disable_private_keys=False,
                                blank=False,
@@ -65,22 +61,16 @@ class AuxpowMiningTest (BitcoinTestFramework):
                                avoid_reuse=False,
                                descriptors=False)
 
-    print("START2")
-    self.nodes[0].importprivkey('cShn2dZmfaBVciRLWikeKW5MdERtje2S2HtnUgtTL5gtUhDqxNX6')
-    print("START3")
+    self.nodes[0].importprivkey('cVpF924EspNh8KjYsfhgY96mmxvT6DgdWiTYMtMjuM74hJaU5psW')
     self.nodes[0].keypoolrefill()
     received_addresses = self.nodes[0].listreceivedbyaddress(minconf=0, include_empty=True, include_watchonly=True)
 
-    print("START4")
     self.ADDRESS = received_addresses[2]["address"]
     self.BURNADDRESS = received_addresses[1]["address"]
     self.MWEBADDRESS = received_addresses[3]["address"]
-    print(f"MWEB - {self.MWEBADDRESS}")
-    print(f"BURNADDRESS - {self.BURNADDRESS}")
-    print(f"ADDRESS - {self.ADDRESS}")
-    print(f"List addrs - {received_addresses}")
     self.nodes[0].generatetoaddress(1, self.ADDRESS)
     self.sync_all()
+
     try:
       self.nodes[0].generatetoaddress(431, self.BURNADDRESS)
       self.sync_all()
@@ -91,8 +81,21 @@ class AuxpowMiningTest (BitcoinTestFramework):
 
     self.nodes[0].generatetoaddress(10, self.BURNADDRESS)
     self.sync_all()
+    # ----------------------------------------
 
-    print("Список адресов1:", self.nodes[0].getaddressesbylabel("").keys())
+    # ------ MAIN TESTS ------
+    # self.nodes[0].createwallet("for_main_test")
+    # self.nodes[0].loadwallet("for_main_test")
+
+    # # Сгенерируйте адрес для майнинга в новом кошельке
+    # mining_address = self.nodes[0].getnewaddress()
+
+    # if self.options.segwit:
+    #     # Активируем SegWit через 432 блока
+    #   self.generate(self.nodes[0], 432, address=mining_address)
+    #   self.generate(self.nodes[0], 68, address=mining_address)
+
+
     self.test_getauxblock ()
     self.test_create_submit_auxblock ()
 
@@ -112,13 +115,10 @@ class AuxpowMiningTest (BitcoinTestFramework):
     auxblock2 = create ()
     assert_equal (auxblock2, auxblock)
 
-    t = self.nodes[0].listtransactions ("*", 1)
-    print(f"LIST Transaction -------------{len(t)}-------------> {t}")
     # If we receive a new block, the old hash will be replaced.
     self.sync_all ()
     self.generate(self.nodes[1], 1)
     auxblock2 = create ()
-    print(f"{auxblock['hash']} == {auxblock2['hash']}")
     assert auxblock['hash'] != auxblock2['hash']
     assert_raises_rpc_error (-8, 'block hash unknown', submit,
                              auxblock['hash'], "x")
@@ -136,15 +136,13 @@ class AuxpowMiningTest (BitcoinTestFramework):
     assert_equal (self.nodes[1].getrawmempool (), [txid])
     auxblock = create ()
     target = reverseHex (auxblock['_target'])
-    print(target)
+  
     # Cross-check target value with GBT to make explicitly sure that it is
     # correct (not just implicitly by successfully mining blocks for it
     # later on).
     gbt = self.nodes[0].getblocktemplate ({"rules": ["mweb", "segwit"]})
     assert_equal (target, gbt['target'].encode ("ascii"))
 
-    t = self.nodes[0].listtransactions ("*", 1)
-    print(f"LIST Transaction -------------{len(t)}-------------> {t}")
     # Compute invalid auxpow.
     apow = computeAuxpow (auxblock['hash'], target, False)
     res = submit (auxblock['hash'], apow)
@@ -179,11 +177,9 @@ class AuxpowMiningTest (BitcoinTestFramework):
     assert 'auxpow' not in data
 
     # Check that it paid correctly to the first node.
-    t = self.nodes[0].listtransactions ("*", 2)
-    print(f"LIST Transaction --------------------------> {t}")
-    assert_equal (len (t), 2)
+    t = self.nodes[0].listtransactions ("*", 1)
+    assert_equal (len (t), 1)
     t = t[0]
-    print(f"Transaction: {auxblock['hash']}\n{t}")
     assert_equal (t['category'], "immature")
     assert_equal (t['blockhash'], auxblock['hash'])
     assert t['generated']
@@ -200,10 +196,7 @@ class AuxpowMiningTest (BitcoinTestFramework):
       blk = self.nodes[1].getblock (auxblock['hash'])
       tx = self.nodes[1].getrawtransaction (blk['tx'][0], True, blk['hash'])
       coinbase = tx['vin'][0]['coinbase']
-      print(f"coinbase {coinbase}")
       expected = serialize_height(auxblock['height'])
-      print(f"Expected serialized height: {expected}")
-      print(f"Actual coinbase: {coinbase[0:6]}")
       assert_equal(expected, coinbase[0:6])
 
   def test_getauxblock (self):
