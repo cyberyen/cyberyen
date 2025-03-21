@@ -9,6 +9,7 @@ from decimal import Decimal
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_raises_rpc_error
+from test_framework.auxpow_testing import computeAuxpow
 
 class KeyPoolTest(BitcoinTestFramework):
     def set_test_params(self):
@@ -195,6 +196,49 @@ class KeyPoolTest(BitcoinTestFramework):
         res = w2.walletcreatefundedpsbt(inputs=[], outputs=[{destination: 0.00010000}], options={"subtractFeeFromOutputs": [0], "feeRate": 0.00010, "changeAddress": addr.pop()})
         assert_equal("psbt" in res, True)
 
+def test_auxpow(self, nodes):
+    """
+    Test behaviour of getauxpow.  Calling getauxpow should reserve
+    a key from the pool, but it should be released again if the
+    created block is not actually used.  On the other hand, if the
+    auxpow is submitted and turned into a block, the keypool should
+    be drained.
+    """
+
+    nodes[0].walletpassphrase('test', 12000)
+    nodes[0].keypoolrefill(1)
+    nodes[0].walletlock()
+    if self.options.descriptors:
+        assert_equal (nodes[0].getwalletinfo()['keypoolsize'], 19)
+    else:
+        assert_equal (nodes[0].getwalletinfo()['keypoolsize'], 1)
+
+    nodes[0].getauxblock()
+    if self.options.descriptors:
+        assert_equal (nodes[0].getwalletinfo()['keypoolsize'], 18)
+    else:
+        assert_equal (nodes[0].getwalletinfo()['keypoolsize'], 0)
+    self.generate(nodes[0], 1)
+    if self.options.descriptors:
+        assert_equal (nodes[0].getwalletinfo()['keypoolsize'], 18)
+    else:
+        assert_equal (nodes[0].getwalletinfo()['keypoolsize'], 0)
+    auxblock = nodes[0].getauxblock()
+    if self.options.descriptors:
+        assert_equal (nodes[0].getwalletinfo()['keypoolsize'], 18)
+    else:
+        assert_equal (nodes[0].getwalletinfo()['keypoolsize'], 0)
+
+    target = reverseHex(auxblock['_target'])
+    solved = computeAuxpow(auxblock['hash'], target, True)
+    res = nodes[0].getauxblock(auxblock['hash'], solved)
+    assert res
+    if self.options.descriptors:
+        assert_equal (nodes[0].getwalletinfo()['keypoolsize'], 18)
+    else:
+        assert_equal (nodes[0].getwalletinfo()['keypoolsize'], 0)
+
+    assert_raises_rpc_error(-12, 'Keypool ran out', nodes[0].getauxblock)
 
 if __name__ == '__main__':
     KeyPoolTest().main()

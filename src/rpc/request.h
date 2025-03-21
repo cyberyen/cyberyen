@@ -28,6 +28,8 @@ void DeleteAuthCookie();
 /** Parse JSON-RPC batch reply into a vector */
 std::vector<UniValue> JSONRPCProcessBatchReply(const UniValue& in);
 
+namespace node {
+    struct NodeContext;
 class JSONRPCRequest
 {
 public:
@@ -39,6 +41,9 @@ public:
     std::string authUser;
     std::string peerAddr;
     const util::Ref& context;
+
+    // CYBERYEN
+    NodeContext *nodeContext{nullptr};
 
     JSONRPCRequest(const util::Ref& context) : id(NullUniValue), params(NullUniValue), fHelp(false), context(context) {}
 
@@ -53,5 +58,5 @@ public:
 
     void parse(const UniValue& valRequest);
 };
-
+}
 #endif // BITCOIN_RPC_REQUEST_H

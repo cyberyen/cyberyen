@@ -101,6 +101,7 @@ class TestNode():
             "-debugexclude=leveldb",
             "-uacomment=testnode%d" % i,
         ]
+
         if use_valgrind:
             default_suppressions_file = os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),

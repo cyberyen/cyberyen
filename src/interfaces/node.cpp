@@ -45,6 +45,8 @@
 namespace interfaces {
 namespace {
 
+using NodeContext = node::NodeContext;
+
 class NodeImpl : public Node
 {
 public:

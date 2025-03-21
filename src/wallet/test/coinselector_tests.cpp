@@ -27,7 +27,7 @@ BOOST_FIXTURE_TEST_SUITE(coinselector_tests, WalletTestingSetup)
 typedef std::set<CInputCoin> CoinSet;
 
 static std::vector<COutputCoin> vCoins;
-static NodeContext testNode;
+static node::NodeContext testNode;
 static auto testChain = interfaces::MakeChain(testNode);
 static CWallet testWallet(testChain.get(), "", CreateDummyWalletDatabase());
 static CAmount balance = 0;

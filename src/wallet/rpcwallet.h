@@ -13,12 +13,15 @@
 
 class CRPCCommand;
 class CWallet;
-class JSONRPCRequest;
 class LegacyScriptPubKeyMan;
 class UniValue;
 class CTransaction;
 struct PartiallySignedTransaction;
 struct WalletContext;
+
+namespace node {
+    class JSONRPCRequest;
+}
 
 Span<const CRPCCommand> GetWalletRPCCommands();
 
@@ -28,7 +31,7 @@ Span<const CRPCCommand> GetWalletRPCCommands();
  * @param[in] request JSONRPCRequest that wishes to access a wallet
  * @return nullptr if no wallet should be used, or a pointer to the CWallet
  */
-std::shared_ptr<CWallet> GetWalletForJSONRPCRequest(const JSONRPCRequest& request);
+std::shared_ptr<CWallet> GetWalletForJSONRPCRequest(const node::JSONRPCRequest& request);
 
 void EnsureWalletIsUnlocked(const CWallet*);
 WalletContext& EnsureWalletContext(const util::Ref& context);

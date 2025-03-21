@@ -74,7 +74,7 @@ static constexpr CAmount CENT{1000000};
  */
 struct BasicTestingSetup {
     ECCVerifyHandle globalVerifyHandle;
-    NodeContext m_node;
+    node::NodeContext m_node;
 
     explicit BasicTestingSetup(const std::string& chainName = CBaseChainParams::MAIN, const std::vector<const char*>& extra_args = {});
     ~BasicTestingSetup();
@@ -153,7 +153,10 @@ CBlock getBlock13b8a();
 
 // define an implicit conversion here so that uint256 may be used directly in BOOST_CHECK_*
 std::ostream& operator<<(std::ostream& os, const uint256& num);
-
+/* This is defined in merkle_tests.cpp, but also used by auxpow_tests.cpp.  */
+namespace merkle_tests {
+    std::vector<uint256> BlockMerkleBranch(const CBlock& block, uint32_t position);
+    }
 /**
  * BOOST_CHECK_EXCEPTION predicates to check the specific validation error.
  * Use as

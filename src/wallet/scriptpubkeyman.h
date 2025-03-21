@@ -16,6 +16,7 @@
 #include <wallet/ismine.h>
 #include <wallet/walletdb.h>
 #include <wallet/walletutil.h>
+#include <util/result.h>
 
 #include <boost/signals2/signal.hpp>
 

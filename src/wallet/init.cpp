@@ -19,6 +19,8 @@
 #include <wallet/wallet.h>
 #include <walletinitinterface.h>
 
+using NodeContext = node::NodeContext;
+
 class WalletInit : public WalletInitInterface
 {
 public:

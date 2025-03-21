@@ -2,11 +2,11 @@
 
 #include <outputtype.h>
 #include <script/standard.h>
+#include <util/result.h>
 
 // Forward Declarations
 class CWallet;
 class ScriptPubKeyMan;
-
 /** A wrapper to reserve an address from a wallet
  *
  * ReserveDestination is used to reserve an address.
