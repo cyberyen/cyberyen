@@ -75,7 +75,7 @@ class AuxpowMiningTest (BitcoinTestFramework):
       self.nodes[0].generatetoaddress(431, self.BURNADDRESS)
       self.sync_all()
     except JSONRPCException as e:
-      print("Expected fail")
+      pass
 
     self.nodes[0].sendtoaddress(self.MWEBADDRESS, 1)
 

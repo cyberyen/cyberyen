@@ -505,7 +505,6 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
 
     def start_nodes(self, extra_args=None, *args, **kwargs):
         """Start multiple cyberyends"""
-        print(f"start with extra wow {extra_args} {self.num_nodes}")
         if extra_args is None:
             extra_args = [None] * self.num_nodes
         assert_equal(len(extra_args), self.num_nodes)
