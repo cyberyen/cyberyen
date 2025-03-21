@@ -81,20 +81,6 @@ class AuxpowMiningTest (BitcoinTestFramework):
 
     self.nodes[0].generatetoaddress(10, self.BURNADDRESS)
     self.sync_all()
-    # ----------------------------------------
-
-    # ------ MAIN TESTS ------
-    # self.nodes[0].createwallet("for_main_test")
-    # self.nodes[0].loadwallet("for_main_test")
-
-    # # Сгенерируйте адрес для майнинга в новом кошельке
-    # mining_address = self.nodes[0].getnewaddress()
-
-    # if self.options.segwit:
-    #     # Активируем SegWit через 432 блока
-    #   self.generate(self.nodes[0], 432, address=mining_address)
-    #   self.generate(self.nodes[0], 68, address=mining_address)
-
 
     self.test_getauxblock ()
     self.test_create_submit_auxblock ()
