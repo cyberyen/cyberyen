@@ -143,7 +143,6 @@ class AuthServiceProxy():
         postdata = json.dumps(self.get_request(*args, **argsn), default=EncodeDecimal, ensure_ascii=self.ensure_ascii)
         response, status = self._request('POST', self.__url.path, postdata.encode('utf-8'))
         if response['error'] is not None:
-            print(f"_------------------------__>> {response}")
             raise JSONRPCException(response['error'], status)
         elif 'result' not in response:
             raise JSONRPCException({

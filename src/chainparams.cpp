@@ -120,7 +120,7 @@ public:
 
 	consensus.fStrictChainId = true;
 	consensus.nAuxpowChainId = 16;
-	consensus.nAuxpowStartHeight = 9999999;
+	consensus.nAuxpowStartHeight = 959691;
 
 	genesis = CreateGenesisBlock(1659708882, 2000096520, 0x1e0ffff0, 1, 1000000 * COIN); // new value
 	consensus.hashGenesisBlock = genesis.GetHash();

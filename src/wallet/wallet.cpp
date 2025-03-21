@@ -920,7 +920,6 @@ CWalletTx* CWallet::AddToWallet(CTransactionRef tx, const boost::optional<MWEB::
 	wtx.nTimeReceived = chain().getAdjustedTime();
 	wtx.nOrderPos = IncOrderPosNext(&batch);
 	wtx.m_it_wtxOrdered = wtxOrdered.insert(std::make_pair(wtx.nOrderPos, &wtx));
-	WalletLogPrintf("------> wallet log: pos %d, %s\n", wtx.nOrderPos, tx->GetHash().GetHex());
 	wtx.nTimeSmart = ComputeTimeSmart(wtx);
 	AddToSpends(hash);
 	AddMWEBOrigins(wtx);
