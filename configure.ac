@@ -69,16 +69,17 @@ case $host in
 esac
 
 AC_ARG_ENABLE([c++17],
-  [AS_HELP_STRING([--enable-c++17],
-  [enable compilation in c++17 mode (disabled by default)])],
+  [AS_HELP_STRING([--disable-c++17],
+  [disable C++17 mode (enabled by default)])],
   [use_cxx17=$enableval],
-  [use_cxx17=no])
+  [use_cxx17=yes]
+)
 
 dnl Require C++11 or C++17 compiler (no GNU extensions)
 if test "x$use_cxx17" = xyes -o "x$enable_fuzz" = xyes ; then
   AX_CXX_COMPILE_STDCXX([17], [noext], [mandatory])
 else
-  AX_CXX_COMPILE_STDCXX([14], [noext], [mandatory])
+  AX_CXX_COMPILE_STDCXX([17], [noext], [mandatory])
 fi
 
 dnl Check if -latomic is required for <std::atomic>
