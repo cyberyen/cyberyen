@@ -24,6 +24,8 @@
 #include <boost/test/unit_test.hpp>
 #include <univalue.h>
 
+using NodeContext = node::NodeContext;
+
 RPCHelpMan importmulti();
 RPCHelpMan dumpwallet();
 RPCHelpMan importwallet();

@@ -27,7 +27,6 @@
 #include <script/sign.h>
 #include <script/signingprovider.h>
 #include <script/standard.h>
-#include <uint256.h>
 #include <util/bip32.h>
 #include <util/moneystr.h>
 #include <util/strencodings.h>
@@ -41,7 +40,7 @@
 
 #include <univalue.h>
 
-static void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
+void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 {
     // Call into TxToUniv() in bitcoin-common to decode the transaction hex.
     //
@@ -157,7 +156,7 @@ static RPCHelpMan getrawtransaction()
                 },
         [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
-    const NodeContext& node = EnsureNodeContext(request.context);
+    const node::NodeContext& node = EnsureNodeContext(request.context);
 
     bool in_active_chain = true;
     uint256 hash = ParseHashV(request.params[0], "parameter 1");
@@ -673,7 +672,7 @@ static RPCHelpMan combinerawtransaction()
     CCoinsView viewDummy;
     CCoinsViewCache view(&viewDummy);
     {
-        const CTxMemPool& mempool = EnsureMemPool(request.context);
+        const CTxMemPool& mempool = EnsureRefMemPool(request.context);
         LOCK(cs_main);
         LOCK(mempool.cs);
         CCoinsViewCache &viewChain = ::ChainstateActive().CoinsTip();
@@ -800,7 +799,7 @@ static RPCHelpMan signrawtransactionwithkey()
     for (const CTxIn& txin : mtx.vin) {
         coins[txin.prevout]; // Create empty map entry keyed by prevout.
     }
-    NodeContext& node = EnsureNodeContext(request.context);
+    node::NodeContext& node = EnsureNodeContext(request.context);
     FindCoins(node, coins);
 
     // Parse the prevtxs array
@@ -862,7 +861,7 @@ static RPCHelpMan sendrawtransaction()
 
     std::string err_string;
     AssertLockNotHeld(cs_main);
-    NodeContext& node = EnsureNodeContext(request.context);
+    node::NodeContext& node = EnsureNodeContext(request.context);
     const TransactionError err = BroadcastTransaction(node, tx, err_string, max_raw_tx_fee, /*relay*/ true, /*wait_callback*/ true);
     if (TransactionError::OK != err) {
         throw JSONRPCTransactionError(err, err_string);
@@ -937,7 +936,7 @@ static RPCHelpMan testmempoolaccept()
                                              DEFAULT_MAX_RAW_TX_FEE_RATE :
                                              CFeeRate(AmountFromValue(request.params[1]));
 
-    CTxMemPool& mempool = EnsureMemPool(request.context);
+    CTxMemPool& mempool = EnsureRefMemPool(request.context);
     int64_t virtual_size = GetVirtualTransactionSize(*tx);
     CAmount max_raw_tx_fee = max_raw_tx_fee_rate.GetTotalFee(virtual_size, tx->mweb_tx.GetMWEBWeight());
 
@@ -1603,7 +1602,7 @@ static RPCHelpMan utxoupdatepsbt()
     CCoinsView viewDummy;
     CCoinsViewCache view(&viewDummy);
     {
-        const CTxMemPool& mempool = EnsureMemPool(request.context);
+        const CTxMemPool& mempool = EnsureRefMemPool(request.context);
         LOCK2(cs_main, mempool.cs);
         CCoinsViewCache &viewChain = ::ChainstateActive().CoinsTip();
         CCoinsViewMemPool viewMempool(&viewChain, mempool);

@@ -11,5 +11,7 @@
 #include <scheduler.h>
 #include <txmempool.h>
 
-NodeContext::NodeContext() {}
-NodeContext::~NodeContext() {}
+namespace node {
+NodeContext::NodeContext() = default;
+NodeContext::~NodeContext() = default;
+}

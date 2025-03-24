@@ -23,6 +23,8 @@
 
 #include <boost/variant.hpp>
 
+using namespace node;
+
 /**
  * String used to describe UNIX epoch time in documentation, factored out to a
  * constant for consistency.

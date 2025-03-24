@@ -1,16 +1,17 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_PRIMITIVES_BLOCK_H
 #define BITCOIN_PRIMITIVES_BLOCK_H
 
+#include <auxpow.h>
 #include <primitives/transaction.h>
+#include <primitives/pureheader.h>
 #include <serialize.h>
 #include <uint256.h>
-#include <mweb/mweb_models.h>
-
+#include <util/time.h>
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
  * requirements.  When they solve the proof-of-work, they broadcast the block
@@ -18,32 +19,46 @@
  * in the block is a special one that creates a new coin owned by the creator
  * of the block.
  */
-class CBlockHeader
+class CBlockHeader : public CPureBlockHeader
 {
 public:
-    // header
-    int32_t nVersion;
-    uint256 hashPrevBlock;
-    uint256 hashMerkleRoot;
-    uint32_t nTime;
-    uint32_t nBits;
-    uint32_t nNonce;
+    // auxpow (if this is a merge-minded block)
+    std::shared_ptr<CAuxPow> auxpow;
 
     CBlockHeader()
     {
         SetNull();
     }
 
-    SERIALIZE_METHODS(CBlockHeader, obj) { READWRITE(obj.nVersion, obj.hashPrevBlock, obj.hashMerkleRoot, obj.nTime, obj.nBits, obj.nNonce); }
+    template<typename Stream>
+    void Serialize(Stream& s) const
+    {
+        s << *(CPureBlockHeader*)this;
+        if (this->IsAuxpow())
+        {
+            assert(auxpow != nullptr);
+            s << *auxpow;
+        }
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream& s)
+    {
+        s >> *(CPureBlockHeader*)this;
+        if (this->IsAuxpow())
+        {
+            auxpow = std::make_shared<CAuxPow>();
+            assert(auxpow != nullptr);
+            s >> *auxpow;
+        } else {
+            auxpow.reset();
+        }
+    }
 
     void SetNull()
     {
-        nVersion = 0;
-        hashPrevBlock.SetNull();
-        hashMerkleRoot.SetNull();
-        nTime = 0;
-        nBits = 0;
-        nNonce = 0;
+        CPureBlockHeader::SetNull();
+        auxpow.reset();
     }
 
     bool IsNull() const
@@ -51,14 +66,20 @@ public:
         return (nBits == 0);
     }
 
-    uint256 GetHash() const;
-
-    uint256 GetPoWHash() const;
+    NodeSeconds Time() const
+    {
+        return NodeSeconds{std::chrono::seconds{nTime}};
+    }
 
     int64_t GetBlockTime() const
     {
         return (int64_t)nTime;
     }
+    /**
+     * Set the block's auxpow (or unset it).  This takes care of updating
+     * the version accordingly.
+     */
+    void SetAuxpow (std::unique_ptr<CAuxPow> apow);
 };
 
 
@@ -86,8 +107,7 @@ public:
 
     SERIALIZE_METHODS(CBlock, obj)
     {
-        READWRITEAS(CBlockHeader, obj);
-        READWRITE(obj.vtx);
+        READWRITE(AsBase<CBlockHeader>(obj), obj.vtx);
         if (!(s.GetVersion() & SERIALIZE_NO_MWEB)) {
             if (obj.vtx.size() >= 2 && obj.vtx.back()->IsHogEx()) {
                 READWRITE(obj.mweb_block);
@@ -112,6 +132,7 @@ public:
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
+        block.auxpow         = auxpow;
         return block;
     }
 
@@ -127,11 +148,20 @@ public:
  */
 struct CBlockLocator
 {
+    /** Historically CBlockLocator's version field has been written to network
+     * streams as the negotiated protocol version and to disk streams as the
+     * client version, but the value has never been used.
+     *
+     * Hard-code to the highest protocol version ever written to a network stream.
+     * SerParams can be used if the field requires any meaning in the future,
+     **/
+    static constexpr int DUMMY_VERSION = 70016;
+
     std::vector<uint256> vHave;
 
     CBlockLocator() {}
 
-    explicit CBlockLocator(const std::vector<uint256>& vHaveIn) : vHave(vHaveIn) {}
+    explicit CBlockLocator(std::vector<uint256>&& have) : vHave(std::move(have)) {}
 
     SERIALIZE_METHODS(CBlockLocator, obj)
     {
@@ -152,4 +182,4 @@ struct CBlockLocator
     }
 };
 
-#endif // BITCOIN_PRIMITIVES_BLOCK_H
+#endif // CYBERYEN_PRIMITIVES_BLOCK_H

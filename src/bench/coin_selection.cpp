@@ -29,7 +29,7 @@ static void addCoin(const CAmount& nValue, const CWallet& wallet, std::vector<st
 // (https://github.com/bitcoin/bitcoin/issues/7883#issuecomment-224807484)
 static void CoinSelection(benchmark::Bench& bench)
 {
-    NodeContext node;
+    node::NodeContext node;
     auto chain = interfaces::MakeChain(node);
     CWallet wallet(chain.get(), "", CreateDummyWalletDatabase());
     wallet.SetupLegacyScriptPubKeyMan();
@@ -66,7 +66,7 @@ static void CoinSelection(benchmark::Bench& bench)
 }
 
 typedef std::set<CInputCoin> CoinSet;
-static NodeContext testNode;
+static node::NodeContext testNode;
 static auto testChain = interfaces::MakeChain(testNode);
 static CWallet testWallet(testChain.get(), "", CreateDummyWalletDatabase());
 std::vector<std::unique_ptr<CWalletTx>> wtxn;

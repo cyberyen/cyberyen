@@ -301,6 +301,12 @@ BASE_SCRIPTS = [
     'p2p_ibd_txrelay.py',
     # Don't append tests at the end to avoid merge conflicts
     # Put them in a random line within the section that fits their approximate run-time
+
+    # auxpow tests
+    'auxpow_mining.py',
+    'auxpow_mining.py --segwit',
+    'auxpow_invalidpow.py',
+    'auxpow_zerohash.py',
 ]
 
 # Place EXTENDED_SCRIPTS first since it has the 3 longest running tests

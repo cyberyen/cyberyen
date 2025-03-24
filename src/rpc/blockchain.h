@@ -19,7 +19,9 @@ class CConnman;
 class CTxMemPool;
 class ChainstateManager;
 class UniValue;
-struct NodeContext;
+namespace node {
+    struct NodeContext;
+}
 namespace util {
 class Ref;
 } // namespace util
@@ -52,9 +54,11 @@ UniValue blockheaderToJSON(const CBlockIndex* tip, const CBlockIndex* blockindex
 /** Used by getblockstats to get feerates at different percentiles by weight  */
 void CalculatePercentilesByWeight(CAmount result[NUM_GETBLOCKSTATS_PERCENTILES], std::vector<std::pair<CAmount, int64_t>>& scores, int64_t total_weight);
 
-NodeContext& EnsureNodeContext(const util::Ref& context);
-CTxMemPool& EnsureMemPool(const util::Ref& context);
-ChainstateManager& EnsureChainman(const util::Ref& context);
+node::NodeContext& EnsureNodeContext(const util::Ref& context);
+CTxMemPool& EnsureRefMemPool(const util::Ref& context);
+CTxMemPool& EnsureMemPool(const node::NodeContext& node);
+ChainstateManager& EnsureRefChainman(const util::Ref& context);
+ChainstateManager& EnsureChainman(const node::NodeContext& node);
 CConnman& EnsureConnman(const util::Ref& context);
 
 #endif

@@ -25,10 +25,12 @@
 
 #include <functional>
 
+
+
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 UrlDecodeFn* const URL_DECODE = urlDecode;
 
-static void WaitForShutdown(NodeContext& node)
+static void WaitForShutdown(node::NodeContext& node)
 {
     while (!ShutdownRequested())
     {
@@ -39,7 +41,7 @@ static void WaitForShutdown(NodeContext& node)
 
 static bool AppInit(int argc, char* argv[])
 {
-    NodeContext node;
+    node::NodeContext node;
 
     bool fRet = false;
 

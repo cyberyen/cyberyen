@@ -16,6 +16,7 @@
 #include <hash.h>
 #include <net_permissions.h>
 #include <netaddress.h>
+#include <netbase.h>
 #include <optional.h>
 #include <policy/feerate.h>
 #include <protocol.h>
@@ -473,7 +474,7 @@ private:
     size_t SocketSendData(CNode *pnode) const;
     void DumpAddresses();
 
-    // Network stats
+// Network stats
     void RecordBytesRecv(uint64_t bytes);
     void RecordBytesSent(uint64_t bytes);
 
@@ -623,6 +624,7 @@ private:
     friend struct CConnmanTest;
     friend struct ConnmanTestMsg;
 };
+
 void Discover();
 void StartMapPort();
 void InterruptMapPort();

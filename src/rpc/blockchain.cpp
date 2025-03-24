@@ -23,12 +23,14 @@
 #include <primitives/transaction.h>
 #include <rpc/server.h>
 #include <rpc/util.h>
+#include <rpc/rawtransaction_util.h>
 #include <script/descriptor.h>
 #include <streams.h>
 #include <sync.h>
 #include <txdb.h>
 #include <txmempool.h>
 #include <undo.h>
+#include <util/any.h>
 #include <util/ref.h>
 #include <util/strencodings.h>
 #include <util/system.h>
@@ -45,6 +47,8 @@
 #include <memory>
 #include <mutex>
 
+using namespace node;
+
 struct CUpdatedBlock
 {
     uint256 hash;
@@ -55,6 +59,50 @@ static Mutex cs_blockchange;
 static std::condition_variable cond_blockchange;
 static CUpdatedBlock latestblock GUARDED_BY(cs_blockchange);
 
+UniValue AuxpowToJSON(const CAuxPow& auxpow)
+{
+    UniValue result(UniValue::VOBJ);
+
+    {
+        UniValue tx(UniValue::VOBJ);
+        tx.pushKV("hex", EncodeHexTx(*auxpow.coinbaseTx));
+        TxToJSON(*auxpow.coinbaseTx, auxpow.parentBlock.GetHash(), tx);
+        result.pushKV("tx", tx);
+    }
+
+     result.pushKV("chainindex", auxpow.nChainIndex);
+
+     {
+        UniValue branch(UniValue::VARR);
+        for (const auto& node : auxpow.vMerkleBranch)
+            branch.push_back(node.GetHex());
+        result.pushKV("merklebranch", branch);
+    }
+
+     {
+        UniValue branch(UniValue::VARR);
+        for (const auto& node : auxpow.vChainMerkleBranch)
+            branch.push_back(node.GetHex());
+        result.pushKV("chainmerklebranch", branch);
+    }
+
+    CDataStream ssParent(SER_NETWORK, PROTOCOL_VERSION);
+    ssParent << auxpow.parentBlock;
+    const std::string strHex = HexStr(ssParent);
+    result.pushKV("parentblock", strHex);
+
+    return result;
+}
+
+node::NodeContext& EnsureAnyNodeContext(const std::any& context)
+{
+    auto node_context = util::AnyPtr<node::NodeContext>(context);
+    if (!node_context) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Node context not found");
+    }
+    return *node_context;
+}
+
 NodeContext& EnsureNodeContext(const util::Ref& context)
 {
     if (!context.Has<NodeContext>()) {
@@ -63,18 +111,27 @@ NodeContext& EnsureNodeContext(const util::Ref& context)
     return context.Get<NodeContext>();
 }
 
-CTxMemPool& EnsureMemPool(const util::Ref& context)
+CTxMemPool& EnsureRefMemPool(const util::Ref& context)
 {
-    NodeContext& node = EnsureNodeContext(context);
+    node::NodeContext& node = EnsureNodeContext(context);
+    return EnsureMemPool(node);
+}
+
+CTxMemPool& EnsureMemPool(const node::NodeContext& node)
+{
     if (!node.mempool) {
 	throw JSONRPCError(RPC_CLIENT_MEMPOOL_DISABLED, "Mempool disabled or instance not found");
     }
     return *node.mempool;
 }
 
-ChainstateManager& EnsureChainman(const util::Ref& context)
+ChainstateManager& EnsureRefChainman(const util::Ref& context) {
+	NodeContext& node = EnsureNodeContext(context);
+	return EnsureChainman(node);
+}
+
+ChainstateManager& EnsureChainman(const node::NodeContext& node)
 {
-    NodeContext& node = EnsureNodeContext(context);
     if (!node.chainman) {
 	throw JSONRPCError(RPC_INTERNAL_ERROR, "Node chainman not found");
     }
@@ -83,7 +140,7 @@ ChainstateManager& EnsureChainman(const util::Ref& context)
 
 CConnman& EnsureConnman(const util::Ref& context)
 {
-    NodeContext& node = EnsureNodeContext(context);
+    node::NodeContext& node = EnsureNodeContext(context);
     if (!node.connman) {
 	throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
     }
@@ -296,6 +353,8 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* tip, const CBlockIn
 	result.pushKV("previousblockhash", blockindex->pprev->GetBlockHash().GetHex());
     if (pnext)
 	result.pushKV("nextblockhash", pnext->GetBlockHash().GetHex());
+    if (block.auxpow)
+        result.pushKV("auxpow", AuxpowToJSON(*block.auxpow));
     return result;
 }
 
@@ -762,7 +821,7 @@ static RPCHelpMan getrawmempool()
 	include_mempool_sequence = request.params[1].get_bool();
     }
 
-    return MempoolToJSON(EnsureMemPool(request.context), fVerbose, include_mempool_sequence);
+    return MempoolToJSON(EnsureRefMemPool(request.context), fVerbose, include_mempool_sequence);
 },
     };
 }
@@ -797,7 +856,7 @@ static RPCHelpMan getmempoolancestors()
 
     uint256 hash = ParseHashV(request.params[0], "parameter 1");
 
-    const CTxMemPool& mempool = EnsureMemPool(request.context);
+    const CTxMemPool& mempool = EnsureRefMemPool(request.context);
     LOCK(mempool.cs);
 
     CTxMemPool::txiter it = mempool.mapTx.find(hash);
@@ -861,7 +920,7 @@ static RPCHelpMan getmempooldescendants()
 
     uint256 hash = ParseHashV(request.params[0], "parameter 1");
 
-    const CTxMemPool& mempool = EnsureMemPool(request.context);
+    const CTxMemPool& mempool = EnsureRefMemPool(request.context);
     LOCK(mempool.cs);
 
     CTxMemPool::txiter it = mempool.mapTx.find(hash);
@@ -913,7 +972,7 @@ static RPCHelpMan getmempoolentry()
 {
     uint256 hash = ParseHashV(request.params[0], "parameter 1");
 
-    const CTxMemPool& mempool = EnsureMemPool(request.context);
+    const CTxMemPool& mempool = EnsureRefMemPool(request.context);
     LOCK(mempool.cs);
 
     CTxMemPool::txiter it = mempool.mapTx.find(hash);
@@ -1087,7 +1146,7 @@ static RPCHelpMan getblock()
 		    {RPCResult::Type::STR_HEX, "versionHex", "The block version formatted in hexadecimal"},
 		    {RPCResult::Type::STR_HEX, "merkleroot", "The merkle root"},
 		    {RPCResult::Type::ARR, "tx", "The transaction ids",
-			{{RPCResult::Type::STR_HEX, "", "The transaction id"}}},
+				{{RPCResult::Type::STR_HEX, "", "The transaction id"}}},
 		    {RPCResult::Type::NUM_TIME, "time",       "The block time expressed in " + UNIX_EPOCH_TIME},
 		    {RPCResult::Type::NUM_TIME, "mediantime", "The median block time expressed in " + UNIX_EPOCH_TIME},
 		    {RPCResult::Type::NUM, "nonce", "The nonce"},
@@ -1095,21 +1154,35 @@ static RPCHelpMan getblock()
 		    {RPCResult::Type::NUM, "difficulty", "The difficulty"},
 		    {RPCResult::Type::STR_HEX, "chainwork", "Expected number of hashes required to produce the chain up to this block (in hex)"},
 		    {RPCResult::Type::NUM, "nTx", "The number of transactions in the block"},
+			{RPCResult::Type::OBJ, "auxpow", "The auxpow object attached to this block",
+			{
+				{RPCResult::Type::OBJ, "tx", "The parent chain coinbase tx of this auxpow",
+				{
+					{RPCResult::Type::ELISION, "", ""},
+				}},
+				{RPCResult::Type::NUM, "index", "Merkle index of the parent coinbase"},
+				{RPCResult::Type::ARR, "merklebranch", "Merkle branch's of the parent coinbase",
+					{{RPCResult::Type::STR_HEX, "", "Merkle branch"}}},
+				{RPCResult::Type::NUM, "chainindex", "Index in the auxpow Merkle tree"},
+				{RPCResult::Type::ARR, "chainmerklebranch", "Branch's in the auxpow Merkle tree",
+					{{RPCResult::Type::STR_HEX, "", "auxpow branch"}}},
+				{RPCResult::Type::STR_HEX, "parentblock", "The parent block serialised as hex string"},
+			}},
 		    {RPCResult::Type::STR_HEX, "previousblockhash", "The hash of the previous block"},
 		    {RPCResult::Type::STR_HEX, "nextblockhash", "The hash of the next block"},
-		}},
-		    RPCResult{"for verbosity = 2",
-		RPCResult::Type::OBJ, "", "",
-		{
-		    {RPCResult::Type::ELISION, "", "Same output as verbosity = 1"},
-		    {RPCResult::Type::ARR, "tx", "",
-		    {
-			{RPCResult::Type::OBJ, "", "",
-			{
-			    {RPCResult::Type::ELISION, "", "The transactions in the format of the getrawtransaction RPC. Different from verbosity = 1 \"tx\" result"},
 			}},
-		    }},
-		}},
+				RPCResult{"for verbosity = 2",
+			RPCResult::Type::OBJ, "", "",
+			{
+				{RPCResult::Type::ELISION, "", "Same output as verbosity = 1"},
+				{RPCResult::Type::ARR, "tx", "",
+				{
+				{RPCResult::Type::OBJ, "", "",
+				{
+					{RPCResult::Type::ELISION, "", "The transactions in the format of the getrawtransaction RPC. Different from verbosity = 1 \"tx\" result"},
+				}},
+				}},
+			}},
 	},
 		RPCExamples{
 		    HelpExampleCli("getblock", "\"e2acdf2dd19a702e5d12a925f1e984b01e47a933562ca893656d4afb38b44ee3\"")
@@ -1246,7 +1319,7 @@ static RPCHelpMan gettxoutsetinfo()
     const CoinStatsHashType hash_type = ParseHashType(request.params[0], CoinStatsHashType::HASH_SERIALIZED);
 
     CCoinsView* coins_view = WITH_LOCK(cs_main, return &ChainstateActive().CoinsDB());
-    NodeContext& node = EnsureNodeContext(request.context);
+    node::NodeContext& node = EnsureNodeContext(request.context);
     if (GetUTXOStats(coins_view, stats, hash_type, node.rpc_interruption_point)) {
 	ret.pushKV("height", (int64_t)stats.nHeight);
 	ret.pushKV("bestblock", stats.hashBlock.GetHex());
@@ -1317,7 +1390,7 @@ static RPCHelpMan gettxout()
     CCoinsViewCache* coins_view = &::ChainstateActive().CoinsTip();
 
     if (fMempool) {
-	const CTxMemPool& mempool = EnsureMemPool(request.context);
+	const CTxMemPool& mempool = EnsureRefMemPool(request.context);
 	LOCK(mempool.cs);
 	CCoinsViewMemPool view(coins_view, mempool);
 	if (!view.GetCoin(out, coin) || mempool.isSpent(out)) {
@@ -1594,7 +1667,7 @@ static RPCHelpMan getchaintips()
 		},
 	[&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
-    ChainstateManager& chainman = EnsureChainman(request.context);
+    ChainstateManager& chainman = EnsureRefChainman(request.context);
     LOCK(cs_main);
 
     /*
@@ -1704,7 +1777,7 @@ static RPCHelpMan getmempoolinfo()
 		},
 	[&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
-    return MempoolInfoToJSON(EnsureMemPool(request.context));
+    return MempoolInfoToJSON(EnsureRefMemPool(request.context));
 },
     };
 }
@@ -2235,7 +2308,7 @@ static RPCHelpMan savemempool()
 		},
 	[&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
-    const CTxMemPool& mempool = EnsureMemPool(request.context);
+    const CTxMemPool& mempool = EnsureRefMemPool(request.context);
 
     if (!mempool.IsLoaded()) {
 	throw JSONRPCError(RPC_MISC_ERROR, "The mempool was not loaded yet");
@@ -2589,7 +2662,7 @@ static RPCHelpMan dumptxoutset()
     std::unique_ptr<CCoinsViewCursor> pcursor;
     CCoinsStats stats;
     CBlockIndex* tip;
-    NodeContext& node = EnsureNodeContext(request.context);
+    node::NodeContext& node = EnsureNodeContext(request.context);
 
     {
 	// We need to lock cs_main to ensure that the coinsdb isn't written to
