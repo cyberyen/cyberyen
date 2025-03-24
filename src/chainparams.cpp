@@ -101,8 +101,8 @@ public:
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartHeight = 0;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeoutHeight = 0;
 
-	consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000036f913d86526204e");
-	consensus.defaultAssumeValid = uint256S("0x9d521139a818119dfccc09c5c751d55d6803a22640250c350902c066f89f6f74"); // 775954
+	consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000003916b868cd6163e0");
+	consensus.defaultAssumeValid = uint256S("0x15a9309b2f899207f170b40a690595fb1f1705fcecb90052cc87a490efcdb3c4"); // 964112
 
 	/**
 	 * The message start string is designed to be unlikely to occur in normal data.
@@ -160,22 +160,19 @@ public:
 	    {  90000,  uint256S("0x84686fb34c249133aa155c04f7bbc6035bdb71f9fc845444137b7535fed69cdb")},
 	    {  144999, uint256S("0xcf88b7b476697e040ce836c3b68a6e6bde7d434649426a4a4e17bc7887f4e53d")}, // fix GetBlockSubsidy, commit 2931510
 	    {  149999, uint256S("0x1afa7bcfedb1fe0799b7dac2feea3ba13d58cd2cce1c4814f03db130a79687f5")}, // LWMA3 activation
-	    {  200000, uint256S("0x665fd8d4901c1524d73362186b98989974682a1002ca1181c88d89813734d41a")},
-	    {  300000, uint256S("0x24676ff40c004077eae9fa0ec6b3f708313471b02d8a4ea2cb8254681034251a")},
-	    {  400000, uint256S("0x1513d02c79b14bae676d49581182e25164cdb8afa8cac9124b2b8ffec95a6bf3")},
 	    {  500000, uint256S("0x9176ad15a493e5db78f653c4fb6bc6585dc2e06869e2aa7390eb22ea5e33cbcb")},
-	    {  600000, uint256S("0x56fe35f53fcfb1333adc1c1b405cc7e0416eec1e105dae7d9935ecd6b953fe28")},
 	    {  700000, uint256S("0x0de1655eb77fc801ebd5f5488948fefcaaaa960f28b99a67c18796a89e4d4167")},
-	    // {  800000, uint256S("0x")}, // Future Block
+	    {  900000, uint256S("0x8f5a8f7ad48c6b4bc7744d12d1e5cfffb0d2e1510f7f369d27c8e5496b6ecb5f")},
+	    // {  975000, uint256S("0x")}, // Future Block: AuxPoW implementation, commit 182963e
 	  }
 	};
 
 
 	chainTxData = ChainTxData{
-	  // Data from rpc: getchaintxstats 17280 9d521139a818119dfccc09c5c751d55d6803a22640250c350902c066f89f6f74
-	  /* nTime    */ 1731046595,
-	  /* nTxCount */ 1597920,
-	  /* dTxRate  */ 0.03297122678257543
+	  // Data from rpc: getchaintxstats 17280 15a9309b2f899207f170b40a690595fb1f1705fcecb90052cc87a490efcdb3c4
+	  /* nTime    */ 1742818424,
+	  /* nTxCount */ 1985862,
+	  /* dTxRate  */ 0.03269240983693632
 	};
     }
 };
