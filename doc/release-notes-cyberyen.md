@@ -20,7 +20,7 @@ Bug fixes
 ---------
 
 - `9feabfa`: clean build and change permissions
-- `c93a9c0`: fix qt and boost patches
+- `c93a9c0`: fix qt patch
 - `e205f95`: fix seeds
 
 Credits
