@@ -5,6 +5,8 @@
 #ifndef BITCOIN_WALLETINITINTERFACE_H
 #define BITCOIN_WALLETINITINTERFACE_H
 
+#include <node/context.h>
+
 class ArgsManager;
 
 class WalletInitInterface {
