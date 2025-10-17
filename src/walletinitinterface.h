@@ -9,6 +9,8 @@
 
 class ArgsManager;
 
+struct NodeContext;
+
 class WalletInitInterface {
 public:
     /** Is the wallet component enabled */
@@ -18,7 +20,7 @@ public:
     /** Check wallet parameter interaction */
     virtual bool ParameterInteraction() const = 0;
     /** Add wallets that should be opened to list of chain clients. */
-    virtual void Construct(node::NodeContext& node) const = 0;
+    virtual void Construct(NodeContext& node) const = 0;
 
     virtual ~WalletInitInterface() {}
 };

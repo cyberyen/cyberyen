@@ -24,9 +24,6 @@ from test_framework.util import (
 
 from test_framework.messages import BLOCK_HEADER_SIZE
 
-# CYBERYEN
-from test_framework.auxpow_testing import mineAuxpowBlock
-
 class ReqType(Enum):
     JSON = 1
     BIN = 2
@@ -208,7 +205,6 @@ class RESTTest (BitcoinTestFramework):
         long_uri = '/'.join(['{}-{}'.format(txid, n_) for n_ in range(15)])
         self.test_rest_request("/getutxos/checkmempool/{}".format(long_uri), http_method='POST', status=200)
 
-        mineAuxpowBlock(self.nodes[0], self.wallet)  # generate block to not affect upcoming tests
         self.nodes[0].generate(1)  # generate block to not affect upcoming tests
         self.sync_all()
 

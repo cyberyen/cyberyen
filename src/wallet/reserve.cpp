@@ -2,6 +2,28 @@
 #include <wallet/scriptpubkeyman.h>
 #include <wallet/wallet.h>
 
+bool ReserveDestination::GetReservedDestination(CTxDestination& dest, bool internal)
+{
+    m_spk_man = pwallet->GetScriptPubKeyMan(type, internal);
+    if (!m_spk_man) {
+        return false;
+    }
+
+    if (nIndex == -1) {
+        m_spk_man->TopUp();
+
+        CKeyPool keypool;
+        int64_t reserved_index;
+        if (!m_spk_man->GetReservedDestination(type, internal, address, reserved_index, keypool)) {
+            return false;
+        }
+        nIndex = reserved_index;
+        fInternal = keypool.fInternal;
+    }
+    dest = address;
+    return true;
+}
+
 void ReserveDestination::KeepDestination()
 {
     if (nIndex != -1) {
@@ -19,27 +41,4 @@ void ReserveDestination::ReturnDestination()
     }
     nIndex = -1;
     address = CNoDestination();
-}
-
-bool ReserveDestination::GetReservedDestination(CTxDestination& dest, bool internal)
-{
-    m_spk_man = pwallet->GetScriptPubKeyMan(type, internal);
-    if (!m_spk_man) {
-        printf("Error: No %s addresses available.", FormatOutputType(type));
-        return false;
-    }
-
-
-    if (nIndex == -1)
-    {
-        m_spk_man->TopUp();
-
-        CKeyPool keypool;
-        if (!m_spk_man->GetReservedDestination(type, internal, address, nIndex, keypool)) {
-            return false;
-        }
-        fInternal = keypool.fInternal;
-    }
-    dest = address;
-    return true;
 }

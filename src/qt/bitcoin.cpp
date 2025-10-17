@@ -446,7 +446,7 @@ int GuiMain(int argc, char* argv[])
     SetupEnvironment();
     util::ThreadSetInternalName("main");
 
-    node::NodeContext node_context;
+    NodeContext node_context;
     std::unique_ptr<interfaces::Node> node = interfaces::MakeNode(&node_context);
 
     // Subscribe to global signals from core

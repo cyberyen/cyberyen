@@ -10,9 +10,7 @@
 #include <primitives/transaction.h>
 #include <util/error.h>
 
-namespace node {
-    struct NodeContext;
-}
+struct NodeContext;
 
 /** Maximum fee rate for sendrawtransaction and testmempoolaccept RPC calls.
  * Also used by the GUI when broadcasting a completed PSBT.
@@ -38,6 +36,6 @@ static const CFeeRate DEFAULT_MAX_RAW_TX_FEE_RATE{COIN / 10};
  * @param[in]  wait_callback wait until callbacks have been processed to avoid stale result due to a sequentially RPC.
  * return error
  */
-NODISCARD TransactionError BroadcastTransaction(node::NodeContext& node, CTransactionRef tx, std::string& err_string, const CAmount& max_tx_fee, bool relay, bool wait_callback);
+NODISCARD TransactionError BroadcastTransaction(NodeContext& node, CTransactionRef tx, std::string& err_string, const CAmount& max_tx_fee, bool relay, bool wait_callback);
 
 #endif // BITCOIN_NODE_TRANSACTION_H

@@ -333,13 +333,13 @@ class P2PInterface(P2PConnection):
 
         def peer_connect_send_version(self, services):
         # Send a version msg
-            vt = msg_version()
-            vt.nServices = services
-            vt.addrTo.ip = self.dstaddr
-            vt.addrTo.port = self.dstport
-            vt.addrFrom.ip = "0.0.0.0"
-            vt.addrFrom.port = 0
-            self.on_connection_send_msg = vt  # Will be sent in connection_made callback
+        vt = msg_version()
+        vt.nServices = services
+        vt.addrTo.ip = self.dstaddr
+        vt.addrTo.port = self.dstport
+        vt.addrFrom.ip = "0.0.0.0"
+        vt.addrFrom.port = 0
+        self.on_connection_send_msg = vt  # Will be sent in connection_made callback
 
     def peer_connect(self, *args, services=NODE_NETWORK|NODE_WITNESS|NODE_MWEB, send_version=True, **kwargs):
         create_conn = super().peer_connect(*args, **kwargs)

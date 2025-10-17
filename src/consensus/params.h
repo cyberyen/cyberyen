@@ -105,12 +105,6 @@ struct Params {
      */
     bool signet_blocks{false};
     std::vector<uint8_t> signet_challenge;
-
-    /** Auxpow parameters */
-    int32_t nAuxpowChainId;
-    int32_t nAuxpowOldChainId;
-    int nAuxpowStartHeight;
-    bool fStrictChainId;
 };
 } // namespace Consensus
 
