@@ -26,18 +26,18 @@ void auxMiningCheck(const node::JSONRPCRequest& request)
   node::NodeContext& node = request.nodeContext? *request.nodeContext: EnsureNodeContext (request.context);
   if (!node.connman)
     throw JSONRPCError (RPC_CLIENT_P2P_DISABLED,
-			"Error: Peer-to-peer functionality missing or"
-			" disabled");
+                        "Error: Peer-to-peer functionality missing or"
+                        " disabled");
 
   if (node.connman->GetNodeCount (CConnman::NumConnections::CONNECTIONS_ALL) == 0
-	&& !Params ().MineBlocksOnDemand ())
+        && !Params ().MineBlocksOnDemand ())
     throw JSONRPCError (RPC_CLIENT_NOT_CONNECTED,
-			"Cyberyen is not connected!");
+                        "Bellscoin is not connected!");
 
   if (node.chainman->ActiveChainstate ().IsInitialBlockDownload ()
-	&& !Params ().MineBlocksOnDemand ())
+        && !Params ().MineBlocksOnDemand ())
     throw JSONRPCError (RPC_CLIENT_IN_INITIAL_DOWNLOAD,
-			"Cyberyen is downloading blocks...");
+                        "Bellscoin is downloading blocks...");
 
   /* This should never fail, since the chain is already
      past the point of merge-mining start.  Check nevertheless.  */
@@ -53,7 +53,7 @@ void auxMiningCheck(const node::JSONRPCRequest& request)
 
 const CBlock*
 AuxpowMiner::getCurrentBlock (ChainstateManager &chainman, const CTxMemPool& mempool,
-			      const CScript& scriptPubKey, uint256& target)
+                              const CScript& scriptPubKey, uint256& target)
 {
   AssertLockHeld(cs);
   const CBlock* pblockCur = nullptr;
@@ -66,38 +66,38 @@ AuxpowMiner::getCurrentBlock (ChainstateManager &chainman, const CTxMemPool& mem
       pblockCur = iter->second;
 
     if (pblockCur == nullptr
-	|| pindexPrev != chainman.ActiveTip()
-	|| (mempool.GetTransactionsUpdated () != txUpdatedLast
-	    && GetTime () - startTime > 60))
+        || pindexPrev != chainman.ActiveTip()
+        || (mempool.GetTransactionsUpdated () != txUpdatedLast
+            && GetTime () - startTime > 60))
       {
-	if (pindexPrev != chainman.ActiveTip())
-	  {
-	    /* Clear old blocks since they're obsolete now.  */
-	    blocks.clear ();
-	    templates.clear ();
-	    curBlocks.clear ();
-	  }
+        if (pindexPrev != chainman.ActiveTip())
+          {
+            /* Clear old blocks since they're obsolete now.  */
+            blocks.clear ();
+            templates.clear ();
+            curBlocks.clear ();
+          }
 
-	/* Create new block with nonce = 0 and extraNonce = 1.  */
-	std::unique_ptr<CBlockTemplate> newBlock
-	    = BlockAssembler (mempool, Params()).CreateNewBlock (scriptPubKey);
-	if (newBlock == nullptr)
-	  throw JSONRPCError (RPC_OUT_OF_MEMORY, "out of memory");
+        /* Create new block with nonce = 0 and extraNonce = 1.  */
+        std::unique_ptr<CBlockTemplate> newBlock
+            = BlockAssembler (mempool, Params()).CreateNewBlock (scriptPubKey);
+        if (newBlock == nullptr)
+          throw JSONRPCError (RPC_OUT_OF_MEMORY, "out of memory");
 
-	/* Update state only when CreateNewBlock succeeded.  */
-	txUpdatedLast = mempool.GetTransactionsUpdated ();
-	pindexPrev = chainman.ActiveTip();
-	startTime = GetTime ();
+        /* Update state only when CreateNewBlock succeeded.  */
+        txUpdatedLast = mempool.GetTransactionsUpdated ();
+        pindexPrev = chainman.ActiveTip();
+        startTime = GetTime ();
 
-	/* Finalise it by setting the version and building the merkle root.  */
-	IncrementExtraNonce (&newBlock->block, pindexPrev, extraNonce);
-	newBlock->block.SetAuxpowVersion (true);
+        /* Finalise it by setting the version and building the merkle root.  */
+        IncrementExtraNonce (&newBlock->block, pindexPrev, extraNonce);
+        newBlock->block.SetAuxpowVersion (true);
 
-	/* Save in our map of constructed blocks.  */
-	pblockCur = &newBlock->block;
-	curBlocks.try_emplace(scriptID, pblockCur);
-	blocks[pblockCur->GetHash ()] = pblockCur;
-	templates.push_back (std::move (newBlock));
+        /* Save in our map of constructed blocks.  */
+        pblockCur = &newBlock->block;
+        curBlocks.try_emplace(scriptID, pblockCur);
+        blocks[pblockCur->GetHash ()] = pblockCur;
+        templates.push_back (std::move (newBlock));
       }
   }
 
@@ -135,7 +135,7 @@ AuxpowMiner::lookupSavedBlock (const std::string& hashHex) const
 
 UniValue
 AuxpowMiner::createAuxBlock (const node::JSONRPCRequest& request,
-			     const CScript& scriptPubKey)
+                             const CScript& scriptPubKey)
 {
   auxMiningCheck (request);
   LOCK (cs);
@@ -150,7 +150,7 @@ AuxpowMiner::createAuxBlock (const node::JSONRPCRequest& request,
   result.pushKV ("chainid", pblock->GetChainId ());
   result.pushKV ("previousblockhash", pblock->hashPrevBlock.GetHex ());
   result.pushKV ("coinbasevalue",
-		 static_cast<int64_t> (pblock->vtx[0]->vout[0].nValue));
+                 static_cast<int64_t> (pblock->vtx[0]->vout[0].nValue));
   result.pushKV ("bits", strprintf ("%08x", pblock->nBits));
   result.pushKV ("height", static_cast<int64_t> (pindexPrev->nHeight + 1));
   result.pushKV ("_target", HexStr (target));
@@ -160,8 +160,8 @@ AuxpowMiner::createAuxBlock (const node::JSONRPCRequest& request,
 
 bool
 AuxpowMiner::submitAuxBlock (const node::JSONRPCRequest& request,
-			     const std::string& hashHex,
-			     const std::string& auxpowHex) const
+                             const std::string& hashHex,
+                             const std::string& auxpowHex) const
 {
   auxMiningCheck (request);
   auto& chainman = request.nodeContext? EnsureChainman (*request.nodeContext): EnsureRefChainman (request.context);
