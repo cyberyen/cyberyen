@@ -1434,14 +1434,8 @@ static RPCHelpMan getauxblock()
     /* RPCHelpMan::Check is not applicable here since we have the
        custom check for exactly zero or two arguments.  */
 
-    // Check if the wallet is disabled at compile time (e.g., built with --disable-wallet)
-    #ifndef ENABLE_WALLET
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "getauxblock is not available when wallet is disabled");
-    #else
-    // If wallet support is enabled, proceed with the logic below
-
     std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
-
+    
     if (!wallet) return NullUniValue;
 
     CWallet* const pwallet = wallet.get();
@@ -1466,8 +1460,15 @@ static RPCHelpMan getauxblock()
         = AuxpowMiner::get().submitAuxBlock(request, hash, request.params[1].get_str());
     if (fAccepted)
         g_mining_keys.MarkBlockSubmitted(pwallet, hash);
+	if(fAccepted)
+	{
+		LogPrint(BCLog::NET, "ACCEPNED----------------------------_>\n");
+	}
+	else
+	{
+		LogPrint(BCLog::NET, "CANT ACCEPNED----------------------------_>\n");
+	}
     return fAccepted;
-    #endif
 },
     };
 }
