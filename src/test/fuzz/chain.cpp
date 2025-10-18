@@ -6,6 +6,8 @@
 #include <test/fuzz/FuzzedDataProvider.h>
 #include <test/fuzz/fuzz.h>
 #include <test/fuzz/util.h>
+#include <test/util/setup_common.h>
+#include <validation.h>
 
 #include <cstdint>
 #include <optional>
@@ -14,6 +16,9 @@
 void test_one_input(const std::vector<uint8_t>& buffer)
 {
     FuzzedDataProvider fuzzed_data_provider(buffer.data(), buffer.size());
+    std::unique_ptr<const TestingSetup> setup{MakeNoLogFileContext<const TestingSetup>()};
+    const auto& node = setup->m_node;
+    auto& chainman{*node.chainman};
     std::optional<CDiskBlockIndex> disk_block_index = ConsumeDeserializable<CDiskBlockIndex>(fuzzed_data_provider);
     if (!disk_block_index) {
         return;
@@ -31,7 +36,7 @@ void test_one_input(const std::vector<uint8_t>& buffer)
     (void)disk_block_index->IsValid();
     (void)disk_block_index->ToString();
 
-    const CBlockHeader block_header = disk_block_index->GetBlockHeader();
+    const CBlockHeader block_header = disk_block_index->GetBlockHeader(chainman.m_blockman);
     (void)CDiskBlockIndex{*disk_block_index};
     (void)disk_block_index->BuildSkip();
 

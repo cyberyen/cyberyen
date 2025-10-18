@@ -10,6 +10,7 @@
 #include <consensus/params.h>
 #include <flatfile.h>
 #include <primitives/block.h>
+#include <primitives/pureheader.h>
 #include <tinyformat.h>
 #include <uint256.h>
 
@@ -197,7 +198,7 @@ public:
     {
     }
 
-    explicit CBlockIndex(const CBlockHeader& block)
+    explicit CBlockIndex(const CPureBlockHeader& block)
         : nVersion{block.nVersion},
           hashMerkleRoot{block.hashMerkleRoot},
           nTime{block.nTime},
@@ -224,21 +225,34 @@ public:
         return ret;
     }
 
-    CBlockHeader GetBlockHeader() const
+    bool IsAuxpow() const
     {
-        CBlockHeader block;
-        block.nVersion       = nVersion;
+        return nVersion & CPureBlockHeader::VERSION_AUXPOW;
+    }
+
+    inline int GetBaseVersion() const
+    {
+        return CPureBlockHeader::GetBaseVersion(nVersion);
+    }
+
+    CPureBlockHeader GetPureHeader() const
+    {
+        CPureBlockHeader block;
+        block.nVersion = nVersion;
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
         block.hashMerkleRoot = hashMerkleRoot;
-        block.nTime          = nTime;
-        block.nBits          = nBits;
-        block.nNonce         = nNonce;
+        block.nTime = nTime;
+        block.nBits = nBits;
+        block.nNonce = nNonce;
         return block;
     }
 
+    CBlockHeader GetBlockHeader(const Consensus::Params& consensusParams) const;
+
     uint256 GetBlockHash() const
     {
+        assert(phashBlock != nullptr);
         return *phashBlock;
     }
 
@@ -250,11 +264,6 @@ public:
      * Does not imply the transactions are still stored on disk. (IsBlockPruned might return true)
      */
     bool HaveTxsDownloaded() const { return nChainTx != 0; }
-    
-    uint256 GetBlockPoWHash() const
-    {
-        return GetBlockHeader().GetPoWHash();
-    }
 
     int64_t GetBlockTime() const
     {
@@ -371,7 +380,7 @@ public:
 
     uint256 GetBlockHash() const
     {
-        CBlockHeader block;
+        CPureBlockHeader block;
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
         block.hashMerkleRoot  = hashMerkleRoot;
