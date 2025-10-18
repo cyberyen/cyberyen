@@ -85,6 +85,13 @@ public:
 	consensus.fPowAllowMinDifficultyBlocks = false;
 	consensus.fPowNoRetargeting = false;
 	consensus.fSimplifiedRewards = true;
+
+	//auxpow
+	consensus.nAuxpowChainId = 0x0001;
+	consensus.nAuxpowStartHeight = std::numeric_limits<uint32_t>::max();
+	consensus.fStrictChainId = true;
+	consensus.nLegacyBlocksBefore = std::numeric_limits<uint32_t>::max();
+
 	consensus.nRuleChangeActivationThreshold = 720; // 75% from 960
 	consensus.nMinerConfirmationWindow = 960; // nPowTargetTimespan / nPowTargetSpacing * 4
 	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -201,6 +208,13 @@ public:
 	consensus.fPowAllowMinDifficultyBlocks = true;
 	consensus.fPowNoRetargeting = false;
 	consensus.fSimplifiedRewards = true;
+
+        //auxpow
+        consensus.nAuxpowChainId = 0x0001;
+        consensus.nAuxpowStartHeight = std::numeric_limits<uint32_t>::max();
+        consensus.fStrictChainId = true;
+        consensus.nLegacyBlocksBefore = std::numeric_limits<uint32_t>::max();
+
 	consensus.nRuleChangeActivationThreshold = 720; // 75% from 960
 	consensus.nMinerConfirmationWindow = 960; // nPowTargetTimespan / nPowTargetSpacing * 4
 	consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -300,6 +314,13 @@ public:
 	consensus.fPowAllowMinDifficultyBlocks = true;
 	consensus.fPowNoRetargeting = true;
 	consensus.fSimplifiedRewards = true;
+
+        //auxpow
+        consensus.nAuxpowChainId = 0x0001;
+        consensus.nAuxpowStartHeight = std::numeric_limits<uint32_t>::max();
+        consensus.fStrictChainId = true;
+        consensus.nLegacyBlocksBefore = std::numeric_limits<uint32_t>::max();
+
 	consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
 	consensus.nMinerConfirmationWindow = 144;
 

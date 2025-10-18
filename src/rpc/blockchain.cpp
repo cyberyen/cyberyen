@@ -21,6 +21,7 @@
 #include <policy/policy.h>
 #include <policy/rbf.h>
 #include <primitives/transaction.h>
+#include <rpc/rawtransaction.h>
 #include <rpc/server.h>
 #include <rpc/util.h>
 #include <script/descriptor.h>
@@ -35,6 +36,7 @@
 #include <util/translation.h>
 #include <validation.h>
 #include <validationinterface.h>
+#include <wallet/context.h>
 #include <warnings.h>
 
 #include <stdint.h>
@@ -57,6 +59,12 @@ static CUpdatedBlock latestblock GUARDED_BY(cs_blockchange);
 
 NodeContext& EnsureNodeContext(const util::Ref& context)
 {
+    if (context.Has<WalletContext>()) {
+        const auto& wctx = context.Get<WalletContext>();
+        if (wctx.nodeContext != nullptr)
+            return *wctx.nodeContext;
+    }
+
     if (!context.Has<NodeContext>()) {
 	throw JSONRPCError(RPC_INTERNAL_ERROR, "Node context not found");
     }
@@ -122,6 +130,41 @@ static int ComputeNextBlockAndDepth(const CBlockIndex* tip, const CBlockIndex* b
     }
     next = nullptr;
     return blockindex == tip ? 1 : -1;
+}
+
+UniValue AuxpowToJSON(const CAuxPow& auxpow)
+{
+    UniValue result(UniValue::VOBJ);
+
+    {
+        UniValue tx(UniValue::VOBJ);
+        tx.pushKV("hex", EncodeHexTx(*auxpow.coinbaseTx));
+        TxToJSON(*auxpow.coinbaseTx, auxpow.parentBlock.GetHash(), tx);
+        result.pushKV("tx", tx);
+    }
+
+    result.pushKV("chainindex", auxpow.nChainIndex);
+
+    {
+        UniValue branch(UniValue::VARR);
+        for (const auto& node : auxpow.vMerkleBranch)
+            branch.push_back(node.GetHex());
+        result.pushKV("merklebranch", branch);
+    }
+
+    {
+        UniValue branch(UniValue::VARR);
+        for (const auto& node : auxpow.vChainMerkleBranch)
+            branch.push_back(node.GetHex());
+        result.pushKV("chainmerklebranch", branch);
+    }
+
+    CDataStream ssParent(SER_NETWORK, PROTOCOL_VERSION);
+    ssParent << auxpow.parentBlock;
+    const std::string strHex = HexStr(ssParent);
+    result.pushKV("parentblock", strHex);
+
+    return result;
 }
 
 UniValue blockheaderToJSON(const CBlockIndex* tip, const CBlockIndex* blockindex)
@@ -291,6 +334,9 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* tip, const CBlockIn
 
 	result.pushKV("mweb", mweb_block);
     }
+
+    if (block.auxpow)
+        result.pushKV("auxpow", AuxpowToJSON(*block.auxpow));
 
     if (blockindex->pprev)
 	result.pushKV("previousblockhash", blockindex->pprev->GetBlockHash().GetHex());
@@ -1020,7 +1066,7 @@ static RPCHelpMan getblockheader()
     if (!fVerbose)
     {
 	CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION);
-	ssBlock << pblockindex->GetBlockHeader();
+        ssBlock << pblockindex->GetBlockHeader(Params().GetConsensus());
 	std::string strHex = HexStr(ssBlock);
 	return strHex;
     }
@@ -1097,6 +1143,18 @@ static RPCHelpMan getblock()
 		    {RPCResult::Type::NUM, "nTx", "The number of transactions in the block"},
 		    {RPCResult::Type::STR_HEX, "previousblockhash", "The hash of the previous block"},
 		    {RPCResult::Type::STR_HEX, "nextblockhash", "The hash of the next block"},
+                    {RPCResult::Type::OBJ, "auxpow", "The auxpow object attached to this block",
+                        {
+                            {RPCResult::Type::OBJ, "tx", "The parent chain coinbase tx of this auxpow",
+                                {{RPCResult::Type::ELISION, "", "Same format as for decoded raw transactions"}}},
+                            {RPCResult::Type::NUM, "index", "Merkle index of the parent coinbase"},
+                            {RPCResult::Type::ARR, "merklebranch", "Merkle branch of the parent coinbase",
+                                {{RPCResult::Type::STR_HEX, "", "The Merkle branch hash"}}},
+                            {RPCResult::Type::NUM, "chainindex", "Index in the auxpow Merkle tree"},
+                            {RPCResult::Type::ARR, "chainmerklebranch", "Branch in the auxpow Merkle tree",
+                                {{RPCResult::Type::STR_HEX, "", "The Merkle branch hash"}}},
+                            {RPCResult::Type::STR_HEX, "parentblock", "The parent block serialised as hex string"},
+                        }},
 		}},
 		    RPCResult{"for verbosity = 2",
 		RPCResult::Type::OBJ, "", "",

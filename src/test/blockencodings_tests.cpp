@@ -6,6 +6,7 @@
 #include <chainparams.h>
 #include <consensus/merkle.h>
 #include <pow.h>
+#include <primitives/pureheader.h>
 #include <streams.h>
 
 #include <test/util/setup_common.h>
