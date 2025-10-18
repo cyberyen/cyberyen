@@ -14,7 +14,7 @@
 #include <util/check.h>
 #include <validation.h>
 
-CTxIn generatetoaddress(const node::NodeContext& node, const std::string& address)
+CTxIn generatetoaddress(const NodeContext& node, const std::string& address)
 {
     const auto dest = DecodeDestination(address);
     assert(IsValidDestination(dest));
@@ -23,7 +23,7 @@ CTxIn generatetoaddress(const node::NodeContext& node, const std::string& addres
     return MineBlock(node, coinbase_script);
 }
 
-CTxIn MineBlock(const node::NodeContext& node, const CScript& coinbase_scriptPubKey)
+CTxIn MineBlock(const NodeContext& node, const CScript& coinbase_scriptPubKey)
 {
     auto block = PrepareBlock(node, coinbase_scriptPubKey);
 
@@ -38,7 +38,7 @@ CTxIn MineBlock(const node::NodeContext& node, const CScript& coinbase_scriptPub
     return CTxIn{block->vtx[0]->GetHash(), 0};
 }
 
-std::shared_ptr<CBlock> PrepareBlock(const node::NodeContext& node, const CScript& coinbase_scriptPubKey)
+std::shared_ptr<CBlock> PrepareBlock(const NodeContext& node, const CScript& coinbase_scriptPubKey)
 {
     auto block = std::make_shared<CBlock>(
         BlockAssembler{*Assert(node.mempool), Params()}

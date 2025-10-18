@@ -18,7 +18,7 @@ BOOST_FIXTURE_TEST_SUITE(scriptpubkeyman_tests, BasicTestingSetup)
 BOOST_AUTO_TEST_CASE(CanProvide)
 {
     // Set up wallet and keyman variables.
-    node::NodeContext node;
+    NodeContext node;
     std::unique_ptr<interfaces::Chain> chain = interfaces::MakeChain(node);
     CWallet wallet(chain.get(), "", CreateDummyWalletDatabase());
     LegacyScriptPubKeyMan& keyman = *wallet.GetOrCreateLegacyScriptPubKeyMan();
@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(CanProvide)
 BOOST_AUTO_TEST_CASE(StealthAddresses)
 {
     // Set up wallet and keyman variables.
-    node::NodeContext node;
+    NodeContext node;
     std::unique_ptr<interfaces::Chain> chain = interfaces::MakeChain(node);
     CWallet wallet(chain.get(), "", CreateMockWalletDatabase());
     wallet.SetMinVersion(WalletFeature::FEATURE_HD_SPLIT);

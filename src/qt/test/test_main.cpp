@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
         BasicTestingSetup dummy{CBaseChainParams::REGTEST};
     }
 
-    node::NodeContext node_context;
+    NodeContext node_context;
     std::unique_ptr<interfaces::Node> node = interfaces::MakeNode(&node_context);
 
     bool fInvalid = false;

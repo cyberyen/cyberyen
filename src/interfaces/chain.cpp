@@ -141,7 +141,6 @@ public:
     const CRPCCommand* m_wrapped_command;
 };
 
-using NodeContext = node::NodeContext;
 class ChainImpl : public Chain
 {
 public:

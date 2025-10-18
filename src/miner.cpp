@@ -124,10 +124,8 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     CBlockIndex* pindexPrev = ::ChainActive().Tip();
     assert(pindexPrev != nullptr);
     nHeight = pindexPrev->nHeight + 1;
-    const int32_t nChainId = chainparams.GetConsensus ().nAuxpowChainId;
-    const int32_t nVersion = ComputeBlockVersion(pindexPrev, chainparams.GetConsensus());
-    pblock->SetBaseVersion(nVersion, nChainId);
 
+    pblock->nVersion = ComputeBlockVersion(pindexPrev, chainparams.GetConsensus());
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
     if (chainparams.MineBlocksOnDemand())

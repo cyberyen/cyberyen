@@ -6,7 +6,6 @@
 #include <validation.h>
 
 #include <arith_uint256.h>
-#include <auxpow.h>
 #include <chain.h>
 #include <chainparams.h>
 #include <checkqueue.h>
@@ -1151,54 +1150,6 @@ CTransactionRef GetTransaction(const CBlockIndex* const block_index, const CTxMe
 //
 // CBlock and CBlockIndex
 //
-//////////////////////////////////////////////////////////////////////////////
-bool CheckProofOfWork(const CBlockHeader& block, const Consensus::Params& params)
-{
-    /* Except for legacy blocks with full version 1, ensure that
-       the chain ID is correct.  Legacy blocks are not allowed since
-       the merge-mining start, which is checked in AcceptBlockHeader
-       where the height is known.  */
-    const int32_t &nChainID = block.GetChainId();
-    if (!block.IsLegacy() && params.fStrictChainId) {
-        if(nChainID > 0) {
-            if(nChainID != params.nAuxpowChainId)
-                return error("%s : block does not have our chain ID"
-                        " (got %d, expected %d, full nVersion %d)",
-                        __func__, nChainID,
-                        params.nAuxpowChainId, block.nVersion);
-        } else if(block.auxpow) {
-                return error("%s : block does not have our old chain ID"
-                        " (got full nVersion %d)",
-                        __func__, block.nVersion);
-        }
-    }
-
-    /* If there is no auxpow, just check the block hash.  */
-    if (!block.auxpow)
-    {
-        if (block.IsAuxpow())
-            return error("%s : no auxpow on block with auxpow version",
-                         __func__);
-
-        if (!CheckProofOfWork(block.GetPoWHash(), block.nBits, params))
-        {
-            return error("%s : non-AUX proof of work failed", __func__);
-        }
-
-        return true;
-    }
-
-    /* We have auxpow.  Check it.  */
-    if (!block.IsAuxpow())
-        return error("%s : auxpow on block with non-auxpow version", __func__);
-
-    if (!block.auxpow->check(block.GetHash(), block.GetChainId(), params))
-        return error("%s : AUX POW is not valid", __func__);
-    if (!CheckProofOfWork(block.auxpow->getParentBlockHash(), block.nBits, params))
-        return error("%s : AUX proof of work failed", __func__);
-
-    return true;
-}
 
 static bool WriteBlockToDisk(const CBlock& block, FlatFilePos& pos, const CMessageHeader::MessageStartChars& messageStart)
 {
@@ -1221,30 +1172,30 @@ static bool WriteBlockToDisk(const CBlock& block, FlatFilePos& pos, const CMessa
     return true;
 }
 
-bool ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos, const Consensus::Params& consensusParams, bool fCheckPOW)
+bool ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos, const Consensus::Params& consensusParams)
 {
     block.SetNull();
 
     // Open history file to read
     CAutoFile filein(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
     if (filein.IsNull())
-		return error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
+	return error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
 
     // Read block
     try {
-		filein >> block;
+	filein >> block;
     }
     catch (const std::exception& e) {
-		return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
+	return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
 
     // Check the header
-    // if (!CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams))
-	// 	return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+    if (!CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams))
+	return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
 
     // Signet only: check block solution
     if (consensusParams.signet_blocks && !CheckSignetBlockSolution(block, consensusParams)) {
-		return error("ReadBlockFromDisk: Errors in block solution at %s", pos.ToString());
+	return error("ReadBlockFromDisk: Errors in block solution at %s", pos.ToString());
     }
 
     return true;
@@ -1254,17 +1205,15 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus
 {
     FlatFilePos blockPos;
     {
-		LOCK(cs_main);
-		blockPos = pindex->GetBlockPos();
+	LOCK(cs_main);
+	blockPos = pindex->GetBlockPos();
     }
 
     if (!ReadBlockFromDisk(block, blockPos, consensusParams))
-		return false;
-
+	return false;
     if (block.GetHash() != pindex->GetBlockHash())
-		return error("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for %s at %s",
-			pindex->ToString(), pindex->GetBlockPos().ToString());
-
+	return error("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for %s at %s",
+		pindex->ToString(), pindex->GetBlockPos().ToString());
     return true;
 }
 
@@ -1274,30 +1223,30 @@ bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const FlatFilePos& pos, c
     hpos.nPos -= 8; // Seek back 8 bytes for meta header
     CAutoFile filein(OpenBlockFile(hpos, true), SER_DISK, CLIENT_VERSION);
     if (filein.IsNull()) {
-		return error("%s: OpenBlockFile failed for %s", __func__, pos.ToString());
+	return error("%s: OpenBlockFile failed for %s", __func__, pos.ToString());
     }
 
     try {
-		CMessageHeader::MessageStartChars blk_start;
-		unsigned int blk_size;
+	CMessageHeader::MessageStartChars blk_start;
+	unsigned int blk_size;
 
-		filein >> blk_start >> blk_size;
+	filein >> blk_start >> blk_size;
 
-		if (memcmp(blk_start, message_start, CMessageHeader::MESSAGE_START_SIZE)) {
-			return error("%s: Block magic mismatch for %s: %s versus expected %s", __func__, pos.ToString(),
-				HexStr(blk_start),
-				HexStr(message_start));
-		}
+	if (memcmp(blk_start, message_start, CMessageHeader::MESSAGE_START_SIZE)) {
+	    return error("%s: Block magic mismatch for %s: %s versus expected %s", __func__, pos.ToString(),
+		    HexStr(blk_start),
+		    HexStr(message_start));
+	}
 
-		if (blk_size > MAX_SIZE) {
-			return error("%s: Block data is larger than maximum deserialization size for %s: %s versus %s", __func__, pos.ToString(),
-				blk_size, MAX_SIZE);
-		}
+	if (blk_size > MAX_SIZE) {
+	    return error("%s: Block data is larger than maximum deserialization size for %s: %s versus %s", __func__, pos.ToString(),
+		    blk_size, MAX_SIZE);
+	}
 
-		block.resize(blk_size); // Zeroing of memory is intentional here
-		filein.read((char*)block.data(), blk_size);
+	block.resize(blk_size); // Zeroing of memory is intentional here
+	filein.read((char*)block.data(), blk_size);
     } catch(const std::exception& e) {
-		return error("%s: Read from block file failed: %s for %s", __func__, e.what(), pos.ToString());
+	return error("%s: Read from block file failed: %s for %s", __func__, e.what(), pos.ToString());
     }
 
     return true;
@@ -1312,50 +1261,6 @@ bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const CBlockIndex* pindex
     }
 
     return ReadRawBlockFromDisk(block, block_pos, message_start);
-}
-
-template<typename T>
-static bool ReadBlockOrHeader(T& block, const FlatFilePos& pos, const Consensus::Params& consensusParams, bool fCheckPOW)
-{
-    block.SetNull();
-
-    CAutoFile filein(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
-    if (filein.IsNull())
-        return error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
-
-    try {
-        filein >> block;
-    } catch (const std::exception& e) {
-        return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
-    }
-
-    if (fCheckPOW && !CheckProofOfWork(block, consensusParams))
-        return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
-
-    return true;
-}
-
-template<typename T>
-static bool ReadBlockOrHeader(T& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams, bool fCheckPOW)
-{
-    FlatFilePos blockPos;
-    {
-        LOCK(cs_main);
-        blockPos = pindex->GetBlockPos();
-    }
-
-    if (!ReadBlockOrHeader(block, blockPos, consensusParams, fCheckPOW))
-        return false;
-
-    if (block.GetHash() != pindex->GetBlockHash())
-        return error("ReadBlockFromDisk: GetHash() doesn't match index for %s at %s",
-                     pindex->ToString(), pindex->GetBlockPos().ToString());
-    return true;
-}
-
-bool ReadBlockHeaderFromDisk(CBlockHeader& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams, bool fCheckPOW)
-{
-    return ReadBlockOrHeader(block, pindex, consensusParams, fCheckPOW);
 }
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
@@ -3567,8 +3472,8 @@ static bool FindUndoPos(BlockValidationState &state, int nFile, FlatFilePos &pos
 static bool CheckBlockHeader(const CBlockHeader& block, BlockValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true)
 {
     // Check proof of work matches claimed amount
-    if (fCheckPOW && !CheckProofOfWork(block, consensusParams))
-		return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "high-hash", "proof of work failed");
+    if (fCheckPOW && !CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams))
+	return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "high-hash", "proof of work failed");
 
     return true;
 }
@@ -3624,14 +3529,14 @@ bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensu
     // Check transactions
     // Must check for duplicate inputs (see CVE-2018-17144)
     for (const auto& tx : block.vtx) {
-		TxValidationState tx_state;
-		if (!CheckTransaction(*tx, tx_state)) {
-			// CheckBlock() does context-free validation checks. The only
-			// possible failures are consensus failures.
-			assert(tx_state.GetResult() == TxValidationResult::TX_CONSENSUS);
-			return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, tx_state.GetRejectReason(),
-					strprintf("Transaction check failed (tx hash %s) %s", tx->GetHash().ToString(), tx_state.GetDebugMessage()));
-		}
+	TxValidationState tx_state;
+	if (!CheckTransaction(*tx, tx_state)) {
+	    // CheckBlock() does context-free validation checks. The only
+	    // possible failures are consensus failures.
+	    assert(tx_state.GetResult() == TxValidationResult::TX_CONSENSUS);
+	    return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, tx_state.GetRejectReason(),
+				 strprintf("Transaction check failed (tx hash %s) %s", tx->GetHash().ToString(), tx_state.GetDebugMessage()));
+	}
     }
     unsigned int nSigOps = 0;
     for (const auto& tx : block.vtx)
@@ -3771,14 +3676,6 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, BlockValidatio
 	return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, strprintf("bad-version(0x%08x)", block.nVersion),
 				 strprintf("rejected nVersion=0x%08x block", block.nVersion));
 
-	const auto& baseVer = block.GetBaseVersion();
-	const int32_t& nChainID = block.GetChainId();
-	if(nHeight > consensusParams.nAuxpowStartHeight)
-	{
-		if((!CPureBlockHeader::IsValidBaseVersion(baseVer) || (nChainID > 0 && nChainID != consensusParams.nAuxpowChainId)))
-				return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, strprintf("bad-version(0x%08x)", baseVer),
-									strprintf("rejected nVersion=0x%08x block", block.nVersion));
-	}
     return true;
 }
 
@@ -4108,14 +4005,14 @@ bool ChainstateManager::ProcessNewBlock(const CChainParams& chainparams, const s
 	// Ensure that CheckBlock() passes before calling AcceptBlock, as
 	// belt-and-suspenders.
 	bool ret = CheckBlock(*pblock, state, chainparams.GetConsensus());
-		if (ret) {
-			// Store to disk
-			ret = ::ChainstateActive().AcceptBlock(pblock, state, chainparams, &pindex, fForceProcessing, nullptr, fNewBlock);
-		}
-		if (!ret) {
-			GetMainSignals().BlockChecked(*pblock, state);
-			return error("%s: AcceptBlock FAILED (%s)", __func__, state.ToString());
-		}
+	if (ret) {
+	    // Store to disk
+	    ret = ::ChainstateActive().AcceptBlock(pblock, state, chainparams, &pindex, fForceProcessing, nullptr, fNewBlock);
+	}
+	if (!ret) {
+	    GetMainSignals().BlockChecked(*pblock, state);
+	    return error("%s: AcceptBlock FAILED (%s)", __func__, state.ToString());
+	}
     }
 
     NotifyHeaderTip();

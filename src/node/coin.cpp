@@ -8,7 +8,7 @@
 #include <txmempool.h>
 #include <validation.h>
 
-void FindCoins(const node::NodeContext& node, std::map<COutPoint, Coin>& coins)
+void FindCoins(const NodeContext& node, std::map<COutPoint, Coin>& coins)
 {
     assert(node.mempool);
     LOCK2(cs_main, node.mempool->cs);

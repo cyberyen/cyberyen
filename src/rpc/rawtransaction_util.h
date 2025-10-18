@@ -7,8 +7,6 @@
 
 #include <map>
 #include <string>
-#include <uint256.h>
-#include <../primitives/transaction.h>
 
 class FillableSigningProvider;
 class UniValue;
@@ -40,6 +38,5 @@ void ParsePrevouts(const UniValue& prevTxsUnival, FillableSigningProvider* keyst
 
 /** Create a transaction from univalue parameters */
 CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, bool rbf);
-// CYBERYEN
-void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
+
 #endif // BITCOIN_RPC_RAWTRANSACTION_UTIL_H

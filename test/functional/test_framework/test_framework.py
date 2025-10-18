@@ -185,6 +185,12 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
                             help="set a random seed for deterministically reproducing a previous test run")
         parser.add_argument('--timeout-factor', dest="timeout_factor", type=float, default=1.0, help='adjust test timeouts by a factor. Setting it to 0 disables all timeouts')
 
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument("--descriptors", default=False, action="store_true",
+                            help="Run test using a descriptor wallet", dest='descriptors')
+        group.add_argument("--legacy-wallet", default=False, action="store_false",
+                            help="Run test using legacy wallets", dest='descriptors')
+
         self.add_options(parser)
         self.options = parser.parse_args()
         self.options.previous_releases_path = previous_releases_path
@@ -407,21 +413,6 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
 
     # Public helper methods. These can be accessed by the subclass test scripts.
 
-    def add_wallet_options(self, parser, *, descriptors=True, legacy=True):
-        kwargs = {}
-        if descriptors + legacy == 1:
-            # If only one type can be chosen, set it as default
-            kwargs["default"] = descriptors
-        group = parser.add_mutually_exclusive_group(
-            # If only one type is allowed, require it to be set in test_runner.py
-            required=os.getenv("REQUIRE_WALLET_TYPE_SET") == "1" and "default" in kwargs)
-        if descriptors:
-            group.add_argument("--descriptors", action='store_const', const=True, **kwargs,
-                               help="Run test using a descriptor wallet", dest='descriptors')
-        if legacy:
-            group.add_argument("--legacy-wallet", action='store_const', const=False, **kwargs,
-                               help="Run test using legacy wallets", dest='descriptors')
-
     def add_nodes(self, num_nodes: int, extra_args=None, *, rpchost=None, binary=None, binary_cli=None, versions=None):
         """Instantiate TestNode objects.
 
@@ -505,6 +496,7 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
 
     def start_nodes(self, extra_args=None, *args, **kwargs):
         """Start multiple cyberyends"""
+
         if extra_args is None:
             extra_args = [None] * self.num_nodes
         assert_equal(len(extra_args), self.num_nodes)
@@ -604,11 +596,6 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
         """
         self.connect_nodes(1, 2)
         self.sync_all()
-
-    def generate(self, generator, *args, sync_fun=None, **kwargs):
-        blocks = generator.generate(*args, **kwargs)
-        sync_fun() if sync_fun else self.sync_all()
-        return blocks
 
     def sync_blocks(self, nodes=None, wait=1, timeout=60):
         """
@@ -754,7 +741,7 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
 
             os.rmdir(cache_path('wallets'))  # Remove empty wallets dir
             for entry in os.listdir(cache_path()):
-                if entry not in ['chainstate', 'blocks', 'indexes']:  # Only keep chainstate and blocks folder
+                if entry not in ['chainstate', 'blocks']:  # Only keep chainstate and blocks folder
                     os.remove(cache_path(entry))
 
         for i in range(self.num_nodes):

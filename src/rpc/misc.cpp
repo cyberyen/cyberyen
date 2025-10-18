@@ -421,7 +421,7 @@ static RPCHelpMan mockscheduler()
 
     // protect against null pointer dereference
     CHECK_NONFATAL(request.context.Has<NodeContext>());
-    node::NodeContext& node = request.context.Get<NodeContext>();
+    NodeContext& node = request.context.Get<NodeContext>();
     CHECK_NONFATAL(node.scheduler);
     node.scheduler->MockForward(std::chrono::seconds(delta_seconds));
 
