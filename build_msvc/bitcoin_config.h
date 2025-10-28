@@ -21,7 +21,7 @@
 #define CLIENT_VERSION_MINOR 21
 
 /* Build revision */
-#define CLIENT_VERSION_REVISION 4
+#define CLIENT_VERSION_REVISION 5
 
 /* Copyright holder(s) before %s replacement */
 #define COPYRIGHT_HOLDERS "The %s developers"
@@ -253,7 +253,7 @@
 #define PACKAGE_NAME "Cyberyen Core"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Cyberyen Core 0.21.4"
+#define PACKAGE_STRING "Cyberyen Core 0.21.5"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "cyberyen"
@@ -262,7 +262,7 @@
 #define PACKAGE_URL "https://cyberyen.org/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "0.21.4"
+#define PACKAGE_VERSION "0.21.5"
 
 /* Define to necessary symbol if this constant uses a non-standard name on
    your system. */

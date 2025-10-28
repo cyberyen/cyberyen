@@ -107,8 +107,8 @@ public:
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartHeight = 0;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeoutHeight = 0;
 
-	consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000003916b868cd6163e0");
-	consensus.defaultAssumeValid = uint256S("0x15a9309b2f899207f170b40a690595fb1f1705fcecb90052cc87a490efcdb3c4"); // 964112
+	consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000003c65f35139fc6b90");
+	consensus.defaultAssumeValid = uint256S("0xce7c3482abb1484502a0e7ef4cb49f9654ca65f4642b9a0931e26143beb8ee9c"); // 1256405
 
 	/**
 	 * The message start string is designed to be unlikely to occur in normal data.
@@ -159,22 +159,21 @@ public:
 	    {  1,      uint256S("0x47cb4e21c076575a197a977198282397f97dbe0e62f0a731bd226f0d800211de")},
 	    {  1000,   uint256S("0xc8c20736dde8af32b54aaa28add2a9c80f57f76e54a636a90ad6fcb4753b1759")},
 	    {  2880,   uint256S("0x57ddbe24d1bef052b153cd987eb4be3ae7e976cbf5bf134e653ce21e08f71d9e")},
-	    {  90000,  uint256S("0x84686fb34c249133aa155c04f7bbc6035bdb71f9fc845444137b7535fed69cdb")},
 	    {  144999, uint256S("0xcf88b7b476697e040ce836c3b68a6e6bde7d434649426a4a4e17bc7887f4e53d")}, // fix GetBlockSubsidy, commit 2931510
 	    {  149999, uint256S("0x1afa7bcfedb1fe0799b7dac2feea3ba13d58cd2cce1c4814f03db130a79687f5")}, // LWMA3 activation
 	    {  500000, uint256S("0x9176ad15a493e5db78f653c4fb6bc6585dc2e06869e2aa7390eb22ea5e33cbcb")},
-	    {  700000, uint256S("0x0de1655eb77fc801ebd5f5488948fefcaaaa960f28b99a67c18796a89e4d4167")},
-	    {  900000, uint256S("0x8f5a8f7ad48c6b4bc7744d12d1e5cfffb0d2e1510f7f369d27c8e5496b6ecb5f")},
-	    // {  975000, uint256S("0x")}, // Future Block: AuxPoW implementation, commit 182963e
+	    {  975000, uint256S("0x3d9df1f81ba08878fa2c9dc407784b63b4db8d98e297dbaad397be8274e8c564")}, // incorrect AuxPoW version, commit 182963e
+	    {  1200000, uint256S("0xad56e87a6ff14c604bb2477805b4bb195d9df4bc1badbca214d5445fe6149e9a")},
+	    // {  975000, uint256S("0x")}, // Future Block: fork for correct AuxPoW version with new chainID 4096, commit c64a813
 	  }
 	};
 
 
 	chainTxData = ChainTxData{
-	  // Data from rpc: getchaintxstats 17280 15a9309b2f899207f170b40a690595fb1f1705fcecb90052cc87a490efcdb3c4
-	  /* nTime    */ 1742818424,
-	  /* nTxCount */ 1985862,
-	  /* dTxRate  */ 0.03269240983693632
+	  // Data from rpc: getchaintxstats 17280 ce7c3482abb1484502a0e7ef4cb49f9654ca65f4642b9a0931e26143beb8ee9c
+	  /* nTime    */ 1761667750,
+	  /* nTxCount */ 2588361,
+	  /* dTxRate  */ 0.0330640929170982
 	};
     }
 };
