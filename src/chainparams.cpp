@@ -85,11 +85,11 @@ public:
 	consensus.fPowAllowMinDifficultyBlocks = false;
 	consensus.fPowNoRetargeting = false;
 
-	//auxpow
-	consensus.nAuxpowChainId = 0x0001;
-	consensus.nAuxpowStartHeight = std::numeric_limits<uint32_t>::max();
+	// Auxpow parameters
+	consensus.nAuxpowChainId = 0x1000;
+	consensus.nAuxpowStartHeight = 1265000;
 	consensus.fStrictChainId = true;
-	consensus.nLegacyBlocksBefore = std::numeric_limits<uint32_t>::max();
+	consensus.nLegacyBlocksBefore = -1;
 
 	consensus.nRuleChangeActivationThreshold = 720; // 75% from 960
 	consensus.nMinerConfirmationWindow = 960; // nPowTargetTimespan / nPowTargetSpacing * 4
@@ -207,11 +207,11 @@ public:
 	consensus.fPowAllowMinDifficultyBlocks = true;
 	consensus.fPowNoRetargeting = false;
 
-        //auxpow
-        consensus.nAuxpowChainId = 0x0001;
-        consensus.nAuxpowStartHeight = std::numeric_limits<uint32_t>::max();
-        consensus.fStrictChainId = true;
-        consensus.nLegacyBlocksBefore = std::numeric_limits<uint32_t>::max();
+	// Auxpow parameters
+	consensus.nAuxpowChainId = 0x1000;
+	consensus.nAuxpowStartHeight = 0;
+	consensus.fStrictChainId = true;
+	consensus.nLegacyBlocksBefore = -1;
 
 	consensus.nRuleChangeActivationThreshold = 720; // 75% from 960
 	consensus.nMinerConfirmationWindow = 960; // nPowTargetTimespan / nPowTargetSpacing * 4
@@ -312,11 +312,11 @@ public:
 	consensus.fPowAllowMinDifficultyBlocks = true;
 	consensus.fPowNoRetargeting = true;
 
-        //auxpow
-        consensus.nAuxpowChainId = 0x0001;
-        consensus.nAuxpowStartHeight = std::numeric_limits<uint32_t>::max();
-        consensus.fStrictChainId = true;
-        consensus.nLegacyBlocksBefore = std::numeric_limits<uint32_t>::max();
+	// Auxpow parameters
+	consensus.nAuxpowChainId = 0x1000;
+	consensus.nAuxpowStartHeight = 0;
+	consensus.fStrictChainId = true;
+	consensus.nLegacyBlocksBefore = -1;
 
 	consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
 	consensus.nMinerConfirmationWindow = 144;
