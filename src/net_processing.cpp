@@ -2622,7 +2622,8 @@ void PeerManager::ProcessMessage(CNode& pfrom, const std::string& msg_type, CDat
 	    return;
 	}
 
-	if (nVersion < MIN_PEER_PROTO_VERSION) {
+	bool isForkTime = CheckIfForkTime();
+	if (nVersion < (isForkTime ? PROTOCOL_VERSION : MIN_PEER_PROTO_VERSION)) {
 	    // disconnect from peers older than this proto version
 	    LogPrint(BCLog::NET, "peer=%d using obsolete version %i; disconnecting\n", pfrom.GetId(), nVersion);
 	    pfrom.fDisconnect = true;

@@ -207,6 +207,16 @@ static FILE* OpenUndoFile(const FlatFilePos &pos, bool fReadOnly = false);
 static FlatFileSeq BlockFileSeq();
 static FlatFileSeq UndoFileSeq();
 
+bool CheckIfForkTime()
+{
+    const int nBlockHeight = ::ChainActive().Height();
+    const Consensus::Params& params = Params().GetConsensus();
+
+    if (nBlockHeight >= params.nAuxpowStartHeight)
+        return true;
+    return false;
+}
+
 bool CheckFinalTx(const CTransaction &tx, int flags)
 {
     AssertLockHeld(cs_main);
@@ -1287,8 +1297,6 @@ bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const CBlockIndex* pindex
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
   int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
-
-  if (!consensusParams.fSimplifiedRewards);
 
   CAmount nSubsidy;
 
