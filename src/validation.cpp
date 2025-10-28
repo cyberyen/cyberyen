@@ -1288,8 +1288,6 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
   int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
 
-  if (!consensusParams.fSimplifiedRewards);
-
   CAmount nSubsidy;
 
   if (nHeight <= 99000) {

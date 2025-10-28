@@ -93,7 +93,6 @@ struct Params {
     int nLWMA3Height;
     int nLWMA3BiggerWindow;
     int64_t DifficultyAdjustmentInterval() const { return nPowTargetTimespan / nPowTargetSpacing; }
-    bool fSimplifiedRewards; // Use block height derived rewards rather than previous block hash derived
     /** The best chain should have at least this much work */
     uint256 nMinimumChainWork;
     /** By default assume that the signatures in ancestors of this block are valid */

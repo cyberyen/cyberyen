@@ -84,7 +84,6 @@ public:
 	consensus.nLWMA3BiggerWindow = 175000;
 	consensus.fPowAllowMinDifficultyBlocks = false;
 	consensus.fPowNoRetargeting = false;
-	consensus.fSimplifiedRewards = true;
 
 	//auxpow
 	consensus.nAuxpowChainId = 0x0001;
@@ -207,7 +206,6 @@ public:
 	consensus.nLWMA3BiggerWindow = 0;
 	consensus.fPowAllowMinDifficultyBlocks = true;
 	consensus.fPowNoRetargeting = false;
-	consensus.fSimplifiedRewards = true;
 
         //auxpow
         consensus.nAuxpowChainId = 0x0001;
@@ -313,7 +311,6 @@ public:
 	consensus.nLWMA3BiggerWindow = 0;
 	consensus.fPowAllowMinDifficultyBlocks = true;
 	consensus.fPowNoRetargeting = true;
-	consensus.fSimplifiedRewards = true;
 
         //auxpow
         consensus.nAuxpowChainId = 0x0001;
