@@ -144,7 +144,8 @@ public:
         return nVersion == 1 ||
                nVersion == 2 ||
                nVersion == 536870912 ||
-               nVersion == 536870932;
+               nVersion == 536870932 ||
+               nVersion == 537919488;
     }
 };
 
