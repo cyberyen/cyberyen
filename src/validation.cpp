@@ -1862,12 +1862,12 @@ DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockI
     }
 
     if (blockUndo.mwundo != nullptr) {
-	try {
-	    view.GetMWEBCacheView()->UndoBlock(blockUndo.mwundo);
-	} catch (const std::exception& e) {
-	    error("DisconnectBlock(): Failed to disconnect MWEB block");
-	    return DISCONNECT_FAILED;
-	}
+        try {
+            view.GetMWEBCacheView()->UndoBlock(blockUndo.mwundo);
+        } catch (const std::exception& e) {
+            error("DisconnectBlock(): Failed to disconnect MWEB block: %s", e.what());
+            return DISCONNECT_FAILED;
+        }
     }
 
     // move best block pointer to prevout block
