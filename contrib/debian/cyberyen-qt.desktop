@@ -1,0 +1,17 @@
+[Desktop Entry]
+Version=1.0
+Name=Cyberyen Core
+Comment=Connect to the Cyberyen P2P Network
+Comment[de]=Verbindung mit dem Cyberyen Peer-to-Peer-Netzwerk herstellen
+Comment[es]=Conectar a la red P2P de Cyberyen
+Comment[fr]=Se connecter au réseau pair à pair Cyberyen
+GenericName=Cryptocurrency Wallet
+Exec=cyberyen-qt %u
+Terminal=false
+Type=Application
+Icon=cyberyen128
+MimeType=x-scheme-handler/cyberyen;
+Categories=Office;Finance;Network;
+Keywords=cyberyen;crypto;cryptocurrency;wallet;blockchain;
+StartupNotify=true
+StartupWMClass=Cyberyen-qt
