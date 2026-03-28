@@ -648,8 +648,9 @@ static void entryToJSON(const CTxMemPool& pool, UniValue& info, const CTxMemPool
 	mweb_weight.pushKV("descendant", (int)e.GetMWEBWeightWithDescendants());
 	mweb_info.pushKV("weight", mweb_weight);
 
-	mweb_info.pushKV("fee", ValueFromAmount(tx.mweb_tx.GetFee()));
-	mweb_info.pushKV("lock_height", tx.mweb_tx.GetLockHeight());
+        const auto mweb_fee = tx.mweb_tx.GetFee();
+        mweb_info.pushKV("fee", mweb_fee ? ValueFromAmount(*mweb_fee) : UniValue(UniValue::VNULL));
+        mweb_info.pushKV("lock_height", tx.mweb_tx.GetLockHeight());
 
 	// Pegins
 	UniValue pegins(UniValue::VARR);
