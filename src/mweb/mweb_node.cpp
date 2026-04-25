@@ -225,7 +225,9 @@ bool Node::ConnectBlock(const CBlock& block, const Consensus::Params& consensus_
         try {
             blockundo.mwundo = mweb_view.ApplyBlock(block.mweb_block.m_block);
         } catch (const std::exception& e) {
-            // MWEB: Need to distinguish between invalid blocks and mutated blocks
+            // ApplyBlock reconciles the serialized MWEB body against the
+            // header/state commitments. Some failures here can be caused by
+            // mutating MWEB body data without changing the canonical block hash.
             return state.Invalid(BlockValidationResult::BLOCK_MUTATED, "mweb-connect-failed", strprintf("MWEB::Node::ConnectBlock(): Failed to connect MWEB block: %s", e.what()));
         }
     }
