@@ -1862,12 +1862,12 @@ DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockI
     }
 
     if (blockUndo.mwundo != nullptr) {
-	try {
-	    view.GetMWEBCacheView()->UndoBlock(blockUndo.mwundo);
-	} catch (const std::exception& e) {
-	    error("DisconnectBlock(): Failed to disconnect MWEB block");
-	    return DISCONNECT_FAILED;
-	}
+        try {
+            view.GetMWEBCacheView()->UndoBlock(blockUndo.mwundo);
+        } catch (const std::exception& e) {
+            error("DisconnectBlock(): Failed to disconnect MWEB block: %s", e.what());
+            return DISCONNECT_FAILED;
+        }
     }
 
     // move best block pointer to prevout block
@@ -2743,19 +2743,24 @@ bool CChainState::ConnectTip(BlockValidationState& state, const CChainParams& ch
     int64_t nTime3;
     LogPrint(BCLog::BENCH, "  - Load block from disk: %.2fms [%.2fs]\n", (nTime2 - nTime1) * MILLI, nTimeReadFromDisk * MICRO);
     {
-	CCoinsViewCache view(&CoinsTip());
-	bool rv = ConnectBlock(blockConnecting, state, pindexNew, view, chainparams);
-	GetMainSignals().BlockChecked(blockConnecting, state);
-	if (!rv) {
-	    if (state.IsInvalid())
-		InvalidBlockFound(pindexNew, state);
-	    return error("%s: ConnectBlock %s failed, %s", __func__, pindexNew->GetBlockHash().ToString(), state.ToString());
-	}
-	nTime3 = GetTimeMicros(); nTimeConnectTotal += nTime3 - nTime2;
-	assert(nBlocksTotal > 0);
-	LogPrint(BCLog::BENCH, "  - Connect total: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime3 - nTime2) * MILLI, nTimeConnectTotal * MICRO, nTimeConnectTotal * MILLI / nBlocksTotal);
-	bool flushed = view.Flush();
-	assert(flushed);
+        CCoinsViewCache view(&CoinsTip());
+        bool rv = ConnectBlock(blockConnecting, state, pindexNew, view, chainparams);
+        GetMainSignals().BlockChecked(blockConnecting, state);
+        if (!rv) {
+            if (state.IsInvalid()) {
+                InvalidBlockFound(pindexNew, state);
+                if (state.GetResult() == BlockValidationResult::BLOCK_MUTATED) {
+                    // The same block hash may be valid with different
+                    // non-committed data, so do not retain these bytes.
+                    EraseBlockData(pindexNew);
+                }
+            }
+            return error("%s: ConnectBlock %s failed, %s", __func__, pindexNew->GetBlockHash().ToString(), state.ToString());
+        }
+        nTime3 = GetTimeMicros(); nTimeConnectTotal += nTime3 - nTime2;
+        assert(nBlocksTotal > 0);
+        LogPrint(BCLog::BENCH, "  - Connect total: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime3 - nTime2) * MILLI, nTimeConnectTotal * MICRO, nTimeConnectTotal * MILLI / nBlocksTotal);
+        bool flushed = view.Flush();
     }
     int64_t nTime4 = GetTimeMicros(); nTimeFlush += nTime4 - nTime3;
     LogPrint(BCLog::BENCH, "  - Flush: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime4 - nTime3) * MILLI, nTimeFlush * MICRO, nTimeFlush * MILLI / nBlocksTotal);
