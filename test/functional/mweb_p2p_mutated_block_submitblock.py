@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026 The Litecoin Core developers
+# Copyright (c) 2026 The Cyberyen Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Verify a mutated P2P MWEB block does not block later submitblock mining."""
 
 import copy
 
-from test_framework.ltc_util import setup_mweb_chain
+from test_framework.cy_util import setup_mweb_chain
 from test_framework.messages import CBlock, FromHex, msg_block
 from test_framework.p2p import P2PDataStore
 from test_framework.test_framework import BitcoinTestFramework
