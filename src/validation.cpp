@@ -2730,12 +2730,12 @@ bool CChainState::ConnectTip(BlockValidationState& state, const CChainParams& ch
     int64_t nTime1 = GetTimeMicros();
     std::shared_ptr<const CBlock> pthisBlock;
     if (!pblock) {
-	std::shared_ptr<CBlock> pblockNew = std::make_shared<CBlock>();
-	if (!ReadBlockFromDisk(*pblockNew, pindexNew, chainparams.GetConsensus()))
-	    return AbortNode(state, "Failed to read block");
-	pthisBlock = pblockNew;
+	      std::shared_ptr<CBlock> pblockNew = std::make_shared<CBlock>();
+	      if (!ReadBlockFromDisk(*pblockNew, pindexNew, chainparams.GetConsensus()))
+	          return AbortNode(state, "Failed to read block");
+        pthisBlock = pblockNew;
     } else {
-	pthisBlock = pblock;
+	      pthisBlock = pblock;
     }
     const CBlock& blockConnecting = *pthisBlock;
     // Apply the block atomically to the chain state.
@@ -2761,6 +2761,7 @@ bool CChainState::ConnectTip(BlockValidationState& state, const CChainParams& ch
         assert(nBlocksTotal > 0);
         LogPrint(BCLog::BENCH, "  - Connect total: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime3 - nTime2) * MILLI, nTimeConnectTotal * MICRO, nTimeConnectTotal * MILLI / nBlocksTotal);
         bool flushed = view.Flush();
+	assert(flushed);
     }
     int64_t nTime4 = GetTimeMicros(); nTimeFlush += nTime4 - nTime3;
     LogPrint(BCLog::BENCH, "  - Flush: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime4 - nTime3) * MILLI, nTimeFlush * MICRO, nTimeFlush * MILLI / nBlocksTotal);
@@ -2788,22 +2789,22 @@ bool CChainState::ConnectTip(BlockValidationState& state, const CChainParams& ch
  * known to be invalid (it's however far from certain to be valid).
  */
 CBlockIndex* CChainState::FindMostWorkChain() {
-    do {
-	CBlockIndex *pindexNew = nullptr;
+  do {
+    CBlockIndex *pindexNew = nullptr;
 
-	// Find the best candidate header.
-	{
-	    std::set<CBlockIndex*, CBlockIndexWorkComparator>::reverse_iterator it = setBlockIndexCandidates.rbegin();
-	    if (it == setBlockIndexCandidates.rend())
-		return nullptr;
-	    pindexNew = *it;
-	}
+    // Find the best candidate header.
+    {
+      std::set<CBlockIndex*, CBlockIndexWorkComparator>::reverse_iterator it = setBlockIndexCandidates.rbegin();
+      if (it == setBlockIndexCandidates.rend())
+        return nullptr;
+      pindexNew = *it;
+    }
 
-	// Check whether all blocks on the path between the currently active chain and the candidate are valid.
-	// Just going until the active chain is an optimization, as we know all blocks in it are valid already.
-	CBlockIndex *pindexTest = pindexNew;
-	bool fInvalidAncestor = false;
-	while (pindexTest && !m_chain.Contains(pindexTest)) {
+    // Check whether all blocks on the path between the currently active chain and the candidate are valid.
+    // Just going until the active chain is an optimization, as we know all blocks in it are valid already.
+    CBlockIndex *pindexTest = pindexNew;
+    bool fInvalidAncestor = false;
+    while (pindexTest && !m_chain.Contains(pindexTest)) {
 	    assert(pindexTest->HaveTxsDownloaded() || pindexTest->nHeight == 0);
 
 	    // Pruned nodes may have entries in setBlockIndexCandidates for
@@ -2813,33 +2814,33 @@ CBlockIndex* CChainState::FindMostWorkChain() {
 	    bool fFailedChain = pindexTest->nStatus & BLOCK_FAILED_MASK;
 	    bool fMissingData = !(pindexTest->nStatus & BLOCK_HAVE_DATA);
 	    if (fFailedChain || fMissingData) {
-		// Candidate chain is not usable (either invalid or missing data)
-		if (fFailedChain && (pindexBestInvalid == nullptr || pindexNew->nChainWork > pindexBestInvalid->nChainWork))
-		    pindexBestInvalid = pindexNew;
-		CBlockIndex *pindexFailed = pindexNew;
-		// Remove the entire chain from the set.
-		while (pindexTest != pindexFailed) {
-		    if (fFailedChain) {
-			pindexFailed->nStatus |= BLOCK_FAILED_CHILD;
-		    } else if (fMissingData) {
-			// If we're missing data, then add back to m_blocks_unlinked,
-			// so that if the block arrives in the future we can try adding
-			// to setBlockIndexCandidates again.
-			m_blockman.m_blocks_unlinked.insert(
-			    std::make_pair(pindexFailed->pprev, pindexFailed));
-		    }
-		    setBlockIndexCandidates.erase(pindexFailed);
-		    pindexFailed = pindexFailed->pprev;
-		}
-		setBlockIndexCandidates.erase(pindexTest);
-		fInvalidAncestor = true;
-		break;
+        // Candidate chain is not usable (either invalid or missing data)
+        if (fFailedChain && (pindexBestInvalid == nullptr || pindexNew->nChainWork > pindexBestInvalid->nChainWork))
+          pindexBestInvalid = pindexNew;
+        CBlockIndex *pindexFailed = pindexNew;
+        // Remove the entire chain from the set.
+        while (pindexTest != pindexFailed) {
+          if (fFailedChain) {
+            pindexFailed->nStatus |= BLOCK_FAILED_CHILD;
+          } else if (fMissingData) {
+            // If we're missing data, then add back to m_blocks_unlinked,
+            // so that if the block arrives in the future we can try adding
+            // to setBlockIndexCandidates again.
+            m_blockman.m_blocks_unlinked.insert(
+                                                std::make_pair(pindexFailed->pprev, pindexFailed));
+          }
+          setBlockIndexCandidates.erase(pindexFailed);
+          pindexFailed = pindexFailed->pprev;
+        }
+        setBlockIndexCandidates.erase(pindexTest);
+        fInvalidAncestor = true;
+        break;
 	    }
 	    pindexTest = pindexTest->pprev;
-	}
-	if (!fInvalidAncestor)
+    }
+    if (!fInvalidAncestor)
 	    return pindexNew;
-    } while(true);
+  } while(true);
 }
 
 /** Delete all entries in setBlockIndexCandidates that are worse than the current tip. */
