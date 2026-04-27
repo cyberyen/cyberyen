@@ -9,7 +9,7 @@ This release includes important security updates. All node operators and wallet 
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/cyberyen-project/cyberyen/issues>
+ <https://github.com/cyberyen/cyberyen/issues>
 
 Notable changes
 ===============
