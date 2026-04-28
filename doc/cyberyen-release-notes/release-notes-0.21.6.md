@@ -1,3 +1,6 @@
+0.21.6 Release Notes
+====================
+
 Cyberyen Core version 0.21.6 is now available from:
 
  <https://github.com/cyberyen/cyberyen/releases/tag/v0.21.6>.
@@ -6,7 +9,7 @@ This release includes important security updates. All node operators and wallet 
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/cyberyen/cyberyen/issues>
+ <https://github.com/cyberyen/cyberyen/issues>
 
 Notable changes
 ===============

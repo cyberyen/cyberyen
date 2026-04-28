@@ -107,8 +107,8 @@ public:
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartHeight = 0;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeoutHeight = 0;
 
-	consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000003c65f35139fc6b90");
-	consensus.defaultAssumeValid = uint256S("0xce7c3482abb1484502a0e7ef4cb49f9654ca65f4642b9a0931e26143beb8ee9c"); // 1256405
+	consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000609dc95a3f099ac4");
+	consensus.defaultAssumeValid = uint256S("0x0e334144d657ffa25235e252c7fb8e887318600f8e70e77f04c2747ebbe89600"); // 1506267
 
 	/**
 	 * The message start string is designed to be unlikely to occur in normal data.
@@ -161,19 +161,20 @@ public:
 	    {  2880,   uint256S("0x57ddbe24d1bef052b153cd987eb4be3ae7e976cbf5bf134e653ce21e08f71d9e")},
 	    {  144999, uint256S("0xcf88b7b476697e040ce836c3b68a6e6bde7d434649426a4a4e17bc7887f4e53d")}, // fix GetBlockSubsidy, commit 2931510
 	    {  149999, uint256S("0x1afa7bcfedb1fe0799b7dac2feea3ba13d58cd2cce1c4814f03db130a79687f5")}, // LWMA3 activation
-	    {  500000, uint256S("0x9176ad15a493e5db78f653c4fb6bc6585dc2e06869e2aa7390eb22ea5e33cbcb")},
 	    {  975000, uint256S("0x3d9df1f81ba08878fa2c9dc407784b63b4db8d98e297dbaad397be8274e8c564")}, // incorrect AuxPoW version, commit 182963e
 	    {  1200000, uint256S("0xad56e87a6ff14c604bb2477805b4bb195d9df4bc1badbca214d5445fe6149e9a")},
-	    // {  975000, uint256S("0x")}, // Future Block: fork for correct AuxPoW version with new chainID 4096, commit c64a813
+        {  1265000, uint256S("0xc17936a342cb2025c95cfc408bcab6ce8900576e624faa5c116fba40c3dec019")}, // fork for correct AuxPoW version with new chainID 4096, commit c64a813
+        {  1506276, uint256S("0xdef021ac77c32b907d2dd7f8125833bfd4d88a520f77b96f60e0259e27304ed2")},
+	    // {  2000000, uint256S("0x")}, // Future Block:
 	  }
 	};
 
 
 	chainTxData = ChainTxData{
-	  // Data from rpc: getchaintxstats 17280 ce7c3482abb1484502a0e7ef4cb49f9654ca65f4642b9a0931e26143beb8ee9c
-	  /* nTime    */ 1761667750,
-	  /* nTxCount */ 2588361,
-	  /* dTxRate  */ 0.0330640929170982
+	  // Data from rpc: getchaintxstats 17280 0e334144d657ffa25235e252c7fb8e887318600f8e70e77f04c2747ebbe89600
+	  /* nTime    */ 1777294302,
+	  /* nTxCount */ 3095955,
+	  /* dTxRate  */ 0.0332570079692097
 	};
     }
 };
@@ -275,7 +276,7 @@ public:
 	};
 
 	chainTxData = ChainTxData{
-	    // Data from RPC: getchaintxstats 4096 36d8ad003bac090cf7bf4e24fbe1d319554c8933b9314188d6096ac12648764d
+	    // Data from RPC: getchaintxstats 17280 0e334144d657ffa25235e252c7fb8e887318600f8e70e77f04c2747ebbe89600
 	   /* nTime    */ 1659708882,
 	   /* nTxCount */ 0,
 	   /* dTxRate  */ 0.01,
