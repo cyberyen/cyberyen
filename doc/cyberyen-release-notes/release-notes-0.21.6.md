@@ -19,49 +19,40 @@ Important Security Updates
 
 This release contains fixes for the following security issues:
 
-- `e7cbf1d`: Belt-and-suspenders input commitment and public key checks on MWEB inputs, providing additional defense-in-depth
-during MWEB transaction validation.
-This corrects MWEB input/output accounting going forward and is a required upgrade for all node operators, miners, and wallet users.
-- `42e7071`: Prevent kernel fee overflow during MWEB transaction validation.
-- `742ee94`: Erase block data for mutated blocks to avoid miner DoS
-- `f423a84`: Miners no longer include MWEB transactions when the input and output commitments in the block would sum to zero.
+- `4b12c49`: Belt-and-suspenders input commitment and public key checks on MWEB inputs, providing additional defense-in-depth
+during MWEB transaction validation
+This corrects MWEB input/output accounting going forward and is a required upgrade for all node operators, miners, and wallet users
+- `27ab3c9`: Prevent kernel fee overflow during MWEB transaction validation
+- `a3846b4`: Erase block data for mutated blocks to avoid miner DoS
 
 MWEB stability and durability fixes
 -----------------------------------
 
-- `23e5eac`: fix data corruption issue on PMMR rewind
-- `bf25a7c`, `3110a7e`: improve file write durability for MMRs
+- `0cbfba9`: fix data corruption issue on PMMR rewind
+- `3824999`, `452c9da`: improve file write durability for MMRs
 
 Wallet
 ------
 
-- `eae9e47`: add MWEB view keys to `dumpwallet` output
-- `3c3aedb`, `c882663`: fix wallet with Boost library >= 1.78
-- `1cc1cee`: wallet: quick pegout accounting fix
+- `d2aa236`: add MWEB view keys to `dumpwallet` output
+- `7981eca`, `a7dfb41`: fix wallet with Boost library >= 1.78
+- `0eee8ee`: wallet: quick pegout accounting fix
 
 RPC and indexing
 ----------------
 
-- `455aff8`: allow `getblocktemplate` for test chains when unconnected or in IBD
-- `eb7f68a`: fix an issue where transaction indexes of a block could be lost when `WriteBlock` failed after `Commit`
+- `47215a7`: allow `getblocktemplate` for test chains when unconnected or in IBD
 
 Build changes
 -------------
 
-- `6fc0530`: fix debug build conflict with logger symbol
-- `58f89ba`: add missing `<cstdint>` include
-- `dcc7bc5`: convert CRLF (Windows) line endings to LF (Linux) line endings
+- `38c6ef8`: add missing `<cstdint>` include
 
 Test related fixes
 ------------------
 
-- `0c59e99`: functional test framework fix
-- `7eb181b`: functional test demonstrating handling of mutated blocks
-
-Misc
-----
-
-- `0f5f7d5`: fix broken Transifex link from README
+- `f48b3ad`: functional test framework fix
+- `cdb4859`: functional test demonstrating handling of mutated blocks
 
 Credits
 =======
