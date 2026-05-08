@@ -243,7 +243,7 @@ UTXO CoinsViewCache::SpendUTXO(const mw::Hash& output_id)
 void CoinsViewCache::WriteBatch(const std::unique_ptr<mw::DBBatch>&, const CoinsViewUpdates& updates, const mw::Header::CPtr& pHeader)
 {
     SetBestHeader(pHeader);
-     
+
     for (const auto& actions : updates.GetActions()) {
         const mw::Hash& output_id = actions.first;
         for (const auto& action : actions.second) {
@@ -262,7 +262,7 @@ void CoinsViewCache::Flush(const std::unique_ptr<mw::DBBatch>& pBatch)
     if (GetBestHeader() == nullptr) {
         return;
     }
-    
+
     m_pBase->WriteBatch(pBatch, *m_pUpdates, GetBestHeader());
 
     MMRInfo mmr_info;

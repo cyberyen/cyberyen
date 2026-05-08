@@ -9,7 +9,7 @@
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
 
 /* Version Build */
-#define CLIENT_VERSION_BUILD 0
+#define CLIENT_VERSION_BUILD 1
 
 /* Version is release */
 #define CLIENT_VERSION_IS_RELEASE true
@@ -253,7 +253,7 @@
 #define PACKAGE_NAME "Cyberyen Core"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Cyberyen Core 0.21.6"
+#define PACKAGE_STRING "Cyberyen Core 0.21.6.1"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "cyberyen"
@@ -262,7 +262,7 @@
 #define PACKAGE_URL "https://cyberyen.org/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "0.21.6"
+#define PACKAGE_VERSION "0.21.6.1"
 
 /* Define to necessary symbol if this constant uses a non-standard name on
    your system. */
