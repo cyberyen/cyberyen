@@ -331,7 +331,7 @@ class P2PInterface(P2PConnection):
 
         self.support_addrv2 = support_addrv2
 
-        def peer_connect_send_version(self, services):
+    def peer_connect_send_version(self, services):
         # Send a version msg
         vt = msg_version()
         vt.nServices = services
