@@ -329,10 +329,13 @@ public:
 	consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nStartTime = Consensus::BIP9Deployment::ALWAYS_ACTIVE;
 	consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
 
-	// Deployment of MWEB (LIP-0002 and LIP-0003)
+	// Height-based MWEB (nStartTime = nTimeout = 0). Window 144/288 → ACTIVE at 432,
+	// matching FIRST_MWEB_HEIGHT under default regtest params.
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].bit = 4;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartTime = 0;
-	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeout = 0;
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartHeight = 144;
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeoutHeight = 288;
 
 	//consensus.nMinimumChainWork = uint256();
 	//consensus.defaultAssumeValid = uint256();
