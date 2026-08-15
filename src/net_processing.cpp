@@ -107,6 +107,12 @@ static const int MAX_BLOCKTXN_DEPTH = 10;
 static const int MAX_MWEB_LEAFSET_DEPTH = 10;
 /** Maximum number of MWEB UTXOs that can be requested in a batch. */
 static const uint16_t MAX_REQUESTED_MWEB_UTXOS = 4096;
+/** Serving an MWEB leafset/UTXO request rewinds and replays up to MAX_MWEB_LEAFSET_DEPTH blocks under cs_main,
+ *  so each request is expensive. Rate-limit these across the node to bound the CPU peers can force, including
+ *  by reconnecting. Values are deliberately conservative: a small burst, refilled slowly.
+ *  These messages are only used by external light clients, so throttling does not affect the node's own operation. */
+static constexpr double MWEB_SERVE_MAX_TOKENS{32.0};
+static constexpr double MWEB_SERVE_REFILL_PER_SECOND{0.5};
 /** Size of the "block download window": how far ahead of our current height do we fetch?
  *  Larger windows tolerate larger download speed differences between peer, but increase the potential
  *  degree of disordering of blocks on disk (which make reindexing and pruning harder). We'll probably
@@ -1739,6 +1745,38 @@ struct MWEBLeafsetMsg
     BitSet leafset;
 };
 
+/** Node-wide token-bucket rate limiter for expensive MWEB leafset/UTXO serving
+ *  requests. Returns true (and consumes a token) if the request may be served
+ *  now. Serving each request rewinds/replays up to MAX_MWEB_LEAFSET_DEPTH
+ *  blocks under cs_main, so without this an unauthenticated peer could pin the
+ *  node by flooding valid requests. */
+static bool AllowMWEBServe(CNode& pfrom) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
+{
+    // Whitelisted peers (e.g. -whitelist / PF_NOBAN) are exempt.
+    if (pfrom.HasPermission(PF_NOBAN)) {
+	return true;
+    }
+
+    // This state is independent of CNodeState so reconnecting cannot reset the
+    // node-wide allowance.
+    static double node_tokens{MWEB_SERVE_MAX_TOKENS};
+    static std::chrono::microseconds node_timestamp{GetTime<std::chrono::microseconds>()};
+
+    const auto now = GetTime<std::chrono::microseconds>();
+    const auto node_time_diff = std::max(now - node_timestamp, std::chrono::microseconds{0});
+    node_tokens = std::min<double>(
+	node_tokens + Ticks<SecondsDouble>(node_time_diff) * MWEB_SERVE_REFILL_PER_SECOND,
+	MWEB_SERVE_MAX_TOKENS);
+    node_timestamp = now;
+
+    if (node_tokens < 1.0) {
+	return false;
+    }
+
+    node_tokens -= 1.0;
+    return true;
+}
+
 static void ProcessGetMWEBLeafset(CNode& pfrom, const ChainstateManager& chainman, const CChainParams& chainparams, const CInv& inv, CConnman& connman)
 {
     ActivateBestChainIfNeeded(chainparams, inv);
@@ -1754,8 +1792,6 @@ static void ProcessGetMWEBLeafset(CNode& pfrom, const ChainstateManager& chainma
 	LogPrint(BCLog::NET, "Ignoring mweb leafset request from peer=%d because requested block hash is not in active chain\n", pfrom.GetId());
 	return;
     }
-
-    // TODO: Add an outbound limit
 
     // For performance reasons, we limit how many blocks can be undone in order to rebuild the leafset
     if (chainman.ActiveChain().Tip()->nHeight - pindex->nHeight > MAX_MWEB_LEAFSET_DEPTH) {
@@ -1776,6 +1812,12 @@ static void ProcessGetMWEBLeafset(CNode& pfrom, const ChainstateManager& chainma
 	if (!pfrom.HasPermission(PF_NOBAN)) {
 	    pfrom.fDisconnect = true;
 	}
+	return;
+    }
+
+    // Rate-limit before the expensive rewind/replay below.
+    if (!AllowMWEBServe(pfrom)) {
+	LogPrint(BCLog::NET, "Rate-limiting mweb leafset request from peer=%d\n", pfrom.GetId());
 	return;
     }
 
@@ -1858,8 +1900,6 @@ static void ProcessGetMWEBUTXOs(CNode& pfrom, const ChainstateManager& chainman,
 	return;
     }
 
-    // TODO: Add an outbound limit
-
     // For performance reasons, we limit how many blocks can be undone in order to rebuild the leafset
     if (chainman.ActiveChain().Tip()->nHeight - pindex->nHeight > MAX_MWEB_LEAFSET_DEPTH) {
 	LogPrint(BCLog::NET, "Ignore getmwebutxos below MAX_MWEB_LEAFSET_DEPTH threshold from peer=%d\n", pfrom.GetId());
@@ -1878,6 +1918,12 @@ static void ProcessGetMWEBUTXOs(CNode& pfrom, const ChainstateManager& chainman,
 	if (!pfrom.HasPermission(PF_NOBAN)) {
 	    pfrom.fDisconnect = true;
 	}
+	return;
+    }
+
+    // Rate-limit before the expensive rewind/replay below.
+    if (!AllowMWEBServe(pfrom)) {
+	LogPrint(BCLog::NET, "Rate-limiting getmwebutxos request from peer=%d\n", pfrom.GetId());
 	return;
     }
 
