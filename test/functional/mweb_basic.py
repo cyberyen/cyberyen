@@ -4,6 +4,8 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Basic MWEB test"""
 
+from decimal import Decimal
+
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal
 
@@ -51,18 +53,28 @@ class MWEBBasicTest(BitcoinTestFramework):
             utxo1 = utxos[0]
           
         assert utxo0['amount'] == 10 and utxo0['address'] == addr0
-        assert 2 < utxo1['amount'] < 2.5 # change from single 12.5 CY coinbase being spent
+        pegin2_info = self.nodes[0].gettransaction(pegin2_txid)
+        pegin2_decoded = self.nodes[0].decoderawtransaction(pegin2_info['hex'])
+        spent_vin = pegin2_decoded['vin'][0]
+        spent_prev = self.nodes[0].decoderawtransaction(
+            self.nodes[0].gettransaction(spent_vin['txid'])['hex']
+        )
+        spent_value = Decimal(str(spent_prev['vout'][spent_vin['vout']]['value']))
+        fee = -Decimal(str(pegin2_info['fee']))
+        assert_equal(utxo1['amount'], spent_value - Decimal('10') - fee)
 
         self.log.info("Send MWEB coins to node 1")
         addr1 = self.nodes[1].getnewaddress(address_type='mweb')
-        self.nodes[0].sendtoaddress(addr1, 5)
+        node0_before = utxo0['amount'] + utxo1['amount']
+        send5_txid = self.nodes[0].sendtoaddress(addr1, 5)
         self.nodes[0].generate(1)
         self.sync_all()
 
         self.log.info("Check MWEB coins are spent on node 0")
         utxos = [x for x in self.nodes[0].listunspent() if x['address'].startswith('tmweb')]
         assert_equal(len(utxos), 2)
-        assert sum(x['amount'] for x in utxos) < 45
+        send5_fee = -Decimal(str(self.nodes[0].gettransaction(send5_txid)['fee']))
+        assert_equal(sum(x['amount'] for x in utxos), node0_before - Decimal('5') - send5_fee)
 
         self.log.info("Check for MWEB UTXO on node 1")
         utxos = [x for x in self.nodes[1].listunspent() if x['address'].startswith('tmweb')]

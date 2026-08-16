@@ -68,8 +68,9 @@ then mines the first MWEB block which includes that pegin.
 mining_node - The node to use to generate blocks
 """
 def setup_mweb_chain(mining_node):
-    # Create all pre-MWEB blocks
-    mining_node.generate(FIRST_MWEB_HEIGHT - 1)
+    remaining = FIRST_MWEB_HEIGHT - 1 - mining_node.getblockcount()
+    if remaining > 0:
+        mining_node.generate(remaining)
 
     # Pegin some coins
     mining_node.sendtoaddress(mining_node.getnewaddress(address_type='mweb'), 1)

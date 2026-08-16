@@ -6,6 +6,7 @@
 
 from decimal import Decimal
 
+from test_framework.cy_util import setup_mweb_chain
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal
 
@@ -20,25 +21,20 @@ class MWEBWeightTest(BitcoinTestFramework):
         self.skip_if_no_wallet()
 
     def run_test(self):
-        self.log.info("Create some blocks")
-        self.nodes[0].generate(101)
-
-        self.log.info("Pegin some coins - activate MWEB")
-        addr = self.nodes[0].getnewaddress(address_type='mweb')
-        self.nodes[0].sendtoaddress(addr, 1)
-        self.sync_all()
-        self.nodes[1].generate(700)
-        self.sync_all()
-
-        # Workaround for syncing issue
-        self.nodes[2].generate(1)
-        self.sync_all()
-
-        self.nodes[2].generate(700)
-        self.sync_all()
-
         # Max number of MWEB transactions in a block (20000/39)
         tx_limit = 512
+
+        self.log.info("Activate MWEB")
+        setup_mweb_chain(self.nodes[0])
+        self.sync_all()
+
+        self.log.info("Create confirmed transparent UTXOs for the spending nodes")
+        node1_outs = {self.nodes[1].getnewaddress(): 2 for _ in range(tx_limit)}
+        self.nodes[0].sendmany("", node1_outs)
+        node2_outs = {self.nodes[2].getnewaddress(): 2 for _ in range(tx_limit + 1)}
+        self.nodes[0].sendmany("", node2_outs)
+        self.nodes[0].generate(1)
+        self.sync_all()
 
         self.log.info("Create transactions up to the max block weight")
         addr = self.nodes[0].getnewaddress(address_type='mweb')

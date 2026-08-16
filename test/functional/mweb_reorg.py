@@ -54,12 +54,15 @@ class MWEBReorgTest(BitcoinTestFramework):
         self.nodes[1].invalidateblock(block0a)
         assert_equal(set(self.nodes[1].getrawmempool()), {pegin_tx1_id})
         
-        self.log.info("Generate block0b. pegin_tx1 should be included in the block")
+        self.log.info("Generate block0b. pegin_tx1 should be included in the MWEB/HogEx")
         block0b_hash = self.nodes[1].generate(1)[0]
 
-        block0b_txs = self.nodes[1].getblock(block0b_hash, 2)['tx']
-        assert_equal(len(block0b_txs), 3)
-        assert_equal(block0b_txs[1]['txid'], pegin_tx1_id)
+        block0b = self.nodes[1].getblock(block0b_hash, 2)
+        # Cyberyen wallet pegins after activation are MWEB-only: they are not
+        # a third canonical tx. The block is coinbase + HogEx.
+        assert_equal(block0b['nTx'], 2)
+        assert 'mweb' in block0b
+        assert_equal(len(self.nodes[1].getrawmempool()), 0)
 
         self.nodes[1].generate(5)
         self.sync_blocks()
