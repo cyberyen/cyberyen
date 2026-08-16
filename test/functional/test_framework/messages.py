@@ -34,7 +34,8 @@ from test_framework.siphash import siphash256
 from test_framework.util import hex_str_to_bytes, assert_equal
 
 MIN_VERSION_SUPPORTED = 60001
-MY_VERSION = 70017  # past wtxid relay
+MY_VERSION = 70018  # PROTOCOL_VERSION
+VERSION_AUXPOW = 1 << 8
 MY_SUBVERSION = b"/python-p2p-tester:0.0.3/"
 MY_RELAY = 1 # from version 70001 onwards, fRelay should be appended to version messages (BIP37)
 
@@ -705,9 +706,45 @@ class CTransaction:
     def __eq__(self, other):
         return isinstance(other, CTransaction) and repr(self) == repr(other)
 
+class CAuxPow:
+    """Auxpow payload after an auxpow-flagged CBlockHeader. Matches src/auxpow.h."""
+    __slots__ = ("coinbaseTx", "hashBlock", "nChainIndex", "nIndex",
+                 "parentBlock", "vChainMerkleBranch", "vMerkleBranch")
+
+    def __init__(self):
+        self.coinbaseTx = CTransaction()
+        self.hashBlock = 0
+        self.vMerkleBranch = []
+        self.nIndex = 0
+        self.vChainMerkleBranch = []
+        self.nChainIndex = 0
+        self.parentBlock = None
+
+    def deserialize(self, f):
+        self.coinbaseTx = CTransaction()
+        self.coinbaseTx.deserialize(f)
+        self.hashBlock = deser_uint256(f)
+        self.vMerkleBranch = deser_uint256_vector(f)
+        self.nIndex = struct.unpack("<i", f.read(4))[0]
+        self.vChainMerkleBranch = deser_uint256_vector(f)
+        self.nChainIndex = struct.unpack("<i", f.read(4))[0]
+        self.parentBlock = CBlockHeader()
+        self.parentBlock.deserialize(f, with_auxpow=False)
+
+    def serialize(self):
+        r = self.coinbaseTx.serialize_without_witness()
+        r += ser_uint256(self.hashBlock)
+        r += ser_uint256_vector(self.vMerkleBranch)
+        r += struct.pack("<i", self.nIndex)
+        r += ser_uint256_vector(self.vChainMerkleBranch)
+        r += struct.pack("<i", self.nChainIndex)
+        r += self.parentBlock.serialize_pure_header()
+        return r
+
+
 class CBlockHeader:
-    __slots__ = ("hash", "hashMerkleRoot", "hashPrevBlock", "nBits", "nNonce",
-                 "nTime", "nVersion", "sha256", "scrypt256")
+    __slots__ = ("auxpow", "hash", "hashMerkleRoot", "hashPrevBlock", "nBits",
+                 "nNonce", "nTime", "nVersion", "sha256", "scrypt256")
 
     def __init__(self, header=None):
         if header is None:
@@ -722,6 +759,7 @@ class CBlockHeader:
             self.sha256 = header.sha256
             self.hash = header.hash
             self.scrypt256 = header.scrypt256
+            self.auxpow = copy.deepcopy(getattr(header, "auxpow", None))
             self.calc_sha256()
 
     def set_null(self):
@@ -734,19 +772,27 @@ class CBlockHeader:
         self.sha256 = None
         self.hash = None
         self.scrypt256 = None
+        self.auxpow = None
 
-    def deserialize(self, f):
+    def is_auxpow(self):
+        return bool(self.nVersion & VERSION_AUXPOW)
+
+    def deserialize(self, f, with_auxpow=True):
         self.nVersion = struct.unpack("<i", f.read(4))[0]
         self.hashPrevBlock = deser_uint256(f)
         self.hashMerkleRoot = deser_uint256(f)
         self.nTime = struct.unpack("<I", f.read(4))[0]
         self.nBits = struct.unpack("<I", f.read(4))[0]
         self.nNonce = struct.unpack("<I", f.read(4))[0]
+        self.auxpow = None
+        if with_auxpow and self.is_auxpow():
+            self.auxpow = CAuxPow()
+            self.auxpow.deserialize(f)
         self.sha256 = None
         self.hash = None
         self.scrypt256 = None
 
-    def serialize(self):
+    def serialize_pure_header(self):
         r = b""
         r += struct.pack("<i", self.nVersion)
         r += ser_uint256(self.hashPrevBlock)
@@ -756,15 +802,15 @@ class CBlockHeader:
         r += struct.pack("<I", self.nNonce)
         return r
 
+    def serialize(self, with_auxpow=True):
+        r = self.serialize_pure_header()
+        if with_auxpow and self.is_auxpow() and self.auxpow is not None:
+            r += self.auxpow.serialize()
+        return r
+
     def calc_sha256(self):
         if self.sha256 is None:
-            r = b""
-            r += struct.pack("<i", self.nVersion)
-            r += ser_uint256(self.hashPrevBlock)
-            r += ser_uint256(self.hashMerkleRoot)
-            r += struct.pack("<I", self.nTime)
-            r += struct.pack("<I", self.nBits)
-            r += struct.pack("<I", self.nNonce)
+            r = self.serialize_pure_header()
             self.sha256 = uint256_from_str(hash256(r))
             self.hash = encode(hash256(r)[::-1], 'hex_codec').decode('ascii')
             self.scrypt256 = uint256_from_str(cyberyen_scrypt.getPoWHash(r))
