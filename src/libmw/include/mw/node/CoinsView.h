@@ -128,6 +128,7 @@ public:
     IMMR::Ptr GetOutputPMMR() const noexcept final { return m_pOutputPMMR; }
 
 private:
+    mw::BlockUndo::CPtr ApplyBlockChanges(const mw::Block::CPtr& pBlock);
     void AddUTXO(const uint64_t header_height, const Output& output);
     UTXO SpendUTXO(const mw::Hash& output_id);
 
