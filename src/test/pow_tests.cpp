@@ -5,6 +5,7 @@
 #include <chain.h>
 #include <chainparams.h>
 #include <pow.h>
+#include <primitives/block.h>
 #include <test/util/setup_common.h>
 
 #include <boost/test/unit_test.hpp>
@@ -162,6 +163,29 @@ void sanity_check_chainparams(const ArgsManager& args, std::string chainName)
         BOOST_CHECK(UintToArith256(consensus.powLimit) < targ_max);
     }
     */
+}
+
+BOOST_AUTO_TEST_CASE(GetNextWorkRequired_regtest_no_retargeting)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, CBaseChainParams::REGTEST);
+    const auto& consensus = chainParams->GetConsensus();
+    BOOST_REQUIRE(consensus.fPowNoRetargeting);
+
+    // LWMA-2 window is N=240. A 1-second spacing chain longer than that
+    // would retarget if fPowNoRetargeting were still unreachable.
+    const int nBlocks = 250;
+    std::vector<CBlockIndex> blocks(nBlocks);
+    const uint32_t nBits = chainParams->GenesisBlock().nBits;
+    for (int i = 0; i < nBlocks; i++) {
+        blocks[i].pprev = i ? &blocks[i - 1] : nullptr;
+        blocks[i].nHeight = i;
+        blocks[i].nTime = chainParams->GenesisBlock().nTime + i;
+        blocks[i].nBits = nBits;
+    }
+
+    CBlockHeader header;
+    header.nTime = blocks.back().nTime + 1;
+    BOOST_CHECK_EQUAL(GetNextWorkRequired(&blocks.back(), &header, consensus), nBits);
 }
 
 BOOST_AUTO_TEST_CASE(ChainParams_MAIN_sanity)
