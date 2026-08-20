@@ -13,6 +13,5 @@ export DEP_OPTS="NO_QT=1 NO_UPNP=1"
 export GOAL="install"
 export TEST_RUNNER_EXTRA="--timeout-factor=2"
 export BITCOIN_CONFIG="--enable-zmq --with-incompatible-bdb --with-gui=no --with-sqlite --disable-bench"
-export RUN_UNIT_TESTS_SEQUENTIAL=true
-export RUN_UNIT_TESTS=${RUN_UNIT_TESTS:-true}
-export RUN_FUNCTIONAL_TESTS=${RUN_FUNCTIONAL_TESTS:-true}
+export RUN_UNIT_TESTS=true
+export RUN_FUNCTIONAL_TESTS=true
