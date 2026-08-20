@@ -3730,11 +3730,15 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, BlockValidatio
 static bool ContextualCheckBlock(const CBlock& block, BlockValidationState& state, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
     const int nHeight = pindexPrev == nullptr ? 0 : pindexPrev->nHeight + 1;
+    // Cyberyen sets CSVHeight and BIP34Height to 0 on all networks; upstream keeps
+    // them > 0 so genesis never enters those branches. Make the genesis guard
+    // explicit (same pattern as ConnectBlock / AcceptBlockHeader).
+    const bool is_genesis = (pindexPrev == nullptr);
+    assert(!is_genesis || block.GetHash() == consensusParams.hashGenesisBlock);
 
     // Start enforcing BIP113 (Median Time Past).
     int nLockTimeFlags = 0;
-    if (nHeight >= consensusParams.CSVHeight) {
-	assert(pindexPrev != nullptr);
+    if (!is_genesis && nHeight >= consensusParams.CSVHeight) {
 	nLockTimeFlags |= LOCKTIME_MEDIAN_TIME_PAST;
     }
 
@@ -3750,7 +3754,7 @@ static bool ContextualCheckBlock(const CBlock& block, BlockValidationState& stat
     }
 
     // Enforce rule that the coinbase starts with serialized block height
-    if (nHeight >= consensusParams.BIP34Height)
+    if (!is_genesis && nHeight >= consensusParams.BIP34Height)
     {
 	CScript expect = CScript() << nHeight;
 	if (block.vtx[0]->vin[0].scriptSig.size() < expect.size() ||
