@@ -42,7 +42,18 @@ if [ "$RUN_UNIT_TESTS_SEQUENTIAL" = "true" ]; then
   END_FOLD
 fi
 
+
+if [ "$RUN_UNIT_TESTS" = "true" ] || [ "$RUN_UNIT_TESTS_SEQUENTIAL" = "true" ]; then
+  BEGIN_FOLD unit-tests-libmw
+  DOCKER_EXEC ${TEST_RUNNER_ENV} DIR_UNIT_TEST_DATA=${DIR_UNIT_TEST_DATA} LD_LIBRARY_PATH=$DEPENDS_DIR/$HOST/lib "${BASE_BUILD_DIR}/cyberyen-*/src/test/test_cyberyen*" --run_test=Test* --catch_system_errors=no -l test_suite
+  END_FOLD
+fi
+
+
 if [ "$RUN_FUNCTIONAL_TESTS" = "true" ]; then
+  BEGIN_FOLD ipv6-lo-setup
+  DOCKER_EXEC bash "${BASE_ROOT_DIR}/ci/test/00_setup_ipv6_lo.sh" || true
+  END_FOLD
   BEGIN_FOLD functional-tests
   DOCKER_EXEC LD_LIBRARY_PATH=$DEPENDS_DIR/$HOST/lib ${TEST_RUNNER_ENV} test/functional/test_runner.py --ci $MAKEJOBS --tmpdirprefix "${BASE_SCRATCH_DIR}/test_runner/" --ansi --combinedlogslen=4000 --timeout-factor=${TEST_RUNNER_TIMEOUT_FACTOR} ${TEST_RUNNER_EXTRA} --quiet --failfast
   END_FOLD

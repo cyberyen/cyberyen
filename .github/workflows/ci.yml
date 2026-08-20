@@ -1,0 +1,19 @@
+# Copyright (c) 2026 The Cyberyen developers
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  native-jammy:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Functional and unit tests (ubuntu 22.04)
+        env:
+          FILE_ENV: ./ci/test/00_setup_env_native_jammy.sh
+        run: ./ci/test_run_all.sh
