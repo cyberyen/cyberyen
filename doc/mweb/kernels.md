@@ -26,11 +26,11 @@ The fee value shall be deducted from the total MWEB supply, and may be collected
 #### Peg-In
 
 Kernels specifying the `PEGIN_FEATURE_BIT` shall contain a (non-negative `var_int`) peg-in amount field.
-The peg-in amount shall be added to the total MWEB supply, and must have a corresponding pegin output on the canonical LTC side.
+The peg-in amount shall be added to the total MWEB supply, and must have a corresponding pegin output on the canonical CY side.
 
 #### Peg-Out
 
-Kernels specifying the `PEGOUT_FEATURE_BIT` shall contain a vector of pegouts, each consisting of a (non-negative `var_int`) peg-out amount field and a valid 4-42 byte LTC script.
+Kernels specifying the `PEGOUT_FEATURE_BIT` shall contain a vector of pegouts, each consisting of a (non-negative `var_int`) peg-out amount field and a valid 4-42 byte CY script.
 The peg-out amount shall be deducted from the total MWEB supply by the miner.
 The miner shall add an output to the integrating transaction (`HogEx`) for each pegout specified. The output's `amount` and `scriptPubKey` shall match the one specified in the kernel.
 

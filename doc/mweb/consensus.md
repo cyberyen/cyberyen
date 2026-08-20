@@ -144,7 +144,7 @@ For kernel-specific rules (feature bits, feature-gated fields, and kernel signat
   * The `scriptPubKey` for a pegout shall be non-empty.
   * Miners shall include a matching output in a block's `HogEx` transaction with the exact `amount` and `scriptPubKey` for each pegout in the block.
 * Kernels may include an optional pegin `amount`
-  * Each pegin kernel must have a corresponding pegin output on the canonical LTC side where the value is <code>v<sub>pegin</sub></code>, witness version is 9, and witness program is the kernel ID (<code>K<sub>ID</sub></code>).
+  * Each pegin kernel must have a corresponding pegin output on the canonical CY side where the value is <code>v<sub>pegin</sub></code>, witness version is 9, and witness program is the kernel ID (<code>K<sub>ID</sub></code>).
   * The extension block peg-in set must exactly match canonical pegins by `(kernel ID, amount)`.
   * Kernel IDs in the canonical block pegin set must be unique.
 * The total MWEB supply (<code>v_total</code>) shall increase by the sum of the block's pegins (<code>v<sub>pegin</sub></code>), and decrease by the sum of the block's pegouts (<code>v<sub>pegout</sub></code>) and the sum of all fees (`f`).
