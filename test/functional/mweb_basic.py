@@ -8,6 +8,7 @@ from decimal import Decimal
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal
+from test_framework.cy_util import assert_is_canonical_pegin
 
 class MWEBBasicTest(BitcoinTestFramework):
     def set_test_params(self):

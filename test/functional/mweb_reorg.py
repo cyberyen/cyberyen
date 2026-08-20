@@ -8,12 +8,9 @@ Test re-org scenarios with a mempool that contains transactions
 that create or spend (directly or indirectly) MWEB outputs.
 """
 
-import json
-
-from test_framework.blocktools import create_raw_transaction
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_raises_rpc_error
-from test_framework.cy_util import setup_mweb_chain
+from test_framework.util import assert_equal
+from test_framework.cy_util import create_canonical_pegin, setup_mweb_chain
 
 class MWEBReorgTest(BitcoinTestFramework):
     def set_test_params(self):
@@ -36,12 +33,20 @@ class MWEBReorgTest(BitcoinTestFramework):
     def basic_reorg_test(self):
         self.log.info("Create all pre-MWEB blocks")
         setup_mweb_chain(self.nodes[0])
-        
-        self.log.info("Pegin some coins in pegin_tx1. pegin_tx1 should be in the mempool")
-        node0_mweb_addr = self.nodes[0].getnewaddress(address_type='mweb')
-        pegin_tx1_id = self.nodes[0].sendtoaddress(node0_mweb_addr, 100)
         self.sync_all()
 
+        # Pegins must come from a wallet without spendable MWEB: after
+        # setup_mweb_chain, node0 prefers MWEB→MWEB for sendtoaddress(mweb).
+        self.log.info("Fund node1 with transparent CY only")
+        self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 1000)
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        self.log.info("Pegin some coins in pegin_tx1. pegin_tx1 should be in the mempool")
+        pegin_tx1_id = create_canonical_pegin(self.nodes[1], 100)
+        self.sync_all()
+
+        assert_equal(set(self.nodes[0].getrawmempool()), {pegin_tx1_id})
         assert_equal(set(self.nodes[1].getrawmempool()), {pegin_tx1_id})
 
         self.log.info("Mine pegin_tx1 in block0a, and mine a few blocks on top. mempool should be empty")
@@ -53,16 +58,13 @@ class MWEBReorgTest(BitcoinTestFramework):
         self.log.info("Invalidate block0a. pegin_tx1 should be back in the mempool")
         self.nodes[1].invalidateblock(block0a)
         assert_equal(set(self.nodes[1].getrawmempool()), {pegin_tx1_id})
-        
-        self.log.info("Generate block0b. pegin_tx1 should be included in the MWEB/HogEx")
+
+        self.log.info("Generate block0b. pegin_tx1 should be included in the block")
         block0b_hash = self.nodes[1].generate(1)[0]
 
-        block0b = self.nodes[1].getblock(block0b_hash, 2)
-        # Cyberyen wallet pegins after activation are MWEB-only: they are not
-        # a third canonical tx. The block is coinbase + HogEx.
-        assert_equal(block0b['nTx'], 2)
-        assert 'mweb' in block0b
-        assert_equal(len(self.nodes[1].getrawmempool()), 0)
+        block0b_txs = self.nodes[1].getblock(block0b_hash, 2)['tx']
+        assert_equal(len(block0b_txs), 3)
+        assert_equal(block0b_txs[1]['txid'], pegin_tx1_id)
 
         self.nodes[1].generate(5)
         self.sync_blocks()
@@ -79,7 +81,7 @@ class MWEBReorgTest(BitcoinTestFramework):
         self.disconnect_nodes(0, 1)
         node0.generate(5)
         node1.generate(5)
-        
+
         # reconnect the nodes and have node0 mine 1 block, forcing a reorg on node1
         self.connect_nodes(0, 1)
         node0.generate(1)
