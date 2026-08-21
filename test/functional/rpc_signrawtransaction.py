@@ -5,6 +5,7 @@
 """Test transaction signing using the signrawtransaction* RPCs."""
 
 from test_framework.address import check_script, script_to_p2sh, script_to_p2wsh
+from test_framework.blocktools import subsidy_cy
 from test_framework.key import ECKey
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_raises_rpc_error, find_vout_for_address, hex_str_to_bytes
@@ -176,7 +177,8 @@ class SignRawTransactionsTest(BitcoinTestFramework):
         p2sh_p2wsh_address = self.nodes[1].createmultisig(1, [embedded_pubkey], "p2sh-segwit")
         # send transaction to P2SH-P2WSH 1-of-1 multisig address
         self.nodes[0].generate(101)
-        self.nodes[0].sendtoaddress(p2sh_p2wsh_address["address"], 49.999)
+        funded = subsidy_cy() - Decimal("0.001")
+        self.nodes[0].sendtoaddress(p2sh_p2wsh_address["address"], funded)
         self.nodes[0].generate(1)
         self.sync_all()
         # Get the UTXO info from scantxoutset
@@ -186,7 +188,7 @@ class SignRawTransactionsTest(BitcoinTestFramework):
         unspent_output['redeemScript'] = script_to_p2wsh_script(unspent_output['witnessScript']).hex()
         assert_equal(spk, unspent_output['scriptPubKey'])
         # Now create and sign a transaction spending that output on node[0], which doesn't know the scripts or keys
-        spending_tx = self.nodes[0].createrawtransaction([unspent_output], {self.nodes[1].get_wallet_rpc(self.default_wallet_name).getnewaddress(): Decimal("49.998")})
+        spending_tx = self.nodes[0].createrawtransaction([unspent_output], {self.nodes[1].get_wallet_rpc(self.default_wallet_name).getnewaddress(): funded - Decimal("0.001")})
         spending_tx_signed = self.nodes[0].signrawtransactionwithkey(spending_tx, [embedded_privkey], [unspent_output])
         # Check the signing completed successfully
         assert 'complete' in spending_tx_signed
@@ -243,7 +245,7 @@ class SignRawTransactionsTest(BitcoinTestFramework):
     def test_signing_with_csv(self):
         self.log.info("Test signing a transaction containing a fully signed CSV input")
         self.nodes[0].walletpassphrase("password", 9999)
-        getcontext().prec = 8
+        getcontext().prec = 28
 
         # Make sure CSV is active
         self.nodes[0].generate(500)
@@ -256,8 +258,9 @@ class SignRawTransactionsTest(BitcoinTestFramework):
         txid = self.nodes[0].sendtoaddress(address, 1)
         vout = find_vout_for_address(self.nodes[0], txid, address)
         self.nodes[0].generate(1)
-        utxo = self.nodes[0].listunspent()[0]
-        amt = Decimal(1) + utxo["amount"] - Decimal(0.00001)
+        utxos = [u for u in self.nodes[0].listunspent() if u['txid'] != txid]
+        utxo = utxos[0]
+        amt = Decimal('1') + utxo["amount"] - Decimal('0.001')
         tx = self.nodes[0].createrawtransaction(
             [{"txid": txid, "vout": vout, "sequence": 1},{"txid": utxo["txid"], "vout": utxo["vout"]}],
             [{self.nodes[0].getnewaddress(): amt}],
@@ -279,7 +282,7 @@ class SignRawTransactionsTest(BitcoinTestFramework):
     def test_signing_with_cltv(self):
         self.log.info("Test signing a transaction containing a fully signed CLTV input")
         self.nodes[0].walletpassphrase("password", 9999)
-        getcontext().prec = 8
+        getcontext().prec = 28
 
         # Make sure CSV is active
         self.nodes[0].generate(1500)
@@ -292,8 +295,9 @@ class SignRawTransactionsTest(BitcoinTestFramework):
         txid = self.nodes[0].sendtoaddress(address, 1)
         vout = find_vout_for_address(self.nodes[0], txid, address)
         self.nodes[0].generate(1)
-        utxo = self.nodes[0].listunspent()[0]
-        amt = Decimal(1) + utxo["amount"] - Decimal(0.00001)
+        utxos = [u for u in self.nodes[0].listunspent() if u['txid'] != txid]
+        utxo = utxos[0]
+        amt = Decimal('1') + utxo["amount"] - Decimal('0.001')
         tx = self.nodes[0].createrawtransaction(
             [{"txid": txid, "vout": vout},{"txid": utxo["txid"], "vout": utxo["vout"]}],
             [{self.nodes[0].getnewaddress(): amt}],

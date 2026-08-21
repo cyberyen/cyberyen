@@ -15,7 +15,10 @@ variants.
 - `test_address()` is called to call getaddressinfo for an address on node1
   and test the values returned."""
 
+from decimal import Decimal
+
 from test_framework.address import key_to_p2pkh
+from test_framework.blocktools import subsidy_cy
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.descriptors import descsum_create
 from test_framework.util import (
@@ -184,7 +187,7 @@ class ImportDescriptorsTest(BitcoinTestFramework):
         xpriv = "tprv8ZgxMBicQKsPeuVhWwi6wuMQGfPKi9Li5GtX35jVNknACgqe3CY4g5xgkfDDJcmtF7o1QnxWDRYw4H5P26PXq7sbcUkEqeR4fg3Kxp2tigg"
         xpub = "tpubD6NzVbkrYhZ4YNXVQbNhMK1WqguFsUXceaVJKbmno2aZ3B6QfbMeraaYvnBSGpV3vxLyTTK9DYT1yoEck4XUScMzXoQ2U2oSmE2JyMedq3H"
         addresses = ["CbLgBpzWA5HfXpPMae62q6A8vuNgxHqXbU", "CLej6btYT9sG7dQR6yL8r5EM1HGUaDYa2F"] # hdkeypath=m/0'/0'/0' and 1'
-        addresses += ["rcy1qrd3n235cj2czsfmsuvqqpr3lu6lg0ju7w49wld", "rcy1qfqeppuvj0ww98r6qghmdkj70tv8qpchef5j2le"] # wpkh subscripts corresponding to the above addresses
+        addresses += ["rcy1qrd3n235cj2czsfmsuvqqpr3lu6lg0ju7rdmq0r", "rcy1qfqeppuvj0ww98r6qghmdkj70tv8qpcheyvvy0h"] # wpkh subscripts corresponding to the above addresses
         desc = "sh(wpkh(" + xpub + "/0/0/*" + "))"
 
         self.log.info("Ranged descriptors cannot have labels")
@@ -255,15 +258,9 @@ class ImportDescriptorsTest(BitcoinTestFramework):
         w1 = self.nodes[1].get_wallet_rpc('w1')
         self.log.info('Key ranges should be imported in order')
         xpub = "tpubDAXcJ7s7ZwicqjprRaEWdPoHKrCS215qxGYxpusRLLmJuT69ZSicuGdSfyvyKpvUNYBW1s2U3NSrT6vrCYB9e6nZUEvrqnwXPF8ArTCRXMY"
-        addresses = [
-            'rcy1qtmp74ayg7p24uslctssvjm06q5phz4yrc3zpyj', # m/0'/0'/0
-            'rcy1q8vprchan07gzagd5e6v9wd7azyucksq2c4ynpe', # m/0'/0'/1
-            'rcy1qtuqdtha7zmqgcrr26n2rqxztv5y8rafjlg94gz', # m/0'/0'/2
-            'rcy1qau64272ymawq26t90md6an0ps99qkrse22pnz3', # m/0'/0'/3
-            'rcy1qsg97266hrh6cpmutqen8s4s962aryy77vv4ql3', # m/0'/0'/4
-        ]
+        wpkh_desc = descsum_create('wpkh([80002067/0h/0h]' + xpub + '/*)')
 
-        self.test_importdesc({'desc': descsum_create('wpkh([80002067/0h/0h]' + xpub + '/*)'),
+        self.test_importdesc({'desc': wpkh_desc,
                               'active': True,
                               'range' : [0, 2],
                               'timestamp': 'now'
@@ -282,6 +279,7 @@ class ImportDescriptorsTest(BitcoinTestFramework):
                              },
                              success=True)
 
+        addresses = w1.deriveaddresses(wpkh_desc, [0, 4])
         assert_equal(w1.getwalletinfo()['keypoolsize'], 5 * 3)
         for i, expected_addr in enumerate(addresses):
             received_addr = w1.getnewaddress('', 'bech32')
@@ -325,10 +323,11 @@ class ImportDescriptorsTest(BitcoinTestFramework):
                      address,
                      solvable=True,
                      ismine=True)
-        txid = w0.sendtoaddress(address, 49.99995540)
+        funded = subsidy_cy() - Decimal("0.00004460")
+        txid = w0.sendtoaddress(address, funded)
         w0.generatetoaddress(6, w0.getnewaddress())
         self.sync_blocks()
-        tx = wpriv.createrawtransaction([{"txid": txid, "vout": 0}], {w0.getnewaddress(): 49.999})
+        tx = wpriv.createrawtransaction([{"txid": txid, "vout": 0}], {w0.getnewaddress(): funded - Decimal("0.00095540")})
         signed_tx = wpriv.signrawtransactionwithwallet(tx)
         w1.sendrawtransaction(signed_tx['hex'])
 
@@ -356,9 +355,9 @@ class ImportDescriptorsTest(BitcoinTestFramework):
 
         assert_equal(wmulti_priv.getwalletinfo()['keypoolsize'], 1001) # Range end (1000) is inclusive, so 1001 addresses generated
         addr = wmulti_priv.getnewaddress('', 'bech32')
-        assert_equal(addr, 'rcy1qdt0qy5p7dzhxzmegnn4ulzhard33s2809arjqgjndx87rv5vd0fqzmggt2') # Derived at m/84'/0'/0'/0
+        assert_equal(addr, 'rcy1qdt0qy5p7dzhxzmegnn4ulzhard33s2809arjqgjndx87rv5vd0fq0jme2s') # Derived at m/84'/0'/0'/0
         change_addr = wmulti_priv.getrawchangeaddress('bech32')
-        assert_equal(change_addr, 'rcy1qt9uhe3a9hnq7vajl7a094z4s3crm9ttf8zw3f5v9gr2nyd7e3lnsvklvg5')
+        assert_equal(change_addr, 'rcy1qt9uhe3a9hnq7vajl7a094z4s3crm9ttf8zw3f5v9gr2nyd7e3lnsplvafw')
         assert_equal(wmulti_priv.getwalletinfo()['keypoolsize'], 1000)
         txid = w0.sendtoaddress(addr, 10)
         self.nodes[0].generate(6)
@@ -391,9 +390,9 @@ class ImportDescriptorsTest(BitcoinTestFramework):
 
         assert_equal(wmulti_pub.getwalletinfo()['keypoolsize'], 1000) # The first one was already consumed by previous import and is detected as used
         addr = wmulti_pub.getnewaddress('', 'bech32')
-        assert_equal(addr, 'rcy1qp8s25ckjl7gr6x2q3dx3tn2pytwp05upkjztk6ey857tt50r5aeqme3nvg') # Derived at m/84'/0'/0'/1
+        assert_equal(addr, 'rcy1qp8s25ckjl7gr6x2q3dx3tn2pytwp05upkjztk6ey857tt50r5aeqkszzdj') # Derived at m/84'/0'/0'/1
         change_addr = wmulti_pub.getrawchangeaddress('bech32')
-        assert_equal(change_addr, 'rcy1qt9uhe3a9hnq7vajl7a094z4s3crm9ttf8zw3f5v9gr2nyd7e3lnsvklvg5')
+        assert_equal(change_addr, 'rcy1qt9uhe3a9hnq7vajl7a094z4s3crm9ttf8zw3f5v9gr2nyd7e3lnsplvafw')
         assert_equal(wmulti_pub.getwalletinfo()['keypoolsize'], 999)
         txid = w0.sendtoaddress(addr, 10)
         vout = find_vout_for_address(self.nodes[0], txid, addr)

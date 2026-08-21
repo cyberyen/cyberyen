@@ -10,6 +10,7 @@ from test_framework.util import (
 )
 from test_framework.blocktools import (
     TIME_GENESIS_BLOCK,
+    REGTEST_POW_TARGET_SPACING,
 )
 
 
@@ -23,8 +24,9 @@ class CreateTxWalletTest(BitcoinTestFramework):
 
     def run_test(self):
         self.log.info('Create some old blocks')
-        self.nodes[0].setmocktime(TIME_GENESIS_BLOCK)
-        self.nodes[0].generate(200)
+        for t in range(TIME_GENESIS_BLOCK, TIME_GENESIS_BLOCK + 200 * REGTEST_POW_TARGET_SPACING, REGTEST_POW_TARGET_SPACING):
+            self.nodes[0].setmocktime(t)
+            self.nodes[0].generate(1)
         self.nodes[0].setmocktime(0)
 
         self.test_anti_fee_sniping()

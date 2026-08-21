@@ -15,7 +15,9 @@ Therefore, this test is limited to the remaining protection criteria.
 
 import time
 
-from test_framework.blocktools import create_block, create_coinbase
+from decimal import Decimal
+
+from test_framework.blocktools import create_block, create_coinbase, subsidy_cy
 from test_framework.messages import CTransaction, FromHex, msg_pong, msg_tx
 from test_framework.p2p import P2PDataStore, P2PInterface
 from test_framework.test_framework import BitcoinTestFramework
@@ -74,7 +76,7 @@ class P2PEvict(BitcoinTestFramework):
             prevtx = node.getblock(node.getblockhash(i + 1), 2)['tx'][0]
             rawtx = node.createrawtransaction(
                 inputs=[{'txid': prevtx['txid'], 'vout': 0}],
-                outputs=[{node.get_deterministic_priv_key().address: 50 - 0.00125}],
+                outputs=[{node.get_deterministic_priv_key().address: subsidy_cy() - Decimal("0.00125")}],
             )
             sigtx = node.signrawtransactionwithkey(
                 hexstring=rawtx,

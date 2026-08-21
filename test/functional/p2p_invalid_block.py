@@ -12,8 +12,7 @@ re-requested.
 """
 import copy
 
-from test_framework.blocktools import create_block, create_coinbase, create_tx_with_script
-from test_framework.messages import COIN
+from test_framework.blocktools import create_block, create_coinbase, create_tx_with_script, get_block_subsidy
 from test_framework.p2p import P2PDataStore
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal
@@ -64,8 +63,8 @@ class InvalidBlockRequestTest(BitcoinTestFramework):
         block_time += 1
 
         # b'0x51' is OP_TRUE
-        tx1 = create_tx_with_script(block1.vtx[0], 0, script_sig=b'\x51', amount=50 * COIN)
-        tx2 = create_tx_with_script(tx1, 0, script_sig=b'\x51', amount=50 * COIN)
+        tx1 = create_tx_with_script(block1.vtx[0], 0, script_sig=b'\x51', amount=get_block_subsidy(1))
+        tx2 = create_tx_with_script(tx1, 0, script_sig=b'\x51', amount=get_block_subsidy(1))
 
         block2.vtx.extend([tx1, tx2])
         block2.hashMerkleRoot = block2.calc_merkle_root()
@@ -97,7 +96,7 @@ class InvalidBlockRequestTest(BitcoinTestFramework):
 
         block3 = create_block(tip, create_coinbase(height), block_time, version=0x20000000)
         block_time += 1
-        block3.vtx[0].vout[0].nValue = 100 * COIN  # Too high!
+        block3.vtx[0].vout[0].nValue = 2 * get_block_subsidy(height)  # Too high!
         block3.vtx[0].sha256 = None
         block3.vtx[0].calc_sha256()
         block3.hashMerkleRoot = block3.calc_merkle_root()
@@ -121,7 +120,7 @@ class InvalidBlockRequestTest(BitcoinTestFramework):
         # Complete testing of CVE-2018-17144, by checking for the inflation bug.
         # Create a block that spends the output of a tx in a previous block.
         block4 = create_block(tip, create_coinbase(height), block_time, version=0x20000000)
-        tx3 = create_tx_with_script(tx2, 0, script_sig=b'\x51', amount=50 * COIN)
+        tx3 = create_tx_with_script(tx2, 0, script_sig=b'\x51', amount=get_block_subsidy(1))
 
         # Duplicates input
         tx3.vin.append(tx3.vin[0])

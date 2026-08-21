@@ -26,8 +26,12 @@ from test_framework.blocktools import (
     create_block,
     create_coinbase,
     TIME_GENESIS_BLOCK,
+    REGTEST_POW_TARGET_SPACING,
+    subsidy_cy,
+    get_block_subsidy,
 )
 from test_framework.messages import (
+    COIN,
     CBlockHeader,
     FromHex,
     msg_block,
@@ -69,8 +73,8 @@ class BlockchainTest(BitcoinTestFramework):
     def mine_chain(self):
         self.log.info('Create some old blocks')
         address = self.nodes[0].get_deterministic_priv_key().address
-        for t in range(TIME_GENESIS_BLOCK, TIME_GENESIS_BLOCK + 200 * 600, 600):
-            # ten-minute steps from genesis block time
+        for t in range(TIME_GENESIS_BLOCK, TIME_GENESIS_BLOCK + 200 * REGTEST_POW_TARGET_SPACING, REGTEST_POW_TARGET_SPACING):
+            # REGTEST_POW_TARGET_SPACING steps from genesis block time
             self.nodes[0].setmocktime(t)
             self.nodes[0].generatetoaddress(1, address)
         assert_equal(self.nodes[0].getblockchaininfo()['blocks'], 200)
@@ -126,10 +130,10 @@ class BlockchainTest(BitcoinTestFramework):
         assert_greater_than(res['size_on_disk'], 0)
 
         assert_equal(res['softforks'], {
-            'bip34': {'type': 'buried', 'active': False, 'height': 500},
-            'bip66': {'type': 'buried', 'active': False, 'height': 1251},
-            'bip65': {'type': 'buried', 'active': False, 'height': 1351},
-            'csv': {'type': 'buried', 'active': False, 'height': 432},
+            'bip34': {'type': 'buried', 'active': True, 'height': 0},
+            'bip66': {'type': 'buried', 'active': True, 'height': 0},
+            'bip65': {'type': 'buried', 'active': True, 'height': 0},
+            'csv': {'type': 'buried', 'active': True, 'height': 0},
             'segwit': {'type': 'buried', 'active': True, 'height': 0},
             'testdummy': {
                 'type': 'bip9',
@@ -143,8 +147,8 @@ class BlockchainTest(BitcoinTestFramework):
                         'period': 144,
                         'threshold': 108,
                         'elapsed': 57,
-                        'count': 57,
-                        'possible': True,
+                        'count': 0,
+                        'possible': False,
                     },
                 },
                 'active': False
@@ -186,9 +190,8 @@ class BlockchainTest(BitcoinTestFramework):
         chaintxstats = self.nodes[0].getchaintxstats(nblocks=1)
         # 200 txs plus genesis tx
         assert_equal(chaintxstats['txcount'], 201)
-        # tx rate should be 1 per 10 minutes, or 1/600
-        # we have to round because of binary math
-        assert_equal(round(chaintxstats['txrate'] * 600, 10), Decimal(1))
+        # one tx per nPowTargetSpacing (60s on regtest)
+        assert_equal(round(chaintxstats['txrate'] * REGTEST_POW_TARGET_SPACING, 10), Decimal(1))
 
         b1_hash = self.nodes[0].getblockhash(1)
         b1 = self.nodes[0].getblock(b1_hash)
@@ -220,7 +223,8 @@ class BlockchainTest(BitcoinTestFramework):
         node = self.nodes[0]
         res = node.gettxoutsetinfo()
 
-        assert_equal(res['total_amount'], Decimal('8725.00000000'))
+        issued = sum(get_block_subsidy(h) for h in range(1, 201))
+        assert_equal(res['total_amount'], Decimal(issued) / Decimal(COIN))
         assert_equal(res['transactions'], 200)
         assert_equal(res['height'], 200)
         assert_equal(res['txouts'], 200)
@@ -309,8 +313,8 @@ class BlockchainTest(BitcoinTestFramework):
 
     def _test_getnetworkhashps(self):
         hashes_per_second = self.nodes[0].getnetworkhashps()
-        # This should be 2 hashes every 10 minutes or 1/300
-        assert abs(hashes_per_second * 300 - 1) < 0.0001
+        # 2 hashes every 60s on Cyberyen regtest, or 1/30
+        assert abs(hashes_per_second * 30 - 1) < 0.0001
 
     def _test_stopatheight(self):
         assert_equal(self.nodes[0].getblockcount(), 200)

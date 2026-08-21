@@ -15,6 +15,7 @@ from test_framework.blocktools import (
     create_coinbase,
     NORMAL_GBT_REQUEST_PARAMS,
     TIME_GENESIS_BLOCK,
+    REGTEST_POW_TARGET_SPACING,
 )
 from test_framework.messages import (
     CBlock,
@@ -30,6 +31,15 @@ from test_framework.util import (
 
 VERSIONBITS_TOP_BITS = 0x20000000
 VERSIONBITS_DEPLOYMENT_TESTDUMMY_BIT = 28
+# CRegTestParams nAuxpowChainId * VERSION_CHAIN_START (src/primitives/pureheader.h)
+AUXPOW_CHAIN_ID = 0x1000
+VERSION_CHAIN_START = 1 << 16
+REGTEST_MINER_BASE_VERSION = 4  # src/miner.cpp leftover of nVersion = 4, packed with chain ID
+
+
+def auxpow_pack_version(base_version):
+    """Full nVersion as CreateNewBlock SetBaseVersion(base, nAuxpowChainId)."""
+    return base_version | (AUXPOW_CHAIN_ID * VERSION_CHAIN_START)
 
 
 def assert_template(node, block, expect, rehash=True):
@@ -51,7 +61,7 @@ class MiningTest(BitcoinTestFramework):
 
     def mine_chain(self):
         self.log.info('Create some old blocks')
-        for t in range(TIME_GENESIS_BLOCK, TIME_GENESIS_BLOCK + 200 * 600, 600):
+        for t in range(TIME_GENESIS_BLOCK, TIME_GENESIS_BLOCK + 200 * REGTEST_POW_TARGET_SPACING, REGTEST_POW_TARGET_SPACING):
             self.nodes[0].setmocktime(t)
             self.nodes[0].generate(1)
         mining_info = self.nodes[0].getmininginfo()
@@ -62,10 +72,10 @@ class MiningTest(BitcoinTestFramework):
         self.log.info('test blockversion')
         self.restart_node(0, extra_args=['-mocktime={}'.format(t), '-blockversion=536870912'])
         self.connect_nodes(0, 1)
-        assert_equal(536870912, self.nodes[0].getblocktemplate(NORMAL_GBT_REQUEST_PARAMS)['version'])
+        assert_equal(auxpow_pack_version(536870912), self.nodes[0].getblocktemplate(NORMAL_GBT_REQUEST_PARAMS)['version'])
         self.restart_node(0, extra_args=['-mocktime={}'.format(t)])
         self.connect_nodes(0, 1)
-        assert_equal(VERSIONBITS_TOP_BITS + (1 << VERSIONBITS_DEPLOYMENT_TESTDUMMY_BIT), self.nodes[0].getblocktemplate(NORMAL_GBT_REQUEST_PARAMS)['version'])
+        assert_equal(auxpow_pack_version(REGTEST_MINER_BASE_VERSION), self.nodes[0].getblocktemplate(NORMAL_GBT_REQUEST_PARAMS)['version'])
         self.restart_node(0)
         self.connect_nodes(0, 1)
 
@@ -86,7 +96,7 @@ class MiningTest(BitcoinTestFramework):
         assert 'currentblocktx' not in mining_info
         assert 'currentblockweight' not in mining_info
         assert_equal(mining_info['difficulty'], Decimal('4.656542373906925E-10'))
-        assert_equal(mining_info['networkhashps'], Decimal('0.003333333333333334'))
+        assert_equal(mining_info['networkhashps'], Decimal('0.03333333333333333'))
         assert_equal(mining_info['pooledtx'], 0)
 
         # Mine a block to leave initial block download
@@ -123,10 +133,12 @@ class MiningTest(BitcoinTestFramework):
         bad_block = copy.deepcopy(block)
         bad_block.vtx[0].vin[0].prevout.hash += 1
         bad_block.vtx[0].rehash()
+        bad_block.hashMerkleRoot = bad_block.calc_merkle_root()
         assert_template(node, bad_block, 'bad-cb-missing')
 
         self.log.info("submitblock: Test invalid coinbase transaction")
-        assert_raises_rpc_error(-22, "Block does not start with a coinbase", node.submitblock, bad_block.serialize().hex())
+        bad_block.solve()
+        assert_equal('bad-cb-missing', node.submitblock(bad_block.serialize().hex()))
 
         self.log.info("getblocktemplate: Test truncated final transaction")
         assert_raises_rpc_error(-22, "Block decode failed", node.getblocktemplate, {
