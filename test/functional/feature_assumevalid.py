@@ -16,43 +16,41 @@ transactions:
               output can be spent
     102:      a block containing a transaction spending the coinbase
               transaction output. The transaction has an invalid signature.
-    103-2202: bury the bad block with just over two weeks' worth of blocks
-              (2100 blocks)
+    103+:     bury the bad block with just over two weeks' work
+              (GetBlockProofEquivalentTime vs nPowTargetSpacing=60).
 
 Start three nodes:
 
-    - node0 has no -assumevalid parameter. Try to sync to block 2202. It will
-      reject block 102 and only sync as far as block 101
-    - node1 has -assumevalid set to the hash of block 102. Try to sync to
-      block 2202. node1 will sync all the way to block 2202.
-    - node2 has -assumevalid set to the hash of block 102. Try to sync to
-      block 200. node2 will reject block 102 since it's assumed valid, but it
-      isn't buried by at least two weeks' work.
-"""
-import time
+    - node0 has no -assumevalid parameter. After headers of the full chain
+      are present, connecting block 102 is rejected; the tip stays at 101.
+    - node1 has -assumevalid set to the hash of block 102. With the full
+      header tree (so pindexBestHeader is two weeks ahead) it accepts the
+      whole chain.
+    - node2 has -assumevalid set to the hash of block 102 but only sees
+      200 headers. Block 102 is still validated and rejected.
 
-from test_framework.blocktools import (create_block, create_coinbase)
+Headers and bodies are submitted over RPC. Twenty thousand unsolicited
+P2P header messages disconnects; leftover Bitcoin's 2100-header dump does
+not recode onto Cyberyen 60s spacing.
+"""
+from test_framework.blocktools import (
+    create_block,
+    create_coinbase,
+    get_block_subsidy,
+    REGTEST_POW_TARGET_SPACING,
+)
 from test_framework.key import ECKey
 from test_framework.messages import (
     CBlockHeader,
+    COIN,
     COutPoint,
     CTransaction,
     CTxIn,
     CTxOut,
-    msg_block,
-    msg_headers,
 )
-from test_framework.p2p import P2PInterface
 from test_framework.script import (CScript, OP_TRUE)
-from test_framework.test_framework import BitcoinTestFramework, SkipTest
+from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal
-
-
-class BaseNode(P2PInterface):
-    def send_header_for_blocks(self, new_blocks):
-        headers_message = msg_headers()
-        headers_message.headers = [CBlockHeader(b) for b in new_blocks]
-        self.send_message(headers_message)
 
 
 class AssumeValidTest(BitcoinTestFramework):
@@ -60,49 +58,26 @@ class AssumeValidTest(BitcoinTestFramework):
         self.setup_clean_chain = True
         self.num_nodes = 3
         self.rpc_timeout = 120
+        # Python blocks have no HogEx; keep MWEB never-active (existing pattern).
+        self.extra_args = [['-vbparams=mweb:-2:0'] for _ in range(3)]
 
     def setup_network(self):
-        self.add_nodes(3)
+        self.add_nodes(3, extra_args=self.extra_args)
         # Start node0. We don't start the other nodes yet since
         # we need to pre-mine a block with an invalid transaction
         # signature so we can pass in the block hash as assumevalid.
         self.start_node(0)
 
-    def send_blocks_until_disconnected(self, p2p_conn):
-        """Keep sending blocks to the node until we're disconnected."""
-        for i in range(len(self.blocks)):
-            if not p2p_conn.is_connected:
-                break
-            try:
-                p2p_conn.send_message(msg_block(self.blocks[i]))
-            except IOError:
-                assert not p2p_conn.is_connected
-                break
+    def submit_headers(self, node, blocks):
+        for block in blocks:
+            node.submitheader(CBlockHeader(block).serialize().hex())
 
-    def assert_blockchain_height(self, node, height):
-        """Wait until the blockchain is no longer advancing and verify it's reached the expected height."""
-        last_height = node.getblock(node.getbestblockhash())['height']
-        timeout = 10
-        while True:
-            time.sleep(0.25)
-            current_height = node.getblock(node.getbestblockhash())['height']
-            if current_height != last_height:
-                last_height = current_height
-                if timeout < 0:
-                    assert False, "blockchain too short after timeout: %d" % current_height
-                timeout - 0.25
-                continue
-            elif current_height > height:
-                assert False, "blockchain too long: %d" % current_height
-            elif current_height == height:
-                break
+    def submit_blocks_until(self, node, blocks, last_index):
+        """submitblock from blocks[0] through last_index inclusive."""
+        for block in blocks[:last_index + 1]:
+            node.submitblock(block.serialize().hex())
 
     def run_test(self):
-        if True:
-            raise SkipTest("TO-DO")
-
-        p2p0 = self.nodes[0].add_p2p_connection(BaseNode())
-
         # Build the blockchain
         self.tip = int(self.nodes[0].getbestblockhash(), 16)
         self.block_time = self.nodes[0].getblock(self.nodes[0].getbestblockhash())['time'] + 1
@@ -137,7 +112,7 @@ class AssumeValidTest(BitcoinTestFramework):
         # Create a transaction spending the coinbase output with an invalid (null) signature
         tx = CTransaction()
         tx.vin.append(CTxIn(COutPoint(self.block1.vtx[0].sha256, 0), scriptSig=b""))
-        tx.vout.append(CTxOut(49 * 100000000, CScript([OP_TRUE])))
+        tx.vout.append(CTxOut(get_block_subsidy(1) - COIN, CScript([OP_TRUE])))
         tx.calc_sha256()
 
         block102 = create_block(self.tip, create_coinbase(height), self.block_time, version=0x20000000)
@@ -151,47 +126,44 @@ class AssumeValidTest(BitcoinTestFramework):
         self.block_time += 1
         height += 1
 
-        # Bury the assumed valid block 2100 deep
-        for _ in range(2100):
-            block = create_block(self.tip, create_coinbase(height), self.block_time)
-            block.nVersion = 0x20000002
+        # Bury the assumed valid block with just over two weeks of work.
+        # GetBlockProofEquivalentTime = height_delta * nPowTargetSpacing (regtest 60s).
+        two_weeks = 60 * 60 * 24 * 7 * 2
+        bury = two_weeks // REGTEST_POW_TARGET_SPACING + 1
+        for _ in range(bury):
+            # 0x20000000 is in CPureBlockHeader::IsLegacy; 0x20000002 is not and is high-hash.
+            block = create_block(self.tip, create_coinbase(height), self.block_time, version=0x20000000)
             block.solve()
             self.blocks.append(block)
             self.tip = block.sha256
             self.block_time += 1
             height += 1
-
-        self.nodes[0].disconnect_p2ps()
+        tip_height = 101 + 1 + bury  # 100 bury-to-mature + invalid block 102 + two-weeks bury
 
         # Start node1 and node2 with assumevalid so they accept a block with a bad signature.
-        self.start_node(1, extra_args=["-assumevalid=" + hex(block102.sha256)])
-        self.start_node(2, extra_args=["-assumevalid=" + hex(block102.sha256)])
+        assume = ["-assumevalid=" + hex(block102.sha256)]
+        self.start_node(1, extra_args=self.extra_args[1] + assume)
+        self.start_node(2, extra_args=self.extra_args[2] + assume)
 
-        p2p0 = self.nodes[0].add_p2p_connection(BaseNode())
-        p2p1 = self.nodes[1].add_p2p_connection(BaseNode())
-        p2p2 = self.nodes[2].add_p2p_connection(BaseNode())
+        # Headers first so pindexBestHeader sits at the two-week tip before bodies connect.
+        self.submit_headers(self.nodes[0], self.blocks)
+        self.submit_headers(self.nodes[1], self.blocks)
+        self.submit_headers(self.nodes[2], self.blocks[:200])
+        assert_equal(self.nodes[0].getblockchaininfo()['headers'], tip_height)
+        assert_equal(self.nodes[1].getblockchaininfo()['headers'], tip_height)
+        assert_equal(self.nodes[2].getblockchaininfo()['headers'], 200)
 
-        # send header lists to all three nodes
-        p2p0.send_header_for_blocks(self.blocks[0:2000])
-        p2p0.send_header_for_blocks(self.blocks[2000:])
-        p2p1.send_header_for_blocks(self.blocks[0:2000])
-        p2p1.send_header_for_blocks(self.blocks[2000:])
-        p2p2.send_header_for_blocks(self.blocks[0:200])
+        # node0: no assumevalid. Block 102 (index 101) is rejected.
+        self.submit_blocks_until(self.nodes[0], self.blocks, 101)
+        assert_equal(self.nodes[0].getblockcount(), 101)
 
-        # Send blocks to node0. Block 102 will be rejected.
-        self.send_blocks_until_disconnected(p2p0)
-        self.assert_blockchain_height(self.nodes[0], 101)
+        # node1: assumevalid + two weeks of headers. All blocks accepted.
+        self.submit_blocks_until(self.nodes[1], self.blocks, len(self.blocks) - 1)
+        assert_equal(self.nodes[1].getblockcount(), tip_height)
 
-        # Send all blocks to node1. All blocks will be accepted.
-        for i in range(2202):
-            p2p1.send_message(msg_block(self.blocks[i]))
-        # Syncing 2200 blocks can take a while on slow systems. Give it plenty of time to sync.
-        p2p1.sync_with_ping(960)
-        assert_equal(self.nodes[1].getblock(self.nodes[1].getbestblockhash())['height'], 2202)
-
-        # Send blocks to node2. Block 102 will be rejected.
-        self.send_blocks_until_disconnected(p2p2)
-        self.assert_blockchain_height(self.nodes[2], 101)
+        # node2: assumevalid, but not buried. Block 102 rejected.
+        self.submit_blocks_until(self.nodes[2], self.blocks, 199)
+        assert_equal(self.nodes[2].getblockcount(), 101)
 
 
 if __name__ == '__main__':
