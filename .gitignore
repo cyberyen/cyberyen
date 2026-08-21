@@ -150,3 +150,6 @@ db4/
 osx_volname
 dist/
 *.background.tiff
+
+# Local honest-gate artifacts (not for commit)
+_honest_gates/
