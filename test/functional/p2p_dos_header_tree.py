@@ -30,6 +30,12 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
             help='Test data file (default: %(default)s)',
         )
 
+    def skip_test_if_missing_module(self):
+        # Must run before setup_nodes: testnet4 + regtest WIF fails importprivkey.
+        raise SkipTest(
+            "No product mechanism to set a non-genesis regtest checkpoint without a new node argument; with only the genesis checkpoint the bad-fork-prior-to-checkpoint path is unreachable."
+        )
+
     def run_test(self):
         raise SkipTest(
             "No product mechanism to set a non-genesis regtest checkpoint without a new node argument; with only the genesis checkpoint the bad-fork-prior-to-checkpoint path is unreachable."
