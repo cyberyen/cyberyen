@@ -14,7 +14,7 @@ Generate 427 more blocks.
 """
 import time
 
-from test_framework.blocktools import NORMAL_GBT_REQUEST_PARAMS, create_block, create_transaction, add_witness_commitment
+from test_framework.blocktools import NORMAL_GBT_REQUEST_PARAMS, create_block, create_transaction, add_witness_commitment, subsidy_cy
 from test_framework.messages import CTransaction
 from test_framework.script import CScript
 from test_framework.test_framework import BitcoinTestFramework
@@ -75,17 +75,18 @@ class NULLDUMMYTest(BitcoinTestFramework):
         self.lastblockheight = 429
         self.lastblocktime = int(time.time()) + 429
 
+        s = subsidy_cy()
         self.log.info("Test 1: NULLDUMMY compliant base transactions should be accepted to mempool and mined before activation [430]")
-        test1txs = [create_transaction(self.nodes[0], coinbase_txid[0], self.ms_address, amount=49)]
+        test1txs = [create_transaction(self.nodes[0], coinbase_txid[0], self.ms_address, amount=s - 1)]
         txid1 = self.nodes[0].sendrawtransaction(test1txs[0].serialize_with_witness().hex(), 0)
-        test1txs.append(create_transaction(self.nodes[0], txid1, self.ms_address, amount=48))
+        test1txs.append(create_transaction(self.nodes[0], txid1, self.ms_address, amount=s - 2))
         txid2 = self.nodes[0].sendrawtransaction(test1txs[1].serialize_with_witness().hex(), 0)
-        test1txs.append(create_transaction(self.nodes[0], coinbase_txid[1], self.wit_ms_address, amount=49))
+        test1txs.append(create_transaction(self.nodes[0], coinbase_txid[1], self.wit_ms_address, amount=s - 1))
         txid3 = self.nodes[0].sendrawtransaction(test1txs[2].serialize_with_witness().hex(), 0)
         self.block_submit(self.nodes[0], test1txs, False, True)
 
         self.log.info("Test 2: Non-NULLDUMMY base multisig transaction should not be accepted to mempool before activation")
-        test2tx = create_transaction(self.nodes[0], txid2, self.ms_address, amount=47)
+        test2tx = create_transaction(self.nodes[0], txid2, self.ms_address, amount=s - 3)
         trueDummy(test2tx)
         assert_raises_rpc_error(-26, NULLDUMMY_ERROR, self.nodes[0].sendrawtransaction, test2tx.serialize_with_witness().hex(), 0)
 
@@ -93,14 +94,14 @@ class NULLDUMMYTest(BitcoinTestFramework):
         self.block_submit(self.nodes[0], [test2tx], False, True)
 
         self.log.info("Test 4: Non-NULLDUMMY base multisig transaction is invalid after activation")
-        test4tx = create_transaction(self.nodes[0], test2tx.hash, self.address, amount=46)
+        test4tx = create_transaction(self.nodes[0], test2tx.hash, self.address, amount=s - 4)
         test6txs = [CTransaction(test4tx)]
         trueDummy(test4tx)
         assert_raises_rpc_error(-26, NULLDUMMY_ERROR, self.nodes[0].sendrawtransaction, test4tx.serialize_with_witness().hex(), 0)
         self.block_submit(self.nodes[0], [test4tx], version=VB_TOP_BITS)
 
         self.log.info("Test 5: Non-NULLDUMMY P2WSH multisig transaction invalid after activation")
-        test5tx = create_transaction(self.nodes[0], txid3, self.wit_address, amount=48)
+        test5tx = create_transaction(self.nodes[0], txid3, self.wit_address, amount=s - 2)
         test6txs.append(CTransaction(test5tx))
         test5tx.wit.vtxinwit[0].scriptWitness.stack[0] = b'\x01'
         assert_raises_rpc_error(-26, NULLDUMMY_ERROR, self.nodes[0].sendrawtransaction, test5tx.serialize_with_witness().hex(), 0)
@@ -111,12 +112,13 @@ class NULLDUMMYTest(BitcoinTestFramework):
             self.nodes[0].sendrawtransaction(i.serialize_with_witness().hex(), 0)
         self.block_submit(self.nodes[0], test6txs, True, True, VB_TOP_BITS)
 
-    def block_submit(self, node, txs, witness=False, accept=False, version=4):
+    def block_submit(self, node, txs, witness=False, accept=False, version=None):
         tmpl = node.getblocktemplate(NORMAL_GBT_REQUEST_PARAMS)
         assert_equal(tmpl['previousblockhash'], self.lastblockhash)
         assert_equal(tmpl['height'], self.lastblockheight + 1)
         block = create_block(tmpl=tmpl, ntime=self.lastblocktime + 1)
-        block.nVersion = version
+        if version is not None:
+            block.nVersion = version
         for tx in txs:
             tx.rehash()
             block.vtx.append(tx)
