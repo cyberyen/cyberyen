@@ -8,12 +8,12 @@ This file is modified from python-bitcoinlib.
 """
 
 from collections import namedtuple
-import hashlib
 import struct
 import unittest
 from typing import List, Dict
 
 from .key import TaggedHash, tweak_add_pubkey
+from .ripemd160 import ripemd160
 
 from .messages import (
     CTransaction,
@@ -34,7 +34,8 @@ OPCODE_NAMES = {}  # type: Dict[CScriptOp, str]
 LEAF_VERSION_TAPSCRIPT = 0xc0
 
 def hash160(s):
-    return hashlib.new('ripemd160', sha256(s)).digest()
+    """SHA256 then in-tree RIPEMD-160. Do not use OpenSSL hashlib."""
+    return ripemd160(sha256(s))
 
 def bn2vch(v):
     """Convert number to bitcoin-specific little endian format."""
