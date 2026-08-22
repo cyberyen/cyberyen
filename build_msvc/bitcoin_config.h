@@ -253,7 +253,7 @@
 #define PACKAGE_NAME "Cyberyen Core"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Cyberyen Core 0.21.6.1"
+#define PACKAGE_STRING "Cyberyen Core 0.21.7"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "cyberyen"
