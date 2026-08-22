@@ -2160,7 +2160,7 @@ class MWEBOutput:
         self.hash = blake3(self.serialize())
         return self.hash.to_hex()
 
-    class MWEBCompactOutput:
+class MWEBCompactOutput:
     __slots__ = ("commitment", "sender_pubkey", "receiver_pubkey", "message",
                 "proof_hash", "signature", "hash")
 
