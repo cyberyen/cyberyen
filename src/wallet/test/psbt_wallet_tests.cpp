@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(psbt_updater_test)
     spk_man->AddCScript(ws1);
 
     // Add hd seed
-    CKey key = DecodeSecret("6usgJoGKXW12i7Ruxy8Z1C5hrRMVGfLmi9NU9uDQJMPXDJ6tQAH"); // Mainnet and uncompressed form of cUkG8i1RFfWGWy5ziR11zJ5V4U4W3viSFCfyJmZnvQaUsd1xuF3T
+    CKey key = DecodeSecret("6EznnAHgUzUW1hooqNiZvn6DY938GaVFyMxKGuTURFFmLmeaFrh"); // Cyberyen mainnet uncompressed WIF for the same secret used by the Bitcoin/Litecoin fixtures
     CPubKey master_pub_key = spk_man->DeriveNewSeed(key);
     spk_man->SetHDSeed(master_pub_key);
     spk_man->NewKeyPool();

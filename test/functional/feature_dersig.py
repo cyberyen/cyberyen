@@ -4,7 +4,8 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test BIP66 (DER SIG).
 
-Test that the DERSIG soft-fork activates at (regtest) height 1251.
+BIP66 is a buried deployment at height 0, so non-DER signatures are rejected
+from genesis.
 """
 
 from test_framework.blocktools import create_coinbase, create_block, create_transaction
@@ -16,7 +17,7 @@ from test_framework.util import (
     assert_equal,
 )
 
-DERSIG_HEIGHT = 1251
+DERSIG_HEIGHT = 0
 VB_TOP_BITS = 0x20000000
 
 
@@ -51,10 +52,10 @@ class BIP66Test(BitcoinTestFramework):
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
 
-    def test_dersig_info(self, *, is_active):
+    def test_dersig_info(self):
         assert_equal(self.nodes[0].getblockchaininfo()['softforks']['bip66'],
             {
-                "active": is_active,
+                "active": True,
                 "height": DERSIG_HEIGHT,
                 "type": "buried",
             },
@@ -63,50 +64,32 @@ class BIP66Test(BitcoinTestFramework):
     def run_test(self):
         peer = self.nodes[0].add_p2p_connection(P2PInterface())
 
-        self.test_dersig_info(is_active=False)
+        self.test_dersig_info()
 
-        self.log.info("Mining %d blocks", DERSIG_HEIGHT - 2)
-        self.coinbase_txids = [self.nodes[0].getblock(b)['tx'][0] for b in self.nodes[0].generate(DERSIG_HEIGHT - 2)]
+        self.log.info("Mining blocks for a mature coinbase")
+        self.coinbase_txids = [self.nodes[0].getblock(b)['tx'][0] for b in self.nodes[0].generate(101)]
         self.nodeaddress = self.nodes[0].getnewaddress()
-
-        self.log.info("Test that a transaction with non-DER signature can still appear in a block")
-
-        spendtx = create_transaction(self.nodes[0], self.coinbase_txids[0],
-                self.nodeaddress, amount=1.0)
-        unDERify(spendtx)
-        spendtx.rehash()
+        self.test_dersig_info()
 
         tip = self.nodes[0].getbestblockhash()
+        height = self.nodes[0].getblockcount()
         block_time = self.nodes[0].getblockheader(tip)['mediantime'] + 1
-        block = create_block(int(tip, 16), create_coinbase(DERSIG_HEIGHT - 1), block_time)
-        block.nVersion = VB_TOP_BITS
-        block.vtx.append(spendtx)
-        block.hashMerkleRoot = block.calc_merkle_root()
-        block.rehash()
-        block.solve()
-
-        self.test_dersig_info(is_active=False)  # Not active as of current tip and next block does not need to obey rules
-        peer.send_and_ping(msg_block(block))
-        self.test_dersig_info(is_active=True)  # Not active as of current tip, but next block must obey rules
-        assert_equal(self.nodes[0].getbestblockhash(), block.hash)
 
         self.log.info("Test that blocks must now be at least VB_TOP_BITS")
-        tip = block.sha256
-        block_time += 1
-        block = create_block(tip, create_coinbase(DERSIG_HEIGHT), block_time)
+        block = create_block(int(tip, 16), create_coinbase(height + 1), block_time)
         block.nVersion = 2
         block.rehash()
         block.solve()
 
         with self.nodes[0].assert_debug_log(expected_msgs=['{}, bad-version(0x00000002)'.format(block.hash)]):
             peer.send_and_ping(msg_block(block))
-            assert_equal(int(self.nodes[0].getbestblockhash(), 16), tip)
+            assert_equal(self.nodes[0].getbestblockhash(), tip)
             peer.sync_with_ping()
 
         self.log.info("Test that transactions with non-DER signatures cannot appear in a block")
         block.nVersion = VB_TOP_BITS
 
-        spendtx = create_transaction(self.nodes[0], self.coinbase_txids[1],
+        spendtx = create_transaction(self.nodes[0], self.coinbase_txids[0],
                 self.nodeaddress, amount=1.0)
         unDERify(spendtx)
         spendtx.rehash()
@@ -126,18 +109,18 @@ class BIP66Test(BitcoinTestFramework):
 
         with self.nodes[0].assert_debug_log(expected_msgs=['CheckInputScripts on {} failed with non-mandatory-script-verify-flag (Non-canonical DER signature)'.format(block.vtx[-1].hash)]):
             peer.send_and_ping(msg_block(block))
-            assert_equal(int(self.nodes[0].getbestblockhash(), 16), tip)
+            assert_equal(self.nodes[0].getbestblockhash(), tip)
             peer.sync_with_ping()
 
         self.log.info("Test that a version 3 block with a DERSIG-compliant transaction is accepted")
-        block.vtx[1] = create_transaction(self.nodes[0], self.coinbase_txids[1], self.nodeaddress, amount=1.0)
+        block.vtx[1] = create_transaction(self.nodes[0], self.coinbase_txids[0], self.nodeaddress, amount=1.0)
         block.hashMerkleRoot = block.calc_merkle_root()
         block.rehash()
         block.solve()
 
-        self.test_dersig_info(is_active=True)  # Not active as of current tip, but next block must obey rules
+        self.test_dersig_info()
         peer.send_and_ping(msg_block(block))
-        self.test_dersig_info(is_active=True)  # Active as of current tip
+        self.test_dersig_info()
         assert_equal(int(self.nodes[0].getbestblockhash(), 16), block.sha256)
 
 

@@ -4,6 +4,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <arith_uint256.h>
 #include <chainparams.h>
 #include <consensus/merkle.h>
 #include <consensus/validation.h>
@@ -21,12 +22,13 @@
 static const std::vector<unsigned char> V_OP_TRUE{OP_TRUE};
 
 namespace validation_block_tests {
-struct MinerTestingSetup : public RegTestingSetup {
-    std::shared_ptr<CBlock> Block(const uint256& prev_hash);
-    std::shared_ptr<const CBlock> GoodBlock(const uint256& prev_hash);
-    std::shared_ptr<const CBlock> BadBlock(const uint256& prev_hash);
+struct MinerTestingSetup : public TestingSetup {
+    MinerTestingSetup() : TestingSetup{CBaseChainParams::REGTEST, {"-vbparams=mweb:-2:0"}} {}
+    std::shared_ptr<CBlock> Block(const uint256& prev_hash, int height);
+    std::shared_ptr<const CBlock> GoodBlock(const uint256& prev_hash, int height);
+    std::shared_ptr<const CBlock> BadBlock(const uint256& prev_hash, int height);
     std::shared_ptr<CBlock> FinalizeBlock(std::shared_ptr<CBlock> pblock);
-    void BuildChain(const uint256& root, int height, const unsigned int invalid_rate, const unsigned int branch_rate, const unsigned int max_size, std::vector<std::shared_ptr<const CBlock>>& blocks);
+    void BuildChain(const uint256& root, int height, const unsigned int invalid_rate, const unsigned int branch_rate, const unsigned int max_size, std::vector<std::shared_ptr<const CBlock>>& blocks, int nHeight = 1);
 };
 } // namespace validation_block_tests
 
@@ -59,7 +61,7 @@ struct TestSubscriber final : public CValidationInterface {
     }
 };
 
-std::shared_ptr<CBlock> MinerTestingSetup::Block(const uint256& prev_hash)
+std::shared_ptr<CBlock> MinerTestingSetup::Block(const uint256& prev_hash, int height)
 {
     static int i = 0;
     static uint64_t time = Params().GenesisBlock().nTime;
@@ -87,16 +89,31 @@ std::shared_ptr<CBlock> MinerTestingSetup::Block(const uint256& prev_hash)
     txCoinbase.vout[1].scriptPubKey = pubKey;
     txCoinbase.vout[1].nValue = txCoinbase.vout[0].nValue;
     txCoinbase.vout[0].nValue = 0;
+    txCoinbase.vin[0].scriptSig = CScript() << height << OP_0;
     txCoinbase.vin[0].scriptWitness.SetNull();
     pblock->vtx[0] = MakeTransactionRef(std::move(txCoinbase));
+    {
+        LOCK(cs_main);
+        if (CBlockIndex* prev = LookupBlockIndex(prev_hash)) {
+            pblock->nBits = GetNextWorkRequired(prev, pblock.get(), Params().GetConsensus());
+        } else {
+            // Parent is not indexed yet (reorg branches built offline). Use the
+            // powLimit compact; REGTEST GetNextWorkRequired often lands there.
+            pblock->nBits = UintToArith256(Params().GetConsensus().powLimit).GetCompact();
+        }
+    }
 
     return pblock;
 }
 
 std::shared_ptr<CBlock> MinerTestingSetup::FinalizeBlock(std::shared_ptr<CBlock> pblock)
 {
-    LOCK(cs_main); // For LookupBlockIndex
-    GenerateCoinbaseCommitment(*pblock, LookupBlockIndex(pblock->hashPrevBlock), Params().GetConsensus());
+    CBlockIndex* prev = nullptr;
+    {
+        LOCK(cs_main);
+        prev = LookupBlockIndex(pblock->hashPrevBlock);
+    }
+    GenerateCoinbaseCommitment(*pblock, prev, Params().GetConsensus());
 
     pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
 
@@ -108,15 +125,15 @@ std::shared_ptr<CBlock> MinerTestingSetup::FinalizeBlock(std::shared_ptr<CBlock>
 }
 
 // construct a valid block
-std::shared_ptr<const CBlock> MinerTestingSetup::GoodBlock(const uint256& prev_hash)
+std::shared_ptr<const CBlock> MinerTestingSetup::GoodBlock(const uint256& prev_hash, int height)
 {
-    return FinalizeBlock(Block(prev_hash));
+    return FinalizeBlock(Block(prev_hash, height));
 }
 
 // construct an invalid block (but with a valid header)
-std::shared_ptr<const CBlock> MinerTestingSetup::BadBlock(const uint256& prev_hash)
+std::shared_ptr<const CBlock> MinerTestingSetup::BadBlock(const uint256& prev_hash, int height)
 {
-    auto pblock = Block(prev_hash);
+    auto pblock = Block(prev_hash, height);
 
     CMutableTransaction coinbase_spend;
     coinbase_spend.vin.push_back(CTxIn(COutPoint(pblock->vtx[0]->GetHash(), 0), CScript(), 0));
@@ -129,22 +146,22 @@ std::shared_ptr<const CBlock> MinerTestingSetup::BadBlock(const uint256& prev_ha
     return ret;
 }
 
-void MinerTestingSetup::BuildChain(const uint256& root, int height, const unsigned int invalid_rate, const unsigned int branch_rate, const unsigned int max_size, std::vector<std::shared_ptr<const CBlock>>& blocks)
+void MinerTestingSetup::BuildChain(const uint256& root, int height, const unsigned int invalid_rate, const unsigned int branch_rate, const unsigned int max_size, std::vector<std::shared_ptr<const CBlock>>& blocks, int nHeight)
 {
     if (height <= 0 || blocks.size() >= max_size) return;
 
     bool gen_invalid = InsecureRandRange(100) < invalid_rate;
     bool gen_fork = InsecureRandRange(100) < branch_rate;
 
-    const std::shared_ptr<const CBlock> pblock = gen_invalid ? BadBlock(root) : GoodBlock(root);
+    const std::shared_ptr<const CBlock> pblock = gen_invalid ? BadBlock(root, nHeight) : GoodBlock(root, nHeight);
     blocks.push_back(pblock);
     if (!gen_invalid) {
-        BuildChain(pblock->GetHash(), height - 1, invalid_rate, branch_rate, max_size, blocks);
+        BuildChain(pblock->GetHash(), height - 1, invalid_rate, branch_rate, max_size, blocks, nHeight + 1);
     }
 
     if (gen_fork) {
-        blocks.push_back(GoodBlock(root));
-        BuildChain(blocks.back()->GetHash(), height - 1, invalid_rate, branch_rate, max_size, blocks);
+        blocks.push_back(GoodBlock(root, nHeight));
+        BuildChain(blocks.back()->GetHash(), height - 1, invalid_rate, branch_rate, max_size, blocks, nHeight + 1);
     }
 }
 
@@ -238,7 +255,8 @@ BOOST_AUTO_TEST_CASE(mempool_locks_reorg)
 
     // Process all mined blocks
     BOOST_REQUIRE(ProcessBlock(std::make_shared<CBlock>(Params().GenesisBlock())));
-    auto last_mined = GoodBlock(Params().GenesisBlock().GetHash());
+    int tip_height = 1;
+    auto last_mined = GoodBlock(Params().GenesisBlock().GetHash(), tip_height);
     BOOST_REQUIRE(ProcessBlock(last_mined));
 
     // Run the test multiple times
@@ -247,6 +265,7 @@ BOOST_AUTO_TEST_CASE(mempool_locks_reorg)
 
         // Later on split from here
         const uint256 split_hash{last_mined->hashPrevBlock};
+        const int split_child_height = tip_height;
 
         // Create a bunch of transactions to spend the miner rewards of the
         // most recent blocks
@@ -259,13 +278,13 @@ BOOST_AUTO_TEST_CASE(mempool_locks_reorg)
             mtx.vout[0].nValue -= 1000;
             txs.push_back(MakeTransactionRef(mtx));
 
-            last_mined = GoodBlock(last_mined->GetHash());
+            last_mined = GoodBlock(last_mined->GetHash(), ++tip_height);
             BOOST_REQUIRE(ProcessBlock(last_mined));
         }
 
         // Mature the inputs of the txs
         for (int j = COINBASE_MATURITY; j > 0; --j) {
-            last_mined = GoodBlock(last_mined->GetHash());
+            last_mined = GoodBlock(last_mined->GetHash(), ++tip_height);
             BOOST_REQUIRE(ProcessBlock(last_mined));
         }
 
@@ -273,10 +292,11 @@ BOOST_AUTO_TEST_CASE(mempool_locks_reorg)
         const uint256 tip_init{last_mined->GetHash()};
 
         std::vector<std::shared_ptr<const CBlock>> reorg;
-        last_mined = GoodBlock(split_hash);
+        int reorg_height = split_child_height;
+        last_mined = GoodBlock(split_hash, reorg_height);
         reorg.push_back(last_mined);
         for (size_t j = COINBASE_MATURITY + txs.size() + 1; j > 0; --j) {
-            last_mined = GoodBlock(last_mined->GetHash());
+            last_mined = GoodBlock(last_mined->GetHash(), ++reorg_height);
             reorg.push_back(last_mined);
         }
 
@@ -328,13 +348,14 @@ BOOST_AUTO_TEST_CASE(mempool_locks_reorg)
 
         // Submit the reorg in this thread to invalidate and remove the txs from the tx pool
         for (const auto& b : reorg) {
-            ProcessBlock(b);
+            BOOST_REQUIRE(ProcessBlock(b));
         }
         // Check that the reorg was eventually successful
         BOOST_CHECK_EQUAL(last_mined->GetHash(), ::ChainActive().Tip()->GetBlockHash());
 
         // We can join the other thread, which returns when the reorg was successful
         rpc_thread.join();
+        tip_height = reorg_height;
     }
 }
 

@@ -9,7 +9,7 @@ import random
 import struct
 import time
 
-from test_framework.blocktools import create_block, create_coinbase, add_witness_commitment, get_witness_script, WITNESS_COMMITMENT_HEADER
+from test_framework.blocktools import create_block, create_coinbase, add_witness_commitment, get_block_subsidy, get_witness_script, WITNESS_COMMITMENT_HEADER
 from test_framework.key import ECKey
 from test_framework.messages import (
     BIP125_SEQUENCE_NUMBER,
@@ -18,6 +18,7 @@ from test_framework.messages import (
     CInv,
     COutPoint,
     CTransaction,
+    COIN,
     CTxIn,
     CTxInWitness,
     CTxOut,
@@ -334,7 +335,7 @@ class SegWitTest(BitcoinTestFramework):
         # Mine a block with an anyone-can-spend coinbase,
         # let it mature, then try to spend it.
 
-        block = self.build_next_block(version=1)
+        block = self.build_next_block()
         block.solve()
         self.test_node.send_and_ping(msg_no_witness_block(block))  # make sure the block was processed
         txid = block.vtx[0].sha256
@@ -344,7 +345,7 @@ class SegWitTest(BitcoinTestFramework):
         # Create a transaction that spends the coinbase
         tx = CTransaction()
         tx.vin.append(CTxIn(COutPoint(txid, 0), b""))
-        tx.vout.append(CTxOut(49 * 100000000, CScript([OP_TRUE, OP_DROP] * 15 + [OP_TRUE])))
+        tx.vout.append(CTxOut(get_block_subsidy(1) - COIN, CScript([OP_TRUE, OP_DROP] * 15 + [OP_TRUE])))
         tx.calc_sha256()
 
         # Check that serializing it with or without witness is the same
@@ -354,7 +355,7 @@ class SegWitTest(BitcoinTestFramework):
         self.test_node.send_and_ping(msg_tx(tx))  # make sure the block was processed
         assert tx.hash in self.nodes[0].getrawmempool()
         # Save this transaction for later
-        self.utxo.append(UTXO(tx.sha256, 0, 49 * 100000000))
+        self.utxo.append(UTXO(tx.sha256, 0, get_block_subsidy(1) - COIN))
         self.nodes[0].generate(1)
 
     @subtest  # type: ignore
@@ -373,7 +374,7 @@ class SegWitTest(BitcoinTestFramework):
         assert tx.sha256 != tx.calc_sha256(with_witness=True)
 
         # Construct a segwit-signaling block that includes the transaction.
-        block = self.build_next_block(version=(VB_TOP_BITS | (1 << VB_WITNESS_BIT)))
+        block = self.build_next_block()
         self.update_witness_block_with_transactions(block, [tx])
         # Sending witness data before activation is not allowed (anti-spam
         # rule).
@@ -415,7 +416,7 @@ class SegWitTest(BitcoinTestFramework):
         assert self.test_node.last_message["getdata"].inv[0].type == blocktype
         test_witness_block(self.nodes[0], self.test_node, block2, True)
 
-        block3 = self.build_next_block(version=(VB_TOP_BITS | (1 << 15)))
+        block3 = self.build_next_block(version=0x20000014)  # IsLegacy + unused bits; 0x20008000 fails auxpow chain ID
         block3.solve()
         self.test_node.announce_block_and_wait_for_getdata(block3, use_header=True)
         assert self.test_node.last_message["getdata"].inv[0].type == blocktype
@@ -466,7 +467,7 @@ class SegWitTest(BitcoinTestFramework):
             assert_equal(rpc_details["weight"], weight)
 
             # Upgraded node should not ask for blocks from unupgraded
-            block4 = self.build_next_block(version=4)
+            block4 = self.build_next_block()
             block4.solve()
             self.old_node.getdataset = set()
 
@@ -1947,12 +1948,7 @@ class SegWitTest(BitcoinTestFramework):
     def test_upgrade_after_activation(self):
         """Test the behavior of starting up a segwit-aware node after the softfork has activated."""
 
-        block = self.build_next_block(version=4)
-        block.solve()
-        resp = self.nodes[0].submitblock(block.serialize().hex())
-        assert_equal(resp, 'bad-version(0x00000004)')
-
-        self.restart_node(2, extra_args=["-segwitheight={}".format(SEGWIT_HEIGHT)])
+        self.restart_node(2, extra_args=["-segwitheight={}".format(SEGWIT_HEIGHT), "-vbparams=mweb:-2:0"])
         self.connect_nodes(0, 2)
 
         # We reconnect more than 100 blocks, give it plenty of time

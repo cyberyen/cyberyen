@@ -13,6 +13,7 @@ from test_framework.blocktools import (
     create_tx_with_script,
     get_legacy_sigopcount_block,
     MAX_BLOCK_SIGOPS,
+    script_BIP34_coinbase_height,
 )
 from test_framework.key import ECKey
 from test_framework.messages import (
@@ -75,14 +76,11 @@ class CBrokenBlock(CBlock):
         return super().serialize()
 
 
-DUPLICATE_COINBASE_SCRIPT_SIG = b'\x01\x78'  # Valid for block at height 120
-
-
 class FullBlockTest(BitcoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
         self.setup_clean_chain = True
-        self.extra_args = [['-acceptnonstdtxn=1']]  # This is a consensus block test, we don't care about tx policy
+        self.extra_args = [['-acceptnonstdtxn=1', '-vbparams=mweb:-2:0']]  # consensus block test; never-MWEB so python blocks need no HogEx
 
     def run_test(self):
         node = self.nodes[0]  # convenience reference to the node
@@ -99,12 +97,8 @@ class FullBlockTest(BitcoinTestFramework):
         self.block_heights[self.genesis_hash] = 0
         self.spendable_outputs = []
 
-        # Create a new block
+        # Create a new block (BIP34 is buried at 0, so coinbase height must match)
         b_dup_cb = self.next_block('dup_cb')
-        b_dup_cb.vtx[0].vin[0].scriptSig = DUPLICATE_COINBASE_SCRIPT_SIG
-        b_dup_cb.vtx[0].rehash()
-        duplicate_tx = b_dup_cb.vtx[0]
-        b_dup_cb = self.update_block('dup_cb', [])
         self.send_blocks([b_dup_cb])
 
         b0 = self.next_block(0)
@@ -370,10 +364,13 @@ class FullBlockTest(BitcoinTestFramework):
         b29 = self.next_block(29, spend=out[7])
         self.send_blocks([b29], False)
 
-        # b30 has a max-sized coinbase scriptSig.
+        # b30 has a max-sized coinbase scriptSig (BIP34 height prefix + padding).
         self.move_tip(23)
         b30 = self.next_block(30)
-        b30.vtx[0].vin[0].scriptSig = b'\x00' * 100
+        height30 = self.block_heights[b30.sha256]
+        prefix = bytes(script_BIP34_coinbase_height(height30))
+        assert len(prefix) <= 100
+        b30.vtx[0].vin[0].scriptSig = prefix + b'\x00' * (100 - len(prefix))
         b30.vtx[0].rehash()
         b30 = self.update_block(30, [])
         self.send_blocks([b30], True)
@@ -790,11 +787,11 @@ class FullBlockTest(BitcoinTestFramework):
         b58 = self.update_block(58, [tx])
         self.send_blocks([b58], success=False, reject_reason='bad-txns-inputs-missingorspent', reconnect=True)
 
-        # tx with output value > input value
+        # tx with output value > input value (spend 1 rin more than out[17] carries)
         self.log.info("Reject a block with a transaction with outputs > inputs")
         self.move_tip(57)
         b59 = self.next_block(59)
-        tx = self.create_and_sign_transaction(out[17], 51 * COIN)
+        tx = self.create_and_sign_transaction(out[17], out[17].vout[0].nValue + 1)
         b59 = self.update_block(59, [tx])
         self.send_blocks([b59], success=False, reject_reason='bad-txns-in-belowout', reconnect=True)
 
@@ -809,42 +806,19 @@ class FullBlockTest(BitcoinTestFramework):
         # -> b39 (11) -> b42 (12) -> b43 (13) -> b53 (14) -> b55 (15) -> b57 (16) -> b60 ()
         #                                                                                  \-> b61 ()
         #
-        # Blocks are not allowed to contain a transaction whose id matches that of an earlier,
-        # not-fully-spent transaction in the same chain. To test, make identical coinbases;
-        # the second one should be rejected. See also CVE-2012-1909.
-        #
-        self.log.info("Reject a block with a transaction with a duplicate hash of a previous transaction (BIP30)")
+        # Cyberyen regtest buries BIP34 at 0: a same-txid coinbase is unreachable.
+        # Reject by sending a BIP34 height prefix that is not this block's height.
+        self.log.info("Reject a coinbase whose BIP34 height prefix does not match the block height")
         self.move_tip(60)
         b61 = self.next_block(61)
-        b61.vtx[0].vin[0].scriptSig = DUPLICATE_COINBASE_SCRIPT_SIG
+        height61 = self.block_heights[b61.sha256]
+        b61.vtx[0].vin[0].scriptSig = bytes(script_BIP34_coinbase_height(height61 + 1))
         b61.vtx[0].rehash()
         b61 = self.update_block(61, [])
-        assert_equal(duplicate_tx.serialize(), b61.vtx[0].serialize())
-        self.send_blocks([b61], success=False, reject_reason='bad-txns-BIP30', reconnect=True)
+        self.send_blocks([b61], success=False, reject_reason='bad-cb-height', reconnect=True)
 
-        # Test BIP30 (allow duplicate if spent)
-        #
-        # -> b57 (16) -> b60 ()
-        #            \-> b_spend_dup_cb (b_dup_cb) -> b_dup_2 ()
-        #
-        self.move_tip(57)
-        b_spend_dup_cb = self.next_block('spend_dup_cb')
-        tx = CTransaction()
-        tx.vin.append(CTxIn(COutPoint(duplicate_tx.sha256, 0)))
-        tx.vout.append(CTxOut(0, CScript([OP_TRUE])))
-        self.sign_tx(tx, duplicate_tx)
-        tx.rehash()
-        b_spend_dup_cb = self.update_block('spend_dup_cb', [tx])
-
-        b_dup_2 = self.next_block('dup_2')
-        b_dup_2.vtx[0].vin[0].scriptSig = DUPLICATE_COINBASE_SCRIPT_SIG
-        b_dup_2.vtx[0].rehash()
-        b_dup_2 = self.update_block('dup_2', [])
-        assert_equal(duplicate_tx.serialize(), b_dup_2.vtx[0].serialize())
-        assert_equal(self.nodes[0].gettxout(txid=duplicate_tx.hash, n=0)['confirmations'], 119)
-        self.send_blocks([b_spend_dup_cb, b_dup_2], success=True)
-        # The duplicate has less confirmations
-        assert_equal(self.nodes[0].gettxout(txid=duplicate_tx.hash, n=0)['confirmations'], 1)
+        # BIP34 uniquely encodes height, so the leftover BIP30 same-txid coinbase
+        # (allow-if-spent) path cannot be constructed on this chain.
 
         # Test tx.isFinal is properly rejected (not an exhaustive tx.isFinal test, that should be in data-driven transaction tests)
         #
@@ -852,7 +826,7 @@ class FullBlockTest(BitcoinTestFramework):
         #                                           \-> b62 (18)
         #
         self.log.info("Reject a block with a transaction with a nonfinal locktime")
-        self.move_tip('dup_2')
+        self.move_tip(60)
         b62 = self.next_block(62)
         tx = CTransaction()
         tx.nLockTime = 0xffffffff  # this locktime is non-final
@@ -869,7 +843,7 @@ class FullBlockTest(BitcoinTestFramework):
         #                                           \-> b63 (-)
         #
         self.log.info("Reject a block with a coinbase transaction with a nonfinal locktime")
-        self.move_tip('dup_2')
+        self.move_tip(60)
         b63 = self.next_block(63)
         b63.vtx[0].nLockTime = 0xffffffff
         b63.vtx[0].vin[0].nSequence = 0xDEADBEEF
@@ -892,7 +866,7 @@ class FullBlockTest(BitcoinTestFramework):
         #  b64 is a good block (same as b64 but w/ canonical varint)
         #
         self.log.info("Accept a valid block even if a bloated version of the block has previously been sent")
-        self.move_tip('dup_2')
+        self.move_tip(60)
         regular_block = self.next_block("64a", spend=out[18])
 
         # make it a "broken_block," with non-canonical serialization
@@ -918,7 +892,7 @@ class FullBlockTest(BitcoinTestFramework):
         node.disconnect_p2ps()
         self.reconnect_p2p()
 
-        self.move_tip('dup_2')
+        self.move_tip(60)
         b64 = CBlock(b64a)
         b64.vtx = copy.deepcopy(b64a.vtx)
         assert_equal(b64.hash, b64a.hash)

@@ -4,8 +4,8 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test BIP65 (CHECKLOCKTIMEVERIFY).
 
-Test that the CHECKLOCKTIMEVERIFY soft-fork activates at (regtest) block height
-1351.
+BIP65 is a buried deployment at height 0, so invalid-CLTV transactions are
+rejected from genesis.
 """
 
 from test_framework.blocktools import create_coinbase, create_block, create_transaction
@@ -20,7 +20,7 @@ from test_framework.util import (
 
 from io import BytesIO
 
-CLTV_HEIGHT = 1351
+CLTV_HEIGHT = 0
 VB_TOP_BITS = 0x20000000
 
 def cltv_invalidate(tx):
@@ -66,10 +66,10 @@ class BIP65Test(BitcoinTestFramework):
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
 
-    def test_cltv_info(self, *, is_active):
+    def test_cltv_info(self):
         assert_equal(self.nodes[0].getblockchaininfo()['softforks']['bip65'],
             {
-                "active": is_active,
+                "active": True,
                 "height": CLTV_HEIGHT,
                 "type": "buried",
             },
@@ -78,48 +78,31 @@ class BIP65Test(BitcoinTestFramework):
     def run_test(self):
         peer = self.nodes[0].add_p2p_connection(P2PInterface())
 
-        self.test_cltv_info(is_active=False)
+        self.test_cltv_info()
 
-        self.log.info("Mining %d blocks", CLTV_HEIGHT - 2)
-        self.coinbase_txids = [self.nodes[0].getblock(b)['tx'][0] for b in self.nodes[0].generate(CLTV_HEIGHT - 2)]
+        self.log.info("Mining blocks for a mature coinbase")
+        self.coinbase_txids = [self.nodes[0].getblock(b)['tx'][0] for b in self.nodes[0].generate(101)]
         self.nodeaddress = self.nodes[0].getnewaddress()
-
-        self.log.info("Test that an invalid-according-to-CLTV transaction can still appear in a block")
-
-        spendtx = create_transaction(self.nodes[0], self.coinbase_txids[0],
-                self.nodeaddress, amount=1.0)
-        cltv_invalidate(spendtx)
-        spendtx.rehash()
+        self.test_cltv_info()
 
         tip = self.nodes[0].getbestblockhash()
+        height = self.nodes[0].getblockcount()
         block_time = self.nodes[0].getblockheader(tip)['mediantime'] + 1
-        block = create_block(int(tip, 16), create_coinbase(CLTV_HEIGHT - 1), block_time)
-        block.nVersion = VB_TOP_BITS
-        block.vtx.append(spendtx)
-        block.hashMerkleRoot = block.calc_merkle_root()
+
+        self.log.info("Test that a leftover version-1 header is rejected (BIP34 is buried at 0)")
+        block = create_block(int(tip, 16), create_coinbase(height + 1), block_time)
+        block.nVersion = 1
         block.solve()
 
-        self.test_cltv_info(is_active=False)  # Not active as of current tip and next block does not need to obey rules
-        peer.send_and_ping(msg_block(block))
-        self.test_cltv_info(is_active=True)  # Not active as of current tip, but next block must obey rules
-        assert_equal(self.nodes[0].getbestblockhash(), block.hash)
-
-        self.log.info("Test that blocks must now be at least version VB_TOP_BITS")
-        tip = block.sha256
-        block_time += 1
-        block = create_block(tip, create_coinbase(CLTV_HEIGHT), block_time)
-        block.nVersion = 3
-        block.solve()
-
-        with self.nodes[0].assert_debug_log(expected_msgs=['{}, bad-version(0x00000003)'.format(block.hash)]):
+        with self.nodes[0].assert_debug_log(expected_msgs=['{}, bad-version(0x00000001)'.format(block.hash)]):
             peer.send_and_ping(msg_block(block))
-            assert_equal(int(self.nodes[0].getbestblockhash(), 16), tip)
+            assert_equal(self.nodes[0].getbestblockhash(), tip)
             peer.sync_with_ping()
 
         self.log.info("Test that invalid-according-to-cltv transactions cannot appear in a block")
         block.nVersion = VB_TOP_BITS
 
-        spendtx = create_transaction(self.nodes[0], self.coinbase_txids[1],
+        spendtx = create_transaction(self.nodes[0], self.coinbase_txids[0],
                 self.nodeaddress, amount=1.0)
         cltv_invalidate(spendtx)
         spendtx.rehash()
@@ -138,11 +121,11 @@ class BIP65Test(BitcoinTestFramework):
 
         with self.nodes[0].assert_debug_log(expected_msgs=['CheckInputScripts on {} failed with non-mandatory-script-verify-flag (Negative locktime)'.format(block.vtx[-1].hash)]):
             peer.send_and_ping(msg_block(block))
-            assert_equal(int(self.nodes[0].getbestblockhash(), 16), tip)
+            assert_equal(self.nodes[0].getbestblockhash(), tip)
             peer.sync_with_ping()
 
         self.log.info("Test that a version VB_TOP_BITS block with a valid-according-to-CLTV transaction is accepted")
-        spendtx = cltv_validate(self.nodes[0], spendtx, CLTV_HEIGHT - 1)
+        spendtx = cltv_validate(self.nodes[0], spendtx, height)
         spendtx.rehash()
 
         block.vtx.pop(1)
@@ -150,9 +133,9 @@ class BIP65Test(BitcoinTestFramework):
         block.hashMerkleRoot = block.calc_merkle_root()
         block.solve()
 
-        self.test_cltv_info(is_active=True)  # Not active as of current tip, but next block must obey rules
+        self.test_cltv_info()
         peer.send_and_ping(msg_block(block))
-        self.test_cltv_info(is_active=True)  # Active as of current tip
+        self.test_cltv_info()
         assert_equal(int(self.nodes[0].getbestblockhash(), 16), block.sha256)
 
 

@@ -5,7 +5,7 @@
 """Test node responses to invalid transactions.
 
 In this test we connect to one node over p2p, and test tx requests."""
-from test_framework.blocktools import create_block, create_coinbase
+from test_framework.blocktools import create_block, create_coinbase, get_block_subsidy
 from test_framework.messages import (
     COIN,
     COutPoint,
@@ -94,7 +94,7 @@ class InvalidTxRequestTest(BitcoinTestFramework):
         SCRIPT_PUB_KEY_OP_TRUE = b'\x51\x75' * 15 + b'\x51'
         tx_withhold = CTransaction()
         tx_withhold.vin.append(CTxIn(outpoint=COutPoint(block1.vtx[0].sha256, 0)))
-        tx_withhold.vout.append(CTxOut(nValue=50 * COIN - 12000, scriptPubKey=SCRIPT_PUB_KEY_OP_TRUE))
+        tx_withhold.vout.append(CTxOut(nValue=get_block_subsidy(1) - 12000, scriptPubKey=SCRIPT_PUB_KEY_OP_TRUE))
         tx_withhold.calc_sha256()
 
         # Our first orphan tx with some outputs to create further orphan txs

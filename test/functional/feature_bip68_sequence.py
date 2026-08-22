@@ -59,11 +59,7 @@ class BIP68Test(BitcoinTestFramework):
         self.log.info("Running test sequence-lock-unconfirmed-inputs")
         self.test_sequence_lock_unconfirmed_inputs()
 
-        self.log.info("Running test BIP68 not consensus before activation")
-        self.test_bip68_not_consensus()
-
-        self.log.info("Activating BIP68 (and 112/113)")
-        self.activateCSV()
+        self.log.info("BIP68/CSV is buried at height 0; skip leftover pre-activation half")
 
         self.log.info("Verifying nVersion=2 transactions are standard.")
         self.log.info("Note that nVersion=2 transactions are always standard (independent of BIP68 activation status).")

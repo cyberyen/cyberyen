@@ -4,6 +4,8 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <base58.h>
+#include <chainparams.h>
 #include <clientversion.h>
 #include <key.h>
 #include <key_io.h>
@@ -11,6 +13,7 @@
 #include <test/util/setup_common.h>
 #include <util/strencodings.h>
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -87,6 +90,25 @@ TestVector test3 =
      "xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L",
       0);
 
+std::string RecodeBip32Key(const std::string& token)
+{
+    std::vector<unsigned char> data;
+    if (!DecodeBase58Check(token, data, 128) || data.size() != 78) return token;
+    const std::vector<unsigned char>& xprv = Params().Base58Prefix(CChainParams::EXT_SECRET_KEY);
+    const std::vector<unsigned char>& xpub = Params().Base58Prefix(CChainParams::EXT_PUBLIC_KEY);
+    static const unsigned char BTC_XPRV[4] = {0x04, 0x88, 0xAD, 0xE4};
+    static const unsigned char BTC_XPUB[4] = {0x04, 0x88, 0xB2, 0x1E};
+    if (std::equal(BTC_XPRV, BTC_XPRV + 4, data.begin()) && xprv.size() == 4) {
+        std::copy(xprv.begin(), xprv.end(), data.begin());
+        return EncodeBase58Check(data);
+    }
+    if (std::equal(BTC_XPUB, BTC_XPUB + 4, data.begin()) && xpub.size() == 4) {
+        std::copy(xpub.begin(), xpub.end(), data.begin());
+        return EncodeBase58Check(data);
+    }
+    return token;
+}
+
 static void RunTest(const TestVector &test) {
     std::vector<unsigned char> seed = ParseHex(test.strHexMaster);
     CExtKey key;
@@ -98,13 +120,13 @@ static void RunTest(const TestVector &test) {
         key.Encode(data);
         pubkey.Encode(data);
 
-        // Test private key
-        BOOST_CHECK(EncodeExtKey(key) == derive.prv);
-        BOOST_CHECK(DecodeExtKey(derive.prv) == key); //ensure a base58 decoded key also matches
+        // Test private key (leftover Bitcoin xprv/xpub recoded onto Cyberyen prefixes)
+        BOOST_CHECK(EncodeExtKey(key) == RecodeBip32Key(derive.prv));
+        BOOST_CHECK(DecodeExtKey(RecodeBip32Key(derive.prv)) == key);
 
         // Test public key
-        BOOST_CHECK(EncodeExtPubKey(pubkey) == derive.pub);
-        BOOST_CHECK(DecodeExtPubKey(derive.pub) == pubkey); //ensure a base58 decoded pubkey also matches
+        BOOST_CHECK(EncodeExtPubKey(pubkey) == RecodeBip32Key(derive.pub));
+        BOOST_CHECK(DecodeExtPubKey(RecodeBip32Key(derive.pub)) == pubkey);
 
         // Derive new keys
         CExtKey keyNew;
