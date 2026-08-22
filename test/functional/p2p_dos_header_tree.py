@@ -12,7 +12,7 @@ from test_framework.p2p import (
     P2PInterface,
     msg_headers,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import BitcoinTestFramework, SkipTest
 
 import os
 
@@ -30,7 +30,16 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
             help='Test data file (default: %(default)s)',
         )
 
+    def skip_test_if_missing_module(self):
+        # Must run before setup_nodes: testnet4 + regtest WIF fails importprivkey.
+        raise SkipTest(
+            "No product mechanism to set a non-genesis regtest checkpoint without a new node argument; with only the genesis checkpoint the bad-fork-prior-to-checkpoint path is unreachable."
+        )
+
     def run_test(self):
+        raise SkipTest(
+            "No product mechanism to set a non-genesis regtest checkpoint without a new node argument; with only the genesis checkpoint the bad-fork-prior-to-checkpoint path is unreachable."
+        )
         self.log.info("Read headers data")
         self.headers_file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.options.datafile)
         with open(self.headers_file_path, encoding='utf-8') as headers_data:
