@@ -6,6 +6,20 @@
 
 export LC_ALL=C
 
+# Local stand-in for Travis's injected travis_retry (undefined outside Travis).
+travis_retry() {
+  local n=0
+  local max=3
+  until "$@"; do
+    n=$((n + 1))
+    if [ "$n" -ge "$max" ]; then
+      return 1
+    fi
+    echo "travis_retry: attempt $n failed; retrying..." >&2
+    sleep 1
+  done
+}
+
 travis_retry sudo apt update && sudo apt install -y clang-format-9
 sudo update-alternatives --install /usr/bin/clang-format      clang-format      $(which clang-format-9     ) 100
 sudo update-alternatives --install /usr/bin/clang-format-diff clang-format-diff $(which clang-format-diff-9) 100

@@ -1,0 +1,35 @@
+# Copyright (c) 2026 The Cyberyen developers
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install lint dependencies
+        run: ./ci/lint/04_install.sh
+      - name: Unshallow clone
+        run: ./ci/lint/05_before_script.sh
+      - name: Fetch pull request base ref
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags origin \
+            +refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+      - name: Run lint scripts
+        run: ./ci/lint/06_script.sh
+
+  native-jammy:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Functional and unit tests (ubuntu 22.04)
+        env:
+          FILE_ENV: ./ci/test/00_setup_env_native_jammy.sh
+        run: ./ci/test_run_all.sh
