@@ -5,7 +5,7 @@
 
 #include <chain.h>
 
-#include <validation.h>
+bool ReadBlockHeaderFromDisk(CBlockHeader& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams);
 
 CBlockHeader CBlockIndex::GetBlockHeader(const Consensus::Params& consensusParams) const
 {
