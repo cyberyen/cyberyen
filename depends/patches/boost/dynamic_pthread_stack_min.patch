@@ -1,0 +1,18 @@
+In glibc >= 2.34 (and on Solaris), PTHREAD_STACK_MIN is no longer a
+compile-time constant, so "#if PTHREAD_STACK_MIN > 0" fails with:
+  error: missing binary operator before token "("
+
+Fixed upstream for Boost.Thread in boostorg/thread#297; required here
+to build Boost 1.70 on Ubuntu 22.04 and newer.
+
+--- a/boost/thread/pthread/thread_data.hpp
++++ b/boost/thread/pthread/thread_data.hpp
+@@ -57,7 +57,7 @@
+ #else
+           std::size_t page_size = ::sysconf( _SC_PAGESIZE);
+ #endif
+-#if PTHREAD_STACK_MIN > 0
++#ifdef PTHREAD_STACK_MIN
+           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+ #endif
+           size = ((size+page_size-1)/page_size)*page_size;

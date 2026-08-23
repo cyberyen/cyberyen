@@ -147,7 +147,114 @@ libmw_a_SOURCES = \
 	libmw/src/node/CoinsViewCache.cpp \
 	libmw/src/node/CoinsViewDB.cpp \
 	libmw/src/wallet/Keychain.cpp \
-	libmw/src/wallet/TxBuilder.cpp
+	libmw/src/wallet/TxBuilder.cpp \
+	$(LIBMW_H)
+
+LIBMW_H = \
+	libmw/include/mw/common/BitSet.h \
+	libmw/include/mw/common/Lock.h \
+	libmw/include/mw/common/Logger.h \
+	libmw/include/mw/common/Macros.h \
+	libmw/include/mw/common/Traits.h \
+	libmw/include/mw/consensus/Aggregation.h \
+	libmw/include/mw/consensus/Amount.h \
+	libmw/include/mw/consensus/KernelSumValidator.h \
+	libmw/include/mw/consensus/Params.h \
+	libmw/include/mw/consensus/StealthSumValidator.h \
+	libmw/include/mw/consensus/Weight.h \
+	libmw/include/mw/crypto/Blinds.h \
+	libmw/include/mw/crypto/Bulletproofs.h \
+	libmw/include/mw/crypto/Hasher.h \
+	libmw/include/mw/crypto/Keys.h \
+	libmw/include/mw/crypto/MuSig.h \
+	libmw/include/mw/crypto/Pedersen.h \
+	libmw/include/mw/crypto/PublicKeys.h \
+	libmw/include/mw/crypto/Schnorr.h \
+	libmw/include/mw/crypto/SecretKeys.h \
+	libmw/include/mw/db/CoinDB.h \
+	libmw/include/mw/db/LeafDB.h \
+	libmw/include/mw/db/MMRInfoDB.h \
+	libmw/include/mw/exceptions/CYException.h \
+	libmw/include/mw/exceptions/CryptoException.h \
+	libmw/include/mw/exceptions/DatabaseException.h \
+	libmw/include/mw/exceptions/DeserializationException.h \
+	libmw/include/mw/exceptions/FileException.h \
+	libmw/include/mw/exceptions/InsufficientFundsException.h \
+	libmw/include/mw/exceptions/NotFoundException.h \
+	libmw/include/mw/exceptions/ValidationException.h \
+	libmw/include/mw/file/AppendOnlyFile.h \
+	libmw/include/mw/file/File.h \
+	libmw/include/mw/file/FilePath.h \
+	libmw/include/mw/file/MemMap.h \
+	libmw/include/mw/interfaces/db_interface.h \
+	libmw/include/mw/mmr/Index.h \
+	libmw/include/mw/mmr/Leaf.h \
+	libmw/include/mw/mmr/LeafIndex.h \
+	libmw/include/mw/mmr/LeafSet.h \
+	libmw/include/mw/mmr/MMR.h \
+	libmw/include/mw/mmr/MMRInfo.h \
+	libmw/include/mw/mmr/MMRUtil.h \
+	libmw/include/mw/mmr/PruneList.h \
+	libmw/include/mw/mmr/Segment.h \
+	libmw/include/mw/models/block/Block.h \
+	libmw/include/mw/models/block/BlockUndo.h \
+	libmw/include/mw/models/block/Header.h \
+	libmw/include/mw/models/crypto/BigInteger.h \
+	libmw/include/mw/models/crypto/BlindingFactor.h \
+	libmw/include/mw/models/crypto/Commitment.h \
+	libmw/include/mw/models/crypto/Hash.h \
+	libmw/include/mw/models/crypto/ProofData.h \
+	libmw/include/mw/models/crypto/ProofMessage.h \
+	libmw/include/mw/models/crypto/PublicKey.h \
+	libmw/include/mw/models/crypto/RangeProof.h \
+	libmw/include/mw/models/crypto/RewoundProof.h \
+	libmw/include/mw/models/crypto/SecretKey.h \
+	libmw/include/mw/models/crypto/Signature.h \
+	libmw/include/mw/models/crypto/SignedMessage.h \
+	libmw/include/mw/models/tx/Input.h \
+	libmw/include/mw/models/tx/Kernel.h \
+	libmw/include/mw/models/tx/Output.h \
+	libmw/include/mw/models/tx/OutputMask.h \
+	libmw/include/mw/models/tx/PegInCoin.h \
+	libmw/include/mw/models/tx/PegOutCoin.h \
+	libmw/include/mw/models/tx/Transaction.h \
+	libmw/include/mw/models/tx/TxBody.h \
+	libmw/include/mw/models/tx/UTXO.h \
+	libmw/include/mw/models/wallet/Coin.h \
+	libmw/include/mw/models/wallet/KeyChainPath.h \
+	libmw/include/mw/models/wallet/Recipient.h \
+	libmw/include/mw/models/wallet/StealthAddress.h \
+	libmw/include/mw/node/BlockBuilder.h \
+	libmw/include/mw/node/BlockValidator.h \
+	libmw/include/mw/node/CoinsView.h \
+	libmw/include/mw/util/BitUtil.h \
+	libmw/include/mw/util/StringUtil.h \
+	libmw/include/mw/util/VectorUtil.h \
+	libmw/include/mw/wallet/Keychain.h \
+	libmw/include/mw/wallet/TxBuilder.h \
+	libmw/deps/caches/include/caches/Cache.h \
+	libmw/deps/caches/include/caches/internal/cache.hpp \
+	libmw/deps/caches/include/caches/internal/cache_policy.hpp \
+	libmw/deps/caches/include/caches/internal/fifo_cache_policy.hpp \
+	libmw/deps/caches/include/caches/internal/lfu_cache_policy.hpp \
+	libmw/deps/caches/include/caches/internal/lru_cache_policy.hpp \
+	libmw/deps/ghc/include/ghc/filesystem.hpp \
+	libmw/deps/ghc/include/ghc/fs_fwd.hpp \
+	libmw/deps/ghc/include/ghc/fs_impl.hpp \
+	libmw/deps/ghc/include/ghc/fs_std.hpp \
+	libmw/deps/ghc/include/ghc/fs_std_fwd.hpp \
+	libmw/deps/ghc/include/ghc/fs_std_impl.hpp \
+	libmw/deps/mio/include/mio/mmap.hpp \
+	libmw/src/crypto/Context.h \
+	libmw/src/crypto/ConversionUtil.h \
+	libmw/src/crypto/secp256k1-zkp.h \
+	libmw/src/db/common/DBEntry.h \
+	libmw/src/db/common/DBTable.h \
+	libmw/src/db/common/DBTransaction.h \
+	libmw/src/db/common/Database.h \
+	libmw/src/db/common/OrderedMultimap.h \
+	libmw/src/db/common/SerializableVec.h \
+	libmw/src/node/CoinActions.h
 
 .PHONY: FORCE check-symbols check-security
 # bitcoin core #
@@ -244,6 +351,7 @@ BITCOIN_CORE_H = \
   rpc/client.h \
   rpc/mining.h \
   rpc/protocol.h \
+  rpc/rawtransaction.h \
   rpc/rawtransaction_util.h \
   rpc/register.h \
   rpc/request.h \
@@ -321,6 +429,8 @@ BITCOIN_CORE_H = \
   wallet/walletdb.h \
   wallet/wallettool.h \
   wallet/walletutil.h \
+  wallet/txlist.h \
+  wallet/txrecord.h \
   walletinitinterface.h \
   warnings.h \
   zmq/zmqabstractnotifier.h \
@@ -763,6 +873,14 @@ CTAES_DIST += crypto/ctaes/ctaes.h
 CTAES_DIST += crypto/ctaes/README.md
 CTAES_DIST += crypto/ctaes/test.c
 
+# blake3 is compiled into Hasher.cpp via #include of the .c sources (not as
+# separate translation units). Ship the sources in the dist tarball only.
+BLAKE3_DIST = crypto/blake3/blake3.h
+BLAKE3_DIST += crypto/blake3/blake3_impl.h
+BLAKE3_DIST += crypto/blake3/blake3.c
+BLAKE3_DIST += crypto/blake3/blake3_dispatch.c
+BLAKE3_DIST += crypto/blake3/blake3_portable.c
+
 CLEANFILES = $(EXTRA_LIBRARIES)
 
 CLEANFILES += *.gcda *.gcno
@@ -785,7 +903,7 @@ CLEANFILES += wallet/test/*.gcda wallet/test/*.gcno
 CLEANFILES += zmq/*.gcda zmq/*.gcno
 CLEANFILES += obj/build.h
 
-EXTRA_DIST = $(CTAES_DIST)
+EXTRA_DIST = $(CTAES_DIST) $(BLAKE3_DIST)
 
 
 config/bitcoin-config.h: config/stamp-h1
