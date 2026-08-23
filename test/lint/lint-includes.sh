@@ -54,13 +54,16 @@ EXPECTED_BOOST_INCLUDES=(
     boost/algorithm/string/replace.hpp
     boost/algorithm/string/split.hpp
     boost/date_time/posix_time/posix_time.hpp
+    boost/dynamic_bitset.hpp
     boost/filesystem.hpp
     boost/filesystem/fstream.hpp
+    boost/functional/hash.hpp
     boost/multi_index/hashed_index.hpp
     boost/multi_index/ordered_index.hpp
     boost/multi_index/sequenced_index.hpp
     boost/multi_index_container.hpp
     boost/optional.hpp
+    boost/optional/optional_io.hpp
     boost/preprocessor/cat.hpp
     boost/preprocessor/stringize.hpp
     boost/process.hpp
