@@ -600,12 +600,7 @@ crypto_libbitcoin_crypto_base_a_SOURCES = \
   crypto/sha512.h \
   crypto/siphash.cpp \
   crypto/siphash.h \
-  libmw/src/crypto/Hasher.cpp \
-  crypto/blake3/blake3.h \
-  crypto/blake3/blake3_impl.h \
-  crypto/blake3/blake3.c \
-  crypto/blake3/blake3_dispatch.c \
-  crypto/blake3/blake3_portable.c
+  libmw/src/crypto/Hasher.cpp
 
 if USE_ASM
 crypto_libbitcoin_crypto_base_a_SOURCES += crypto/sha256_sse4.cpp
@@ -878,6 +873,14 @@ CTAES_DIST += crypto/ctaes/ctaes.h
 CTAES_DIST += crypto/ctaes/README.md
 CTAES_DIST += crypto/ctaes/test.c
 
+# blake3 is compiled into Hasher.cpp via #include of the .c sources (not as
+# separate translation units). Ship the sources in the dist tarball only.
+BLAKE3_DIST = crypto/blake3/blake3.h
+BLAKE3_DIST += crypto/blake3/blake3_impl.h
+BLAKE3_DIST += crypto/blake3/blake3.c
+BLAKE3_DIST += crypto/blake3/blake3_dispatch.c
+BLAKE3_DIST += crypto/blake3/blake3_portable.c
+
 CLEANFILES = $(EXTRA_LIBRARIES)
 
 CLEANFILES += *.gcda *.gcno
@@ -900,7 +903,7 @@ CLEANFILES += wallet/test/*.gcda wallet/test/*.gcno
 CLEANFILES += zmq/*.gcda zmq/*.gcno
 CLEANFILES += obj/build.h
 
-EXTRA_DIST = $(CTAES_DIST)
+EXTRA_DIST = $(CTAES_DIST) $(BLAKE3_DIST)
 
 
 config/bitcoin-config.h: config/stamp-h1
