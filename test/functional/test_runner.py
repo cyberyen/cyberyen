@@ -315,6 +315,7 @@ NON_SCRIPTS = [
     # These are python files that live in the functional tests directory, but are not test scripts.
     "combine_logs.py",
     "create_cache.py",
+    "cyberyen_scrypt.py",
     "test_runner.py",
 ]
 
