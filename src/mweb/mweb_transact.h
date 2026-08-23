@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BITCOIN_MWEB_MWEB_TRANSACT_H
+#define BITCOIN_MWEB_MWEB_TRANSACT_H
 
 #include <mweb/mweb_models.h>
 #include <mweb/mweb_wallet.h>
@@ -45,3 +46,5 @@ private:
 };
 
 }
+
+#endif // BITCOIN_MWEB_MWEB_TRANSACT_H

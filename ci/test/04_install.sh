@@ -37,6 +37,10 @@ if [ -z "$DANGER_RUN_CI_ON_HOST" ]; then
   ${CI_RETRY_EXE} docker pull "$DOCKER_NAME_TAG"
 
   DOCKER_ID=$(docker run $DOCKER_ADMIN -idt \
+                  --privileged \
+                  --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+                  --sysctl net.ipv6.conf.default.disable_ipv6=0 \
+                  --sysctl net.ipv6.conf.lo.disable_ipv6=0 \
                   --mount type=bind,src=$BASE_ROOT_DIR,dst=/ro_base,readonly \
                   --mount type=bind,src=$CCACHE_DIR,dst=$CCACHE_DIR \
                   --mount type=bind,src=$DEPENDS_DIR,dst=$DEPENDS_DIR \
@@ -65,6 +69,7 @@ if [[ $DOCKER_NAME_TAG == centos* ]]; then
 elif [ "$CI_USE_APT_INSTALL" != "no" ]; then
   ${CI_RETRY_EXE} DOCKER_EXEC apt-get update
   ${CI_RETRY_EXE} DOCKER_EXEC apt-get install --no-install-recommends --no-upgrade -y $PACKAGES $DOCKER_PACKAGES
+  ${CI_RETRY_EXE} DOCKER_EXEC pip3 install blake3
 fi
 
 if [ "$CI_OS_NAME" == "macos" ]; then

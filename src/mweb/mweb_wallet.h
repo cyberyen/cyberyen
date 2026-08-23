@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BITCOIN_MWEB_MWEB_WALLET_H
+#define BITCOIN_MWEB_MWEB_WALLET_H
 
 #include <amount.h>
 #include <key.h>
@@ -114,3 +115,5 @@ struct WalletTxInfo
 };
 
 } // namespace MWEB
+
+#endif // BITCOIN_MWEB_MWEB_WALLET_H

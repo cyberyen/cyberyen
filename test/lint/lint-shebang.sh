@@ -7,14 +7,15 @@
 
 export LC_ALL=C
 EXIT_CODE=0
-for PYTHON_FILE in $(git ls-files -- "*.py"); do
+EXCLUDE="^src/(crypto/blake3/|crypto/ctaes/|crc32c/|leveldb/|libmw/|secp256k1/|secp256k1-zkp/|univalue/)"
+for PYTHON_FILE in $(git ls-files -- "*.py" | grep -vE "${EXCLUDE}"); do
     if [[ $(head -c 2 "${PYTHON_FILE}") == "#!" &&
           $(head -n 1 "${PYTHON_FILE}") != "#!/usr/bin/env python3" ]]; then
         echo "Missing shebang \"#!/usr/bin/env python3\" in ${PYTHON_FILE} (do not use python or python2)"
         EXIT_CODE=1
     fi
 done
-for SHELL_FILE in $(git ls-files -- "*.sh"); do
+for SHELL_FILE in $(git ls-files -- "*.sh" | grep -vE "${EXCLUDE}"); do
     if [[ $(head -n 1 "${SHELL_FILE}") != "#!/usr/bin/env bash" &&
           $(head -n 1 "${SHELL_FILE}") != "#!/bin/sh" ]]; then
         echo "Missing expected shebang \"#!/usr/bin/env bash\" or \"#!/bin/sh\" in ${SHELL_FILE}"

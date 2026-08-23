@@ -21,6 +21,7 @@
 #include <script/descriptor.h>
 #include <script/sign.h>
 #include <util/bip32.h>
+#include <util/check.h>
 #include <util/fees.h>
 #include <util/message.h> // For MessageSign()
 #include <util/moneystr.h>
@@ -4817,7 +4818,7 @@ public:
     LOCK (cs);
 
     const auto mit = data.find (pwallet->GetName ());
-    assert (mit != data.end ());
+    CHECK_NONFATAL (mit != data.end ());
     mit->second.blockHashes.insert (hashHex);
   }
 
@@ -4901,7 +4902,7 @@ static UniValue getauxblock(const JSONRPCRequest& request)
     }
 
     /* Submit a block instead.  */
-    assert(request.params.size() == 2);
+    CHECK_NONFATAL(request.params.size() == 2);
     const std::string& hash = request.params[0].get_str();
 
     const bool fAccepted

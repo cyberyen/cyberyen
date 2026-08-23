@@ -5,9 +5,9 @@
 """Test the -mempoolreplacement (RBF) flag."""
 
 from test_framework.messages import COIN, COutPoint, CTransaction, CTxIn, CTxOut
-from test_framework.script import CScript, OP_DROP
+from test_framework.script import CScript
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_raises_rpc_error, satoshi_round
+from test_framework.util import assert_equal, assert_raises_rpc_error
 from test_framework.cy_util import make_utxo
 from test_framework.script_util import DUMMY_P2WPKH_SCRIPT
 
@@ -44,9 +44,9 @@ class CyReplaceByFeeTest(BitcoinTestFramework):
         tx1a.vout = [CTxOut(1 * COIN, DUMMY_P2WPKH_SCRIPT)]
         tx1a_hex = tx1a.serialize().hex()
         tx1a_txid = self.nodes[0].sendrawtransaction(tx1a_hex, 0)
-        
+
         assert_equal(self.nodes[0].getmempoolentry(tx1a_txid)['bip125-replaceable'], False)
-        
+
         #
         # Create a 2nd non-opting in transaction
         #
@@ -72,7 +72,7 @@ class CyReplaceByFeeTest(BitcoinTestFramework):
         tx3a_hex = tx3a.serialize().hex()
 
         tx3a_txid = self.nodes[0].sendrawtransaction(tx3a_hex, 0)
-        
+
         self.sync_all()
 
         # This transaction is shown as replaceable
@@ -82,10 +82,10 @@ class CyReplaceByFeeTest(BitcoinTestFramework):
         tx3b.vin = [CTxIn(COutPoint(tx1a_txid, 0), nSequence=0)]
         tx3b.vout = [CTxOut(int(0.5 * COIN), DUMMY_P2WPKH_SCRIPT)]
         tx3b_hex = tx3b.serialize().hex()
-        
+
         # Transaction should not be replaceable on non-RBF node
         assert_raises_rpc_error(-26, "txn-mempool-conflict", non_rbf_node.sendrawtransaction, tx3b_hex, 0)
-        
+
         # Transaction should be replaceable on either input on RBF node
         rbf_node.sendrawtransaction(tx3b_hex, 0)
 

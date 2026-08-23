@@ -64,37 +64,32 @@ uint64_t expectedMinSubsidy(int height) {
 BOOST_AUTO_TEST_CASE(subsidy_limit_test)
 {
     int nHeight = 0;
-    int nStepSize= 1;
     const auto chainParams = CreateChainParams(*m_node.args, CBaseChainParams::MAIN);
-    //const Consensus::Params& params = Params(CBaseChainParams::MAIN).GetConsensus();
-    CAmount nSum = 0;
+    arith_uint256 nSum = 0;
 
     for (nHeight = 0; nHeight <= 99000; nHeight++) {
       CAmount nSubsidy = GetBlockSubsidy(nHeight, chainParams->GetConsensus());
 	BOOST_CHECK(MoneyRange(nSubsidy));
 	BOOST_CHECK(nSubsidy <= 1000000 * COIN);
-	nSum += nSubsidy * nStepSize;
+	nSum += nSubsidy;
     }
     for (; nHeight <= 100000; nHeight++) {
       CAmount nSubsidy = GetBlockSubsidy(nHeight, chainParams->GetConsensus());
 	BOOST_CHECK(MoneyRange(nSubsidy));
 	BOOST_CHECK(nSubsidy <= 500000 * COIN);
-	nSum += nSubsidy * nStepSize;
+	nSum += nSubsidy;
     }
     for (; nHeight < 600000; nHeight++) {
       CAmount nSubsidy = GetBlockSubsidy(nHeight, chainParams->GetConsensus());
 	CAmount nExpectedSubsidy = (500000 >> (nHeight / 100000)) * COIN;
 	BOOST_CHECK(MoneyRange(nSubsidy));
 	BOOST_CHECK(nSubsidy == nExpectedSubsidy);
-	nSum += nSubsidy * nStepSize;
+	nSum += nSubsidy;
     }
 
-    //test sum +- ~10billion
-    arith_uint256 upperlimit = arith_uint256("95e14ec776380000"); //108 billion cy
-    BOOST_CHECK(nSum <= upperlimit);
-
-    arith_uint256 lowerlimit = arith_uint256("7a1fe16027700000"); //88 billion cy
-    BOOST_CHECK(nSum >= lowerlimit);
+    // Exact satoshi supply from heights [0, 600000) under MAIN GetBlockSubsidy.
+    arith_uint256 expected = arith_uint256("cd4e22b8162c8000"); // 147.938 billion CY
+    BOOST_CHECK(nSum == expected);
 
     // Test reward at 600k+ is constant
     CAmount nConstantSubsidy = GetBlockSubsidy(600000, chainParams->GetConsensus());

@@ -10,14 +10,35 @@
 import enum
 import unittest
 
-from .script import hash256, hash160, sha256, CScript, OP_0
-from .segwit_addr import encode_segwit_address
+from .descriptors import descsum_create
+from .script import hash256, hash160, sha256, CScript, OP_0, OP_TRUE
+from .segwit_addr import CHARSET, encode_segwit_address, bech32_decode, convertbits
 from .util import assert_equal, hex_str_to_bytes
 
-ADDRESS_BCRT1_UNSPENDABLE = 'rcy1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe9kxtl'
-ADDRESS_BCRT1_UNSPENDABLE_DESCRIPTOR = 'addr(rcy1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe9kxtl)#xm6azk0m'
+ADDRESS_BCRT1_UNSPENDABLE = encode_segwit_address("rcy", 0, bytes(32))
+ADDRESS_BCRT1_UNSPENDABLE_DESCRIPTOR = descsum_create("addr({})".format(ADDRESS_BCRT1_UNSPENDABLE))
 # Coins sent to this address can be spent with a witness stack of just OP_TRUE
-ADDRESS_BCRT1_P2WSH_OP_TRUE = 'rcy1qft5p2uhsdcdc3l2ua4ap5qqfg4pjaqlp250x7us7a8qqhrxrxfsqc6h8ge'
+ADDRESS_BCRT1_P2WSH_OP_TRUE = encode_segwit_address("rcy", 0, sha256(CScript([OP_TRUE])))
+
+
+def recode_segwit_address(addr, hrp="rcy"):
+    """Re-encode a leftover bech32 address under Cyberyen's HRP.
+
+    Recovers the witness program even when a prior HRP rewrite left a bad checksum.
+    """
+    bech = addr.lower()
+    pos = bech.rfind("1")
+    data = [CHARSET.find(x) for x in bech[pos + 1:]]
+    if -1 in data:
+        encoding, _, payload = bech32_decode(addr)
+        if encoding is None:
+            raise ValueError("invalid bech32: {}".format(addr))
+        witver = payload[0]
+        program = bytes(convertbits(payload[1:], 5, 8, False))
+    else:
+        witver = data[0]
+        program = bytes(convertbits(data[1:-6], 5, 8, False))
+    return encode_segwit_address(hrp, witver, program)
 
 
 class AddressType(enum.Enum):

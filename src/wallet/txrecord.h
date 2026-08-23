@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BITCOIN_WALLET_TXRECORD_H
+#define BITCOIN_WALLET_TXRECORD_H
 
 #include <amount.h>
 #include <primitives/transaction.h>
@@ -128,3 +129,5 @@ private:
 
     std::string GetType() const;
 };
+
+#endif // BITCOIN_WALLET_TXRECORD_H

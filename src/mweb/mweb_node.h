@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BITCOIN_MWEB_MWEB_NODE_H
+#define BITCOIN_MWEB_MWEB_NODE_H
 
 #include <consensus/params.h>
 #include <mw/node/CoinsView.h>
@@ -106,3 +107,5 @@ private:
 };
 
 }
+
+#endif // BITCOIN_MWEB_MWEB_NODE_H

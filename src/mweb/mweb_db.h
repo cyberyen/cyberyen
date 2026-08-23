@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BITCOIN_MWEB_MWEB_DB_H
+#define BITCOIN_MWEB_MWEB_DB_H
 
 #include <dbwrapper.h>
 #include <mw/interfaces/db_interface.h>
@@ -86,3 +87,5 @@ private:
 };
 
 } // namespace MWEB
+
+#endif // BITCOIN_MWEB_MWEB_DB_H

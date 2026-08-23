@@ -2,6 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <base58.h>
+#include <chainparams.h>
 #include <script/descriptor.h>
 #include <script/sign.h>
 #include <script/standard.h>
@@ -10,20 +12,83 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <algorithm>
+#include <cctype>
 #include <string>
 #include <vector>
 
 namespace {
 
-void CheckUnparsable(const std::string& prv, const std::string& pub, const std::string& expected_error)
+std::string RecodeLeftoverToken(const std::string& token)
 {
+    std::vector<unsigned char> data;
+    if (!DecodeBase58Check(token, data, 128) || data.empty()) return token;
+    // Leftover Litecoin WIF version 176
+    if ((data.size() == 33 || data.size() == 34) && data[0] == 176) {
+        data[0] = Params().Base58Prefix(CChainParams::SECRET_KEY)[0];
+        return EncodeBase58Check(data);
+    }
+    const std::vector<unsigned char>& xprv = Params().Base58Prefix(CChainParams::EXT_SECRET_KEY);
+    const std::vector<unsigned char>& xpub = Params().Base58Prefix(CChainParams::EXT_PUBLIC_KEY);
+    static const unsigned char BTC_XPRV[4] = {0x04, 0x88, 0xAD, 0xE4};
+    static const unsigned char BTC_XPUB[4] = {0x04, 0x88, 0xB2, 0x1E};
+    if (data.size() == 78) {
+        if (std::equal(BTC_XPRV, BTC_XPRV + 4, data.begin()) && xprv.size() == 4) {
+            std::copy(xprv.begin(), xprv.end(), data.begin());
+            return EncodeBase58Check(data);
+        }
+        if (std::equal(BTC_XPUB, BTC_XPUB + 4, data.begin()) && xpub.size() == 4) {
+            std::copy(xpub.begin(), xpub.end(), data.begin());
+            return EncodeBase58Check(data);
+        }
+    }
+    return token;
+}
+
+std::string RecodeExtKeysInDescriptor(const std::string& desc)
+{
+    std::string out;
+    std::string token;
+    auto flush = [&]() {
+        if (!token.empty()) {
+            out += RecodeLeftoverToken(token);
+            token.clear();
+        }
+    };
+    static const std::string b58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+    for (char c : desc) {
+        if (b58.find(c) != std::string::npos) {
+            token.push_back(c);
+        } else {
+            flush();
+            out.push_back(c);
+        }
+    }
+    flush();
+    return out;
+}
+
+//! Recode a leftover Litecoin WIF (version 176) onto this chain's SECRET_KEY.
+std::string RecodeToChainSecret(const std::string& wif)
+{
+    std::vector<unsigned char> data;
+    BOOST_REQUIRE(DecodeBase58Check(wif, data, 100));
+    BOOST_REQUIRE(!data.empty());
+    data[0] = Params().Base58Prefix(CChainParams::SECRET_KEY)[0];
+    return EncodeBase58Check(data);
+}
+
+void CheckUnparsable(const std::string& prv_in, const std::string& pub_in, const std::string& expected_error)
+{
+    const std::string prv = RecodeExtKeysInDescriptor(prv_in);
+    const std::string pub = RecodeExtKeysInDescriptor(pub_in);
     FlatSigningProvider keys_priv, keys_pub;
     std::string error;
     auto parse_priv = Parse(prv, keys_priv, error);
     auto parse_pub = Parse(pub, keys_pub, error);
     BOOST_CHECK_MESSAGE(!parse_priv, prv);
     BOOST_CHECK_MESSAGE(!parse_pub, pub);
-    BOOST_CHECK(error == expected_error);
+    BOOST_CHECK_MESSAGE(error == expected_error, error + " != " + expected_error);
 }
 
 constexpr int DEFAULT = 0;
@@ -65,9 +130,21 @@ std::string UseHInsteadOfApostrophe(const std::string& desc)
 
 const std::set<std::vector<uint32_t>> ONLY_EMPTY{{}};
 
-void DoCheck(const std::string& prv, const std::string& pub, int flags, const std::vector<std::vector<std::string>>& scripts, const Optional<OutputType>& type, const std::set<std::vector<uint32_t>>& paths = ONLY_EMPTY,
+void DoCheck(const std::string& prv_in, const std::string& pub_in, int flags, const std::vector<std::vector<std::string>>& scripts, const Optional<OutputType>& type, const std::set<std::vector<uint32_t>>& paths = ONLY_EMPTY,
     bool replace_apostrophe_with_h_in_prv=false, bool replace_apostrophe_with_h_in_pub=false)
 {
+    const std::string prv = [&] {
+        std::string s = RecodeExtKeysInDescriptor(prv_in);
+        const auto hash = s.rfind('#');
+        if (hash != std::string::npos) s.resize(hash);
+        return s;
+    }();
+    const std::string pub = [&] {
+        std::string s = RecodeExtKeysInDescriptor(pub_in);
+        const auto hash = s.rfind('#');
+        if (hash != std::string::npos) s.resize(hash);
+        return s;
+    }();
     FlatSigningProvider keys_priv, keys_pub;
     std::set<std::vector<uint32_t>> left_paths = paths;
     std::string error;
@@ -86,8 +163,8 @@ void DoCheck(const std::string& prv, const std::string& pub, int flags, const st
         parse_pub = Parse(pub, keys_pub, error);
     }
 
-    BOOST_CHECK(parse_priv);
-    BOOST_CHECK(parse_pub);
+    BOOST_CHECK_MESSAGE(parse_priv, prv + " :: " + error);
+    BOOST_CHECK_MESSAGE(parse_pub, pub + " :: " + error);
 
     // Check that the correct OutputType is inferred
     BOOST_CHECK(parse_priv->GetOutputType() == type);
@@ -170,7 +247,7 @@ void DoCheck(const std::string& prv, const std::string& pub, int flags, const st
                     const CPubKey& pk = origin_pair.second.first;
                     BOOST_CHECK(pubkeys.count(pk) > 0);
                 }
-            } else if (pub1.find("xpub") != std::string::npos) {
+            } else if (pub1.find("xpub") != std::string::npos || !parent_xpub_cache.empty() || !der_xpub_cache.empty()) {
                 // For ranged, hardened derivation, or not ranged, but has an xpub, all of the keys should appear in the cache
                 BOOST_CHECK(der_xpub_cache.size() + parent_xpub_cache.size() == script_provider_cached.origins.size());
                 // Get all of the derived pubkeys
@@ -283,31 +360,34 @@ BOOST_FIXTURE_TEST_SUITE(descriptor_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(descriptor_test)
 {
+    const std::string wif_c = RecodeToChainSecret("T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte");
+    const std::string wif_u = RecodeToChainSecret("6uWuTLr7s7iTXhh3semxLf3w4BxzpXbwzbrYzHENHCbeWiqiD9S");
+
     // Basic single-key compressed
-    Check("combo(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)", "combo(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", SIGNABLE, {{"2102a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cac","76a9140c13eca58177d726d65b8556f351d081b1103bf088ac","00140c13eca58177d726d65b8556f351d081b1103bf0","a9147bdb0f7aa46efb97e699cef65234d80481fab37287"}}, nullopt);
-    Check("pk(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)", "pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", SIGNABLE, {{"2102a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cac"}}, nullopt);
-    Check("pkh([deadbeef/1/2'/3/4']T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)", "pkh([deadbeef/1/2'/3/4']02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", SIGNABLE, {{"76a9140c13eca58177d726d65b8556f351d081b1103bf088ac"}}, OutputType::LEGACY, {{1,0x80000002UL,3,0x80000004UL}});
-    Check("wpkh(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)", "wpkh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", SIGNABLE, {{"00140c13eca58177d726d65b8556f351d081b1103bf0"}}, OutputType::BECH32);
-    Check("sh(wpkh(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte))", "sh(wpkh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", SIGNABLE, {{"a9147bdb0f7aa46efb97e699cef65234d80481fab37287"}}, OutputType::P2SH_SEGWIT);
+    Check("combo(" + wif_c + ")", "combo(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", SIGNABLE, {{"2102a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cac","76a9140c13eca58177d726d65b8556f351d081b1103bf088ac","00140c13eca58177d726d65b8556f351d081b1103bf0","a9147bdb0f7aa46efb97e699cef65234d80481fab37287"}}, nullopt);
+    Check("pk(" + wif_c + ")", "pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", SIGNABLE, {{"2102a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cac"}}, nullopt);
+    Check("pkh([deadbeef/1/2'/3/4']" + wif_c + ")", "pkh([deadbeef/1/2'/3/4']02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", SIGNABLE, {{"76a9140c13eca58177d726d65b8556f351d081b1103bf088ac"}}, OutputType::LEGACY, {{1,0x80000002UL,3,0x80000004UL}});
+    Check("wpkh(" + wif_c + ")", "wpkh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", SIGNABLE, {{"00140c13eca58177d726d65b8556f351d081b1103bf0"}}, OutputType::BECH32);
+    Check("sh(wpkh(" + wif_c + "))", "sh(wpkh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", SIGNABLE, {{"a9147bdb0f7aa46efb97e699cef65234d80481fab37287"}}, OutputType::P2SH_SEGWIT);
     CheckUnparsable("sh(wpkh(L4rK1yDtCWekvXuE6oXD9jCYfFNV2cWRpVuPLBcCU2z8TrisoyY2))", "sh(wpkh(03a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5))", "Pubkey '03a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5' is invalid"); // Invalid pubkey
-    CheckUnparsable("pkh(deadbeef/1/2'/3/4']T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)", "pkh(deadbeef/1/2'/3/4']02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", "Key origin start '[ character expected but not found, got 'd' instead"); // Missing start bracket in key origin
-    CheckUnparsable("pkh([deadbeef]/1/2'/3/4']T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)", "pkh([deadbeef]/1/2'/3/4']02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", "Multiple ']' characters found for a single pubkey"); // Multiple end brackets in key origin
+    CheckUnparsable("pkh(deadbeef/1/2'/3/4']" + wif_c + ")", "pkh(deadbeef/1/2'/3/4']02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", "Key origin start '[ character expected but not found, got 'd' instead"); // Missing start bracket in key origin
+    CheckUnparsable("pkh([deadbeef]/1/2'/3/4']" + wif_c + ")", "pkh([deadbeef]/1/2'/3/4']02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", "Multiple ']' characters found for a single pubkey"); // Multiple end brackets in key origin
     
     // Basic single-key uncompressed 
-    Check("combo(6uWuTLr7s7iTXhh3semxLf3w4BxzpXbwzbrYzHENHCbeWiqiD9S)", "combo(04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", SIGNABLE, {{"4104a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762ac","76a91419c13841a49884bd124fed9f4e036ec2462403fd88ac"}}, nullopt);
-    Check("pk(6uWuTLr7s7iTXhh3semxLf3w4BxzpXbwzbrYzHENHCbeWiqiD9S)", "pk(04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", SIGNABLE, {{"4104a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762ac"}}, nullopt);
-    Check("pkh(6uWuTLr7s7iTXhh3semxLf3w4BxzpXbwzbrYzHENHCbeWiqiD9S)", "pkh(04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", SIGNABLE, {{"76a91419c13841a49884bd124fed9f4e036ec2462403fd88ac"}}, OutputType::LEGACY);
-    CheckUnparsable("wpkh(6uWuTLr7s7iTXhh3semxLf3w4BxzpXbwzbrYzHENHCbeWiqiD9S)", "wpkh(04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", "Uncompressed keys are not allowed"); // No uncompressed keys in witness
-    CheckUnparsable("wsh(pk(6uWuTLr7s7iTXhh3semxLf3w4BxzpXbwzbrYzHENHCbeWiqiD9S))", "wsh(pk(04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762))", "Uncompressed keys are not allowed"); // No uncompressed keys in witness
-    CheckUnparsable("sh(wpkh(6uWuTLr7s7iTXhh3semxLf3w4BxzpXbwzbrYzHENHCbeWiqiD9S))", "sh(wpkh(04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762))", "Uncompressed keys are not allowed"); // No uncompressed keys in witness
+    Check("combo(" + wif_u + ")", "combo(04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", SIGNABLE, {{"4104a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762ac","76a91419c13841a49884bd124fed9f4e036ec2462403fd88ac"}}, nullopt);
+    Check("pk(" + wif_u + ")", "pk(04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", SIGNABLE, {{"4104a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762ac"}}, nullopt);
+    Check("pkh(" + wif_u + ")", "pkh(04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", SIGNABLE, {{"76a91419c13841a49884bd124fed9f4e036ec2462403fd88ac"}}, OutputType::LEGACY);
+    CheckUnparsable("wpkh(" + wif_u + ")", "wpkh(04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", "Uncompressed keys are not allowed"); // No uncompressed keys in witness
+    CheckUnparsable("wsh(pk(" + wif_u + "))", "wsh(pk(04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762))", "Uncompressed keys are not allowed"); // No uncompressed keys in witness
+    CheckUnparsable("sh(wpkh(" + wif_u + "))", "sh(wpkh(04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762))", "Uncompressed keys are not allowed"); // No uncompressed keys in witness
     
     // Some unconventional single-key constructions
-    Check("sh(pk(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte))", "sh(pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", SIGNABLE, {{"a914de92af19990cd11b293afd89b9d1985fa0b8166f87"}}, OutputType::LEGACY);
-    Check("sh(pkh(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte))", "sh(pkh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", SIGNABLE, {{"a91401c62701a59dea1cf6d8b834a994f77575df782487"}}, OutputType::LEGACY);
-    Check("wsh(pk(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte))", "wsh(pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", SIGNABLE, {{"0020f971e2b302ee0977ddb08d4150e50acabda3f53478fbd474a866b616ce041868"}}, OutputType::BECH32);
-    Check("wsh(pkh(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte))", "wsh(pkh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", SIGNABLE, {{"002099dba00720686a1275aae85494e4eafc1744ba11d4eb6059e83e383e49fe7274"}}, OutputType::BECH32);
-    Check("sh(wsh(pk(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)))", "sh(wsh(pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)))", SIGNABLE, {{"a914bd45baff235b772370d6265d268b1ddb08917b0e87"}}, OutputType::P2SH_SEGWIT);
-    Check("sh(wsh(pkh(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)))", "sh(wsh(pkh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)))", SIGNABLE, {{"a914c36470aa22c4026cf75d377d3611f86225f7676c87"}}, OutputType::P2SH_SEGWIT);
+    Check("sh(pk(" + wif_c + "))", "sh(pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", SIGNABLE, {{"a914de92af19990cd11b293afd89b9d1985fa0b8166f87"}}, OutputType::LEGACY);
+    Check("sh(pkh(" + wif_c + "))", "sh(pkh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", SIGNABLE, {{"a91401c62701a59dea1cf6d8b834a994f77575df782487"}}, OutputType::LEGACY);
+    Check("wsh(pk(" + wif_c + "))", "wsh(pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", SIGNABLE, {{"0020f971e2b302ee0977ddb08d4150e50acabda3f53478fbd474a866b616ce041868"}}, OutputType::BECH32);
+    Check("wsh(pkh(" + wif_c + "))", "wsh(pkh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", SIGNABLE, {{"002099dba00720686a1275aae85494e4eafc1744ba11d4eb6059e83e383e49fe7274"}}, OutputType::BECH32);
+    Check("sh(wsh(pk(" + wif_c + ")))", "sh(wsh(pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)))", SIGNABLE, {{"a914bd45baff235b772370d6265d268b1ddb08917b0e87"}}, OutputType::P2SH_SEGWIT);
+    Check("sh(wsh(pkh(" + wif_c + ")))", "sh(wsh(pkh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)))", SIGNABLE, {{"a914c36470aa22c4026cf75d377d3611f86225f7676c87"}}, OutputType::P2SH_SEGWIT);
 
     // Versions with BIP32 derivations
     Check("combo([01234567]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc)", "combo([01234567]xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL)", SIGNABLE, {{"2102d2b36900396c9282fa14628566582f206a5dd0bcc8d5e892611806cafb0301f0ac","76a91431a507b815593dfc51ffc7245ae7e5aee304246e88ac","001431a507b815593dfc51ffc7245ae7e5aee304246e","a9142aafb926eb247cb18240a7f4c07983ad1f37922687"}}, nullopt);
@@ -322,9 +402,9 @@ BOOST_AUTO_TEST_CASE(descriptor_test)
 
     // Multisig constructions
    
-    Check("multi(1,T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte,6uWuTLr7s7iTXhh3semxLf3w4BxzpXbwzbrYzHENHCbeWiqiD9S)", "multi(1,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c,04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", SIGNABLE, {{"512102a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c4104a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c176252ae"}}, nullopt);
-    Check("sortedmulti(1,T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte,6uWuTLr7s7iTXhh3semxLf3w4BxzpXbwzbrYzHENHCbeWiqiD9S)", "sortedmulti(1,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c,04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", SIGNABLE, {{"512102a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c4104a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c176252ae"}}, nullopt);
-    Check("sortedmulti(1,6uWuTLr7s7iTXhh3semxLf3w4BxzpXbwzbrYzHENHCbeWiqiD9S,T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)", "sortedmulti(1,04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", SIGNABLE, {{"512102a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c4104a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c176252ae"}}, nullopt);
+    Check("multi(1," + wif_c + "," + wif_u + ")", "multi(1,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c,04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", SIGNABLE, {{"512102a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c4104a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c176252ae"}}, nullopt);
+    Check("sortedmulti(1," + wif_c + "," + wif_u + ")", "sortedmulti(1,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c,04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", SIGNABLE, {{"512102a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c4104a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c176252ae"}}, nullopt);
+    Check("sortedmulti(1," + wif_u + "," + wif_c + ")", "sortedmulti(1,04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", SIGNABLE, {{"512102a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c4104a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c176252ae"}}, nullopt);
     Check("sh(multi(2,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))", "sh(multi(2,[00000000/111'/222]xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0))", DEFAULT, {{"a91445a9a622a8b0a1269944be477640eedc447bbd8487"}}, OutputType::LEGACY, {{0x8000006FUL,222},{0}});
     Check("sortedmulti(2,xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc/*,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0/0/*)", "sortedmulti(2,xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL/*,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0/0/*)", RANGE, {{"5221025d5fc65ebb8d44a5274b53bac21ff8307fec2334a32df05553459f8b1f7fe1b62102fbd47cc8034098f0e6a94c6aeee8528abf0a2153a5d8e46d325b7284c046784652ae"}, {"52210264fd4d1f5dea8ded94c61e9641309349b62f27fbffe807291f664e286bfbe6472103f4ece6dfccfa37b211eb3d0af4d0c61dba9ef698622dc17eecdf764beeb005a652ae"}, {"5221022ccabda84c30bad578b13c89eb3b9544ce149787e5b538175b1d1ba259cbb83321024d902e1a2fc7a8755ab5b694c575fce742c48d9ff192e63df5193e4c7afe1f9c52ae"}}, nullopt, {{0}, {1}, {2}, {0, 0, 0}, {0, 0, 1}, {0, 0, 2}});
     Check("wsh(multi(2,xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U/2147483647'/0,xprv9vHkqa6EV4sPZHYqZznhT2NPtPCjKuDKGY38FBWLvgaDx45zo9WQRUT3dKYnjwih2yJD9mkrocEZXo1ex8G81dwSM1fwqWpWkeS3v86pgKt/1/2/*,xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi/10/20/30/40/*'))", "wsh(multi(2,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/2147483647'/0,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/1/2/*,xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8/10/20/30/40/*'))", HARDENED | RANGE | DERIVE_HARDENED, {{"0020b92623201f3bb7c3771d45b2ad1d0351ea8fbf8cfe0a0e570264e1075fa1948f"},{"002036a08bbe4923af41cf4316817c93b8d37e2f635dd25cfff06bd50df6ae7ea203"},{"0020a96e7ab4607ca6b261bfe3245ffda9c746b28d3f59e83d34820ec0e2b36c139c"}}, OutputType::BECH32, {{0xFFFFFFFFUL,0}, {1,2,0}, {1,2,1}, {1,2,2}, {10, 20, 30, 40, 0x80000000UL}, {10, 20, 30, 40, 0x80000001UL}, {10, 20, 30, 40, 0x80000002UL}});
@@ -335,20 +415,20 @@ BOOST_AUTO_TEST_CASE(descriptor_test)
     CheckUnparsable("wsh(multi(2,[aaaaaaaa],xprv9vHkqa6EV4sPZHYqZznhT2NPtPCjKuDKGY38FBWLvgaDx45zo9WQRUT3dKYnjwih2yJD9mkrocEZXo1ex8G81dwSM1fwqWpWkeS3v86pgKt/1/2/*,xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi/10/20/30/40/*'))", "wsh(multi(2,[aaaaaaaa],xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/1/2/*,xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8/10/20/30/40/*'))", "No key provided"); // No public key with origin
     CheckUnparsable("wsh(multi(2,[aaaaaaa]xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U/2147483647'/0,xprv9vHkqa6EV4sPZHYqZznhT2NPtPCjKuDKGY38FBWLvgaDx45zo9WQRUT3dKYnjwih2yJD9mkrocEZXo1ex8G81dwSM1fwqWpWkeS3v86pgKt/1/2/*,xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi/10/20/30/40/*'))", "wsh(multi(2,[aaaaaaa]xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/2147483647'/0,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/1/2/*,xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8/10/20/30/40/*'))", "Fingerprint is not 4 bytes (7 characters instead of 8 characters)"); // Too short fingerprint
     CheckUnparsable("wsh(multi(2,[aaaaaaaaa]xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U/2147483647'/0,xprv9vHkqa6EV4sPZHYqZznhT2NPtPCjKuDKGY38FBWLvgaDx45zo9WQRUT3dKYnjwih2yJD9mkrocEZXo1ex8G81dwSM1fwqWpWkeS3v86pgKt/1/2/*,xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi/10/20/30/40/*'))", "wsh(multi(2,[aaaaaaaaa]xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/2147483647'/0,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/1/2/*,xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8/10/20/30/40/*'))", "Fingerprint is not 4 bytes (9 characters instead of 8 characters)"); // Too long fingerprint
-    CheckUnparsable("multi(a,T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte,6uWuTLr7s7iTXhh3semxLf3w4BxzpXbwzbrYzHENHCbeWiqiD9S)", "multi(a,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c,04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", "Multi threshold 'a' is not valid"); // Invalid threshold
-    CheckUnparsable("multi(0,T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte,6uWuTLr7s7iTXhh3semxLf3w4BxzpXbwzbrYzHENHCbeWiqiD9S)", "multi(0,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c,04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", "Multisig threshold cannot be 0, must be at least 1"); // Threshold of 0
-    CheckUnparsable("multi(3,T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte,6uWuTLr7s7iTXhh3semxLf3w4BxzpXbwzbrYzHENHCbeWiqiD9S)", "multi(3,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c,04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", "Multisig threshold cannot be larger than the number of keys; threshold is 3 but only 2 keys specified"); // Threshold larger than number of keys
+    CheckUnparsable("multi(a," + wif_c + "," + wif_u + ")", "multi(a,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c,04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", "Multi threshold 'a' is not valid"); // Invalid threshold
+    CheckUnparsable("multi(0," + wif_c + "," + wif_u + ")", "multi(0,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c,04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", "Multisig threshold cannot be 0, must be at least 1"); // Threshold of 0
+    CheckUnparsable("multi(3," + wif_c + "," + wif_u + ")", "multi(3,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c,04a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8cf2858b37e9ef7162964cfaf304f859350af59745166f1a9345916c7ba43c1762)", "Multisig threshold cannot be larger than the number of keys; threshold is 3 but only 2 keys specified"); // Threshold larger than number of keys
     CheckUnparsable("multi(3,KzoAz5CanayRKex3fSLQ2BwJpN7U52gZvxMyk78nDMHuqrUxuSJy,KwGNz6YCCQtYvFzMtrC6D3tKTKdBBboMrLTsjr2NYVBwapCkn7Mr,KxogYhiNfwxuswvXV66eFyKcCpm7dZ7TqHVqujHAVUjJxyivxQ9X,L2BUNduTSyZwZjwNHynQTF14mv2uz2NRq5n5sYWTb4FkkmqgEE9f)", "multi(3,03669b8afcec803a0d323e9a17f3ea8e68e8abe5a278020a929adbec52421adbd0,0260b2003c386519fc9eadf2b5cf124dd8eea4c4e68d5e154050a9346ea98ce600,0362a74e399c39ed5593852a30147f2959b56bb827dfa3e60e464b02ccf87dc5e8,0261345b53de74a4d721ef877c255429961b7e43714171ac06168d7e08c542a8b8)", "Cannot have 4 pubkeys in bare multisig; only at most 3 pubkeys"); // Threshold larger than number of keys
-    CheckUnparsable("sh(multi(16,KzoAz5CanayRKex3fSLQ2BwJpN7U52gZvxMyk78nDMHuqrUxuSJy,KwGNz6YCCQtYvFzMtrC6D3tKTKdBBboMrLTsjr2NYVBwapCkn7Mr,KxogYhiNfwxuswvXV66eFyKcCpm7dZ7TqHVqujHAVUjJxyivxQ9X,L2BUNduTSyZwZjwNHynQTF14mv2uz2NRq5n5sYWTb4FkkmqgEE9f,L1okJGHGn1kFjdXHKxXjwVVtmCMR2JA5QsbKCSpSb7ReQjezKeoD,KxDCNSST75HFPaW5QKpzHtAyaCQC7p9Vo3FYfi2u4dXD1vgMiboK,L5edQjFtnkcf5UWURn6UuuoFrabgDQUHdheKCziwN42aLwS3KizU,KzF8UWFcEC7BYTq8Go1xVimMkDmyNYVmXV5PV7RuDicvAocoPB8i,L3nHUboKG2w4VSJ5jYZ5CBM97oeK6YuKvfZxrefdShECcjEYKMWZ,KyjHo36dWkYhimKmVVmQTq3gERv3pnqA4xFCpvUgbGDJad7eS8WE,KwsfyHKRUTZPQtysN7M3tZ4GXTnuov5XRgjdF2XCG8faAPmFruRF,KzCUbGhN9LJhdeFfL9zQgTJMjqxdBKEekRGZX24hXdgCNCijkkap,KzgpMBwwsDLwkaC5UrmBgCYaBD2WgZ7PBoGYXR8KT7gCA9UTN5a3,KyBXTPy4T7YG4q9tcAM3LkvfRpD1ybHMvcJ2ehaWXaSqeGUxEdkP,KzJDe9iwJRPtKP2F2AoN6zBgzS7uiuAwhWCfGdNeYJ3PC1HNJ8M8,L1xbHrxynrqLKkoYc4qtoQPx6uy5qYXR5ZDYVYBSRmCV5piU3JG9,T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte))","sh(multi(16,03669b8afcec803a0d323e9a17f3ea8e68e8abe5a278020a929adbec52421adbd0,0260b2003c386519fc9eadf2b5cf124dd8eea4c4e68d5e154050a9346ea98ce600,0362a74e399c39ed5593852a30147f2959b56bb827dfa3e60e464b02ccf87dc5e8,0261345b53de74a4d721ef877c255429961b7e43714171ac06168d7e08c542a8b8,02da72e8b46901a65d4374fe6315538d8f368557dda3a1dcf9ea903f3afe7314c8,0318c82dd0b53fd3a932d16e0ba9e278fcc937c582d5781be626ff16e201f72286,0297ccef1ef99f9d73dec9ad37476ddb232f1238aff877af19e72ba04493361009,02e502cfd5c3f972fe9a3e2a18827820638f96b6f347e54d63deb839011fd5765d,03e687710f0e3ebe81c1037074da939d409c0025f17eb86adb9427d28f0f7ae0e9,02c04d3a5274952acdbc76987f3184b346a483d43be40874624b29e3692c1df5af,02ed06e0f418b5b43a7ec01d1d7d27290fa15f75771cb69b642a51471c29c84acd,036d46073cbb9ffee90473f3da429abc8de7f8751199da44485682a989a4bebb24,02f5d1ff7c9029a80a4e36b9a5497027ef7f3e73384a4a94fbfe7c4e9164eec8bc,02e41deffd1b7cce11cde209a781adcffdabd1b91c0ba0375857a2bfd9302419f3,02d76625f7956a7fc505ab02556c23ee72d832f1bac391bcd2d3abce5710a13d06,0399eb0a5487515802dc14544cf10b3666623762fbed2ec38a3975716e2c29c232,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", "Cannot have 17 keys in multisig; must have between 1 and 16 keys, inclusive"); // Cannot have more than 16 keys in a multisig
+    CheckUnparsable("sh(multi(16,KzoAz5CanayRKex3fSLQ2BwJpN7U52gZvxMyk78nDMHuqrUxuSJy,KwGNz6YCCQtYvFzMtrC6D3tKTKdBBboMrLTsjr2NYVBwapCkn7Mr,KxogYhiNfwxuswvXV66eFyKcCpm7dZ7TqHVqujHAVUjJxyivxQ9X,L2BUNduTSyZwZjwNHynQTF14mv2uz2NRq5n5sYWTb4FkkmqgEE9f,L1okJGHGn1kFjdXHKxXjwVVtmCMR2JA5QsbKCSpSb7ReQjezKeoD,KxDCNSST75HFPaW5QKpzHtAyaCQC7p9Vo3FYfi2u4dXD1vgMiboK,L5edQjFtnkcf5UWURn6UuuoFrabgDQUHdheKCziwN42aLwS3KizU,KzF8UWFcEC7BYTq8Go1xVimMkDmyNYVmXV5PV7RuDicvAocoPB8i,L3nHUboKG2w4VSJ5jYZ5CBM97oeK6YuKvfZxrefdShECcjEYKMWZ,KyjHo36dWkYhimKmVVmQTq3gERv3pnqA4xFCpvUgbGDJad7eS8WE,KwsfyHKRUTZPQtysN7M3tZ4GXTnuov5XRgjdF2XCG8faAPmFruRF,KzCUbGhN9LJhdeFfL9zQgTJMjqxdBKEekRGZX24hXdgCNCijkkap,KzgpMBwwsDLwkaC5UrmBgCYaBD2WgZ7PBoGYXR8KT7gCA9UTN5a3,KyBXTPy4T7YG4q9tcAM3LkvfRpD1ybHMvcJ2ehaWXaSqeGUxEdkP,KzJDe9iwJRPtKP2F2AoN6zBgzS7uiuAwhWCfGdNeYJ3PC1HNJ8M8,L1xbHrxynrqLKkoYc4qtoQPx6uy5qYXR5ZDYVYBSRmCV5piU3JG9," + wif_c + "))","sh(multi(16,03669b8afcec803a0d323e9a17f3ea8e68e8abe5a278020a929adbec52421adbd0,0260b2003c386519fc9eadf2b5cf124dd8eea4c4e68d5e154050a9346ea98ce600,0362a74e399c39ed5593852a30147f2959b56bb827dfa3e60e464b02ccf87dc5e8,0261345b53de74a4d721ef877c255429961b7e43714171ac06168d7e08c542a8b8,02da72e8b46901a65d4374fe6315538d8f368557dda3a1dcf9ea903f3afe7314c8,0318c82dd0b53fd3a932d16e0ba9e278fcc937c582d5781be626ff16e201f72286,0297ccef1ef99f9d73dec9ad37476ddb232f1238aff877af19e72ba04493361009,02e502cfd5c3f972fe9a3e2a18827820638f96b6f347e54d63deb839011fd5765d,03e687710f0e3ebe81c1037074da939d409c0025f17eb86adb9427d28f0f7ae0e9,02c04d3a5274952acdbc76987f3184b346a483d43be40874624b29e3692c1df5af,02ed06e0f418b5b43a7ec01d1d7d27290fa15f75771cb69b642a51471c29c84acd,036d46073cbb9ffee90473f3da429abc8de7f8751199da44485682a989a4bebb24,02f5d1ff7c9029a80a4e36b9a5497027ef7f3e73384a4a94fbfe7c4e9164eec8bc,02e41deffd1b7cce11cde209a781adcffdabd1b91c0ba0375857a2bfd9302419f3,02d76625f7956a7fc505ab02556c23ee72d832f1bac391bcd2d3abce5710a13d06,0399eb0a5487515802dc14544cf10b3666623762fbed2ec38a3975716e2c29c232,02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", "Cannot have 17 keys in multisig; must have between 1 and 16 keys, inclusive"); // Cannot have more than 16 keys in a multisig
 
     // Check for invalid nesting of structures
-    CheckUnparsable("sh(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)", "sh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", "A function is needed within P2SH"); // P2SH needs a script, not a key
-    CheckUnparsable("sh(combo(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte))", "sh(combo(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", "Cannot have combo in non-top level"); // Old must be top level
-    CheckUnparsable("wsh(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)", "wsh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", "A function is needed within P2WSH"); // P2WSH needs a script, not a key
-    CheckUnparsable("wsh(wpkh(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte))", "wsh(wpkh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", "Cannot have wpkh within wsh"); // Cannot embed witness inside witness
-    CheckUnparsable("wsh(sh(pk(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)))", "wsh(sh(pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)))", "Cannot have sh in non-top level"); // Cannot embed P2SH inside P2WSH
-    CheckUnparsable("sh(sh(pk(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)))", "sh(sh(pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)))", "Cannot have sh in non-top level"); // Cannot embed P2SH inside P2SH
-    CheckUnparsable("wsh(wsh(pk(T4nzXGboJCdz6WbmgZjRFkwwb5QACn5FjEqiBpdzvWBva3PMLwte)))", "wsh(wsh(pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)))", "Cannot have wsh within wsh"); // Cannot embed P2WSH inside P2WSH
+    CheckUnparsable("sh(" + wif_c + ")", "sh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", "A function is needed within P2SH"); // P2SH needs a script, not a key
+    CheckUnparsable("sh(combo(" + wif_c + "))", "sh(combo(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", "Cannot have combo in non-top level"); // Old must be top level
+    CheckUnparsable("wsh(" + wif_c + ")", "wsh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)", "A function is needed within P2WSH"); // P2WSH needs a script, not a key
+    CheckUnparsable("wsh(wpkh(" + wif_c + "))", "wsh(wpkh(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c))", "Cannot have wpkh within wsh"); // Cannot embed witness inside witness
+    CheckUnparsable("wsh(sh(pk(" + wif_c + ")))", "wsh(sh(pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)))", "Cannot have sh in non-top level"); // Cannot embed P2SH inside P2WSH
+    CheckUnparsable("sh(sh(pk(" + wif_c + ")))", "sh(sh(pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)))", "Cannot have sh in non-top level"); // Cannot embed P2SH inside P2SH
+    CheckUnparsable("wsh(wsh(pk(" + wif_c + ")))", "wsh(wsh(pk(02a5e85e848c4107607d7b8522018d6dffa6b40aad853ae634f95cded666dd1d8c)))", "Cannot have wsh within wsh"); // Cannot embed P2WSH inside P2WSH
 
     // Checksums
     Check("sh(multi(2,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))#ggrsrxfy", "sh(multi(2,[00000000/111'/222]xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0))#tjg09x5t", DEFAULT, {{"a91445a9a622a8b0a1269944be477640eedc447bbd8487"}}, OutputType::LEGACY, {{0x8000006FUL,222},{0}});
@@ -356,8 +436,8 @@ BOOST_AUTO_TEST_CASE(descriptor_test)
     CheckUnparsable("sh(multi(2,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))#", "sh(multi(2,[00000000/111'/222]xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0))#", "Expected 8 character checksum, not 0 characters"); // Empty checksum
     CheckUnparsable("sh(multi(2,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))#ggrsrxfyq", "sh(multi(2,[00000000/111'/222]xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0))#tjg09x5tq", "Expected 8 character checksum, not 9 characters"); // Too long checksum
     CheckUnparsable("sh(multi(2,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))#ggrsrxf", "sh(multi(2,[00000000/111'/222]xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0))#tjg09x5", "Expected 8 character checksum, not 7 characters"); // Too short checksum
-    CheckUnparsable("sh(multi(3,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))#ggrsrxfy", "sh(multi(3,[00000000/111'/222]xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0))#tjg09x5t", "Provided checksum 'tjg09x5t' does not match computed checksum 'd4x0uxyv'"); // Error in payload
-    CheckUnparsable("sh(multi(2,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))#ggssrxfy", "sh(multi(2,[00000000/111'/222]xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0))#tjq09x4t", "Provided checksum 'tjq09x4t' does not match computed checksum 'tjg09x5t'"); // Error in checksum
+    CheckUnparsable("sh(multi(3,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))#ggrsrxfy", "sh(multi(3,[00000000/111'/222]xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0))#tjg09x5t", "Provided checksum 'tjg09x5t' does not match computed checksum 'd4xq4nn4'"); // Error in payload
+    CheckUnparsable("sh(multi(2,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))#ggssrxfy", "sh(multi(2,[00000000/111'/222]xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0))#tjq09x4t", "Provided checksum 'tjq09x4t' does not match computed checksum 'tjgqvnrj'"); // Error in checksum
     CheckUnparsable("sh(multi(2,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))##ggssrxfy", "sh(multi(2,[00000000/111'/222]xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0))##tjq09x4t", "Multiple '#' symbols"); // Error in checksum
 
     // Addr and raw tests

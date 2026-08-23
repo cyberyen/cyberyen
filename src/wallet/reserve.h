@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BITCOIN_WALLET_RESERVE_H
+#define BITCOIN_WALLET_RESERVE_H
 
 #include <outputtype.h>
 #include <script/standard.h>
@@ -58,3 +59,5 @@ public:
     //! Keep the address. Do not return it's key to the keypool when this object goes out of scope
     void KeepDestination();
 };
+
+#endif // BITCOIN_WALLET_RESERVE_H

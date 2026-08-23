@@ -124,10 +124,9 @@ MESSAGEMAP = {
 }
 
 MAGIC_BYTES = {
-    "mainnet": b"\xfb\xc0\xb6\xdb",   # mainnet
-    "testnet4": b"\xfd\xd2\xc8\xf1",  # testnet4
-    "regtest": b"\xfa\xbf\xb5\xda",   # regtest
-    "signet": b"\x0a\x03\xcf\x40",    # signet
+    "mainnet": b"\xc1\xc1\xc1\xc1",   # pchMessageStart CMainParams
+    "testnet4": b"\xfc\xc1\xb7\xdc",  # pchMessageStart CTestNetParams
+    "regtest": b"\xfa\xbf\xb5\xda",   # pchMessageStart CRegTestParams
 }
 
 
@@ -331,7 +330,7 @@ class P2PInterface(P2PConnection):
 
         self.support_addrv2 = support_addrv2
 
-        def peer_connect_send_version(self, services):
+    def peer_connect_send_version(self, services):
         # Send a version msg
         vt = msg_version()
         vt.nServices = services

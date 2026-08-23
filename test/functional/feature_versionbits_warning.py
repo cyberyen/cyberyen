@@ -18,8 +18,8 @@ from test_framework.test_framework import BitcoinTestFramework
 VB_PERIOD = 144           # versionbits period length for regtest
 VB_THRESHOLD = 108        # versionbits activation threshold for regtest
 VB_TOP_BITS = 0x20000000
-VB_UNKNOWN_BIT = 27       # Choose a bit unassigned to any deployment
-VB_UNKNOWN_VERSION = VB_TOP_BITS | (1 << VB_UNKNOWN_BIT)
+VB_UNKNOWN_BIT = 20       # Unassigned bit that still fits Cyberyen IsLegacy (0x20100000)
+VB_UNKNOWN_VERSION = 0x20100000
 
 WARN_UNKNOWN_RULES_ACTIVE = "unknown new rules activated (versionbit {})".format(VB_UNKNOWN_BIT)
 VB_PATTERN = re.compile("Warning: unknown new rules activated.*versionbit")
@@ -34,7 +34,7 @@ class VersionBitsWarningTest(BitcoinTestFramework):
         # Open and close to create zero-length file
         with open(self.alert_filename, 'w', encoding='utf8'):
             pass
-        self.extra_args = [["-alertnotify=echo %s >> \"" + self.alert_filename + "\""]]
+        self.extra_args = [["-alertnotify=echo %s >> \"" + self.alert_filename + "\"", "-vbparams=mweb:-2:0"]]
         self.setup_nodes()
 
     def send_blocks_with_version(self, peer, numblocks, version):

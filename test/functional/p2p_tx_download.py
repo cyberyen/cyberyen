@@ -6,6 +6,8 @@
 Test transaction download behavior
 """
 
+from decimal import Decimal
+
 from test_framework.messages import (
     CInv,
     CTransaction,
@@ -25,6 +27,7 @@ from test_framework.util import (
     assert_equal,
 )
 from test_framework.address import ADDRESS_BCRT1_UNSPENDABLE
+from test_framework.blocktools import subsidy_cy
 
 import time
 
@@ -94,7 +97,7 @@ class TxDownloadTest(BitcoinTestFramework):
                 "txid": self.nodes[0].getblock(self.nodes[0].getblockhash(1))['tx'][0],
                 "vout": 0
             }],
-            outputs={ADDRESS_BCRT1_UNSPENDABLE: 50 - 0.00025},
+            outputs={ADDRESS_BCRT1_UNSPENDABLE: subsidy_cy() - Decimal("0.00025")},
         )
         tx = self.nodes[0].signrawtransactionwithkey(
             hexstring=tx,

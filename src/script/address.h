@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BITCOIN_SCRIPT_ADDRESS_H
+#define BITCOIN_SCRIPT_ADDRESS_H
 
 #include <script/standard.h>
 #include <boost/variant.hpp>
@@ -35,3 +36,5 @@ public:
 private:
     boost::variant<CScript, StealthAddress> m_script;
 };
+
+#endif // BITCOIN_SCRIPT_ADDRESS_H

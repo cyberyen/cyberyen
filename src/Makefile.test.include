@@ -84,7 +84,7 @@ FUZZ_TARGETS = \
   test/fuzz/parse_script \
   test/fuzz/parse_univalue \
   test/fuzz/partial_merkle_tree_deserialize \
-  test/fuzz/partially_downloaded_block.cpp \
+  test/fuzz/partially_downloaded_block \
   test/fuzz/partially_signed_transaction_deserialize \
   test/fuzz/policy_estimator \
   test/fuzz/policy_estimator_io \
@@ -314,7 +314,16 @@ endif
 
 BITCOIN_TEST_SUITE += \
   libmw/test/framework/src/TxBuilder.cpp \
-  libmw/test/framework/src/models/Tx.cpp
+  libmw/test/framework/src/models/Tx.cpp \
+  libmw/test/framework/include/test_framework/Deserializer.h \
+  libmw/test/framework/include/test_framework/Miner.h \
+  libmw/test/framework/include/test_framework/TestLeafSet.h \
+  libmw/test/framework/include/test_framework/TestMWEB.h \
+  libmw/test/framework/include/test_framework/TxBuilder.h \
+  libmw/test/framework/include/test_framework/models/MinedBlock.h \
+  libmw/test/framework/include/test_framework/models/Tx.h \
+  libmw/test/framework/include/test_framework/models/TxInput.h \
+  libmw/test/framework/include/test_framework/models/TxOutput.h
 
 BITCOIN_TESTS += \
   libmw/test/tests/consensus/Test_Aggregation.cpp \
@@ -865,6 +874,12 @@ test_fuzz_partial_merkle_tree_deserialize_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 test_fuzz_partial_merkle_tree_deserialize_LDADD = $(FUZZ_SUITE_LD_COMMON)
 test_fuzz_partial_merkle_tree_deserialize_LDFLAGS = $(FUZZ_SUITE_LDFLAGS_COMMON)
 test_fuzz_partial_merkle_tree_deserialize_SOURCES = test/fuzz/deserialize.cpp
+
+test_fuzz_partially_downloaded_block_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+test_fuzz_partially_downloaded_block_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+test_fuzz_partially_downloaded_block_LDADD = $(FUZZ_SUITE_LD_COMMON)
+test_fuzz_partially_downloaded_block_LDFLAGS = $(FUZZ_SUITE_LDFLAGS_COMMON)
+test_fuzz_partially_downloaded_block_SOURCES = test/fuzz/partially_downloaded_block.cpp
 
 test_fuzz_partially_signed_transaction_deserialize_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) -DPARTIALLY_SIGNED_TRANSACTION_DESERIALIZE=1
 test_fuzz_partially_signed_transaction_deserialize_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)

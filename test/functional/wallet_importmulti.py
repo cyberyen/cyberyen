@@ -579,11 +579,10 @@ class ImportMultiTest(BitcoinTestFramework):
 
         # Test ranged descriptor fails if range is not specified
         xpriv = "tprv8ZgxMBicQKsPeuVhWwi6wuMQGfPKi9Li5GtX35jVNknACgqe3CY4g5xgkfDDJcmtF7o1QnxWDRYw4H5P26PXq7sbcUkEqeR4fg3Kxp2tigg"
-        addresses = ["CbLgBpzWA5HfXpPMae62q6A8vuNgxHqXbU", "CLej6btYT9sG7dQR6yL8r5EM1HGUaDYa2F"] # hdkeypath=m/0'/0'/0' and 1'
-        addresses += ["rcy1qrd3n235cj2czsfmsuvqqpr3lu6lg0ju7w49wld", "rcy1qfqeppuvj0ww98r6qghmdkj70tv8qpchef5j2le"] # wpkh subscripts corresponding to the above addresses
         desc = "sh(wpkh(" + xpriv + "/0'/0'/*'" + "))"
+        desc_with_checksum = descsum_create(desc)
         self.log.info("Ranged descriptor import should fail without a specified range")
-        self.test_importmulti({"desc": descsum_create(desc),
+        self.test_importmulti({"desc": desc_with_checksum,
                                "timestamp": "now"},
                               success=False,
                               error_code=-8,
@@ -591,11 +590,11 @@ class ImportMultiTest(BitcoinTestFramework):
 
         # Test importing of a ranged descriptor with xpriv
         self.log.info("Should import the ranged descriptor with specified range as solvable")
-        self.test_importmulti({"desc": descsum_create(desc),
+        self.test_importmulti({"desc": desc_with_checksum,
                                "timestamp": "now",
                                "range": 1},
                               success=True)
-        for address in addresses:
+        for address in self.nodes[1].deriveaddresses(desc_with_checksum, 1):
             test_address(self.nodes[1],
                          address,
                          solvable=True,
@@ -838,16 +837,11 @@ class ImportMultiTest(BitcoinTestFramework):
         assert_equal(wrpc.getwalletinfo()["keypoolsize"], 0)
         assert_equal(wrpc.getwalletinfo()["private_keys_enabled"], False)
         xpub = "tpubDAXcJ7s7ZwicqjprRaEWdPoHKrCS215qxGYxpusRLLmJuT69ZSicuGdSfyvyKpvUNYBW1s2U3NSrT6vrCYB9e6nZUEvrqnwXPF8ArTCRXMY"
-        addresses = [
-            'rcy1qtmp74ayg7p24uslctssvjm06q5phz4yrc3zpyj', # m/0'/0'/0
-            'rcy1q8vprchan07gzagd5e6v9wd7azyucksq2c4ynpe', # m/0'/0'/1
-            'rcy1qtuqdtha7zmqgcrr26n2rqxztv5y8rafjlg94gz', # m/0'/0'/2
-            'rcy1qau64272ymawq26t90md6an0ps99qkrse22pnz3', # m/0'/0'/3
-            'rcy1qsg97266hrh6cpmutqen8s4s962aryy77vv4ql3', # m/0'/0'/4
-        ]
+        ranged_desc = descsum_create('wpkh([80002067/0h/0h]' + xpub + '/*)')
+        addresses = wrpc.deriveaddresses(ranged_desc, [0, 4])
         result = wrpc.importmulti(
             [{
-                'desc': descsum_create('wpkh([80002067/0h/0h]' + xpub + '/*)'),
+                'desc': ranged_desc,
                 'keypool': True,
                 'timestamp': 'now',
                 'range' : [0, 4],

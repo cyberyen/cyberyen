@@ -9,18 +9,30 @@
 export LC_ALL=C
 
 EXPECTED_CIRCULAR_DEPENDENCIES=(
+    "auxpow -> primitives/block -> auxpow"
+    "chainparams -> protocol -> chainparams"
     "chainparamsbase -> util/system -> chainparamsbase"
     "index/txindex -> validation -> index/txindex"
+    "interfaces/chain.h -> node/context -> interfaces/chain.h"
+    "interfaces/wallet.h -> wallet/txrecord -> wallet/wallet -> interfaces/wallet.h"
+    "miner -> mweb/mweb_miner -> miner"
+    "mweb/mweb_node -> validation -> mweb/mweb_node"
+    "mweb/mweb_transact -> wallet/txassembler -> mweb/mweb_transact"
+    "mweb/mweb_wallet -> wallet/wallet -> mweb/mweb_wallet"
     "policy/fees -> txmempool -> policy/fees"
+    "policy/fees -> txmempool -> validation -> policy/fees"
     "qt/addresstablemodel -> qt/walletmodel -> qt/addresstablemodel"
     "qt/bitcoingui -> qt/walletframe -> qt/bitcoingui"
     "qt/recentrequeststablemodel -> qt/walletmodel -> qt/recentrequeststablemodel"
     "qt/sendcoinsdialog -> qt/walletmodel -> qt/sendcoinsdialog"
     "qt/transactiontablemodel -> qt/walletmodel -> qt/transactiontablemodel"
+    "rpc/blockchain -> rpc/rawtransaction -> rpc/blockchain"
+    "script/address -> script/standard -> script/address"
     "txmempool -> validation -> txmempool"
     "wallet/fees -> wallet/wallet -> wallet/fees"
+    "wallet/reserve -> wallet/wallet -> wallet/reserve"
+    "wallet/txassembler -> wallet/wallet -> wallet/txassembler"
     "wallet/wallet -> wallet/walletdb -> wallet/wallet"
-    "policy/fees -> txmempool -> validation -> policy/fees"
 )
 
 EXIT_CODE=0

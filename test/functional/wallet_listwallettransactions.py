@@ -3,12 +3,11 @@
 from decimal import Decimal
 from io import BytesIO
 
-from test_framework.messages import COIN, CTransaction
+from test_framework.messages import CTransaction
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.cy_util import setup_mweb_chain
 from test_framework.util import (
     assert_array_result,
-    assert_equal,
     hex_str_to_bytes,
 )
 
@@ -23,7 +22,7 @@ class ListWalletTransactionsTest(BitcoinTestFramework):
         self.setup_clean_chain = True
         self.num_nodes = 3
         self.extra_args = [['-whitelist=noban@127.0.0.1'],['-whitelist=noban@127.0.0.1'],[]]  # immediate tx relay
-        
+
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
 
@@ -64,12 +63,12 @@ class ListWalletTransactionsTest(BitcoinTestFramework):
                             {"amount": Decimal("0.2")})
 
         # pegin to self
-        node0_mweb_addr = node0.getnewaddress(address_type='mweb') 
+        node0_mweb_addr = node0.getnewaddress(address_type='mweb')
         txid = node0.sendtoaddress(node0_mweb_addr, 0.4)
         assert_array_result(node0.listwallettransactions(),
                             {"txid": txid, "type": "SendToSelf"},
                             {"amount": Decimal("0.4")})
-        
+
         # mine a block, confirmations should change:
         blockhash = node0.generate(1)[0]
         blockheight = node0.getblockheader(blockhash)['height']
@@ -89,7 +88,7 @@ class ListWalletTransactionsTest(BitcoinTestFramework):
         assert_array_result(node1.listwallettransactions(),
                             {"address": node1_mweb_addr},
                             {"type": "RecvWithAddress", "amount": Decimal("5.0"), "confirmations": 0})
-        
+
         # mine a block, confirmations should change:
         blockhash = node0.generate(1)[0]
         blockheight = node0.getblockheader(blockhash)['height']
@@ -101,7 +100,7 @@ class ListWalletTransactionsTest(BitcoinTestFramework):
                             {"address": node1_mweb_addr},
                             {"type": "RecvWithAddress", "amount": Decimal("5.0"), "confirmations": 1, "blockheight": blockheight})
 
-        
+
         # pegout from 1 to 0 (node0 online)
         node0_addr = node0.getnewaddress()
         txid = node1.sendtoaddress(node0_addr, 3)

@@ -107,8 +107,8 @@ public:
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartHeight = 0;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeoutHeight = 0;
 
-	consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000609dc95a3f099ac4");
-	consensus.defaultAssumeValid = uint256S("0x0e334144d657ffa25235e252c7fb8e887318600f8e70e77f04c2747ebbe89600"); // 1506267
+	consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000f71fe61040a8b4bf");
+	consensus.defaultAssumeValid = uint256S("0xc85004adde9b31c9cd37229e669395b251a66848b62e46e2f1c8e041596a61bf"); // 1671189
 
 	/**
 	 * The message start string is designed to be unlikely to occur in normal data.
@@ -164,17 +164,16 @@ public:
 	    {  975000, uint256S("0x3d9df1f81ba08878fa2c9dc407784b63b4db8d98e297dbaad397be8274e8c564")}, // incorrect AuxPoW version, commit 182963e
 	    {  1200000, uint256S("0xad56e87a6ff14c604bb2477805b4bb195d9df4bc1badbca214d5445fe6149e9a")},
         {  1265000, uint256S("0xc17936a342cb2025c95cfc408bcab6ce8900576e624faa5c116fba40c3dec019")}, // fork for correct AuxPoW version with new chainID 4096, commit c64a813
-        {  1506276, uint256S("0xdef021ac77c32b907d2dd7f8125833bfd4d88a520f77b96f60e0259e27304ed2")},
-	    // {  2000000, uint256S("0x")}, // Future Block:
+        {  1671189, uint256S("0xc85004adde9b31c9cd37229e669395b251a66848b62e46e2f1c8e041596a61bf")},
 	  }
 	};
 
 
 	chainTxData = ChainTxData{
-	  // Data from rpc: getchaintxstats 17280 0e334144d657ffa25235e252c7fb8e887318600f8e70e77f04c2747ebbe89600
-	  /* nTime    */ 1777294302,
-	  /* nTxCount */ 3095955,
-	  /* dTxRate  */ 0.0332570079692097
+	  // Data from rpc: getchaintxstats 17280 c85004adde9b31c9cd37229e669395b251a66848b62e46e2f1c8e041596a61bf
+	  /* nTime    */ 1787510502,
+	  /* nTxCount */ 3428320,
+	  /* dTxRate  */ 0.03229151567186647
 	};
     }
 };
@@ -271,7 +270,6 @@ public:
 	checkpointData = {
 	    {
 	      {  0, uint256S("0xfc87d3af1c388f561386e08cfb74819cc04cf33ddb6c39f0bfb685048d3dfb2a")},
-
 	    }
 	};
 
@@ -329,10 +327,13 @@ public:
 	consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nStartTime = Consensus::BIP9Deployment::ALWAYS_ACTIVE;
 	consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
 
-	// Deployment of MWEB (LIP-0002 and LIP-0003)
+	// Height-based MWEB (nStartTime = nTimeout = 0). Window 144/288 → ACTIVE at 432,
+	// matching FIRST_MWEB_HEIGHT under default regtest params.
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].bit = 4;
 	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartTime = 0;
-	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeout = 0;
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nStartHeight = 144;
+	consensus.vDeployments[Consensus::DEPLOYMENT_MWEB].nTimeoutHeight = 288;
 
 	//consensus.nMinimumChainWork = uint256();
 	//consensus.defaultAssumeValid = uint256();

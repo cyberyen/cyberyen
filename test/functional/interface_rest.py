@@ -22,7 +22,8 @@ from test_framework.util import (
     hex_str_to_bytes,
 )
 
-from test_framework.messages import BLOCK_HEADER_SIZE
+from test_framework.blocktools import subsidy_cy
+from test_framework.messages import BLOCK_HEADER_SIZE, CBlockHeader
 
 class ReqType(Enum):
     JSON = 1
@@ -87,7 +88,7 @@ class RESTTest (BitcoinTestFramework):
         self.nodes[1].generatetoaddress(100, not_related_address)
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbalance(), 50)
+        assert_equal(self.nodes[0].getbalance(), subsidy_cy())
 
         txid = self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
         self.sync_all()
@@ -226,11 +227,14 @@ class RESTTest (BitcoinTestFramework):
         assert_greater_than(int(response.getheader('content-length')), BLOCK_HEADER_SIZE)
         response_bytes = response.read()
 
-        # Compare with block header
+        # Compare with block header (auxpow headers are larger than Bitcoin's 80 bytes)
         response_header = self.test_rest_request("/headers/1/{}".format(bb_hash), req_type=ReqType.BIN, ret_type=RetType.OBJ)
-        assert_equal(int(response_header.getheader('content-length')), BLOCK_HEADER_SIZE)
+        header_len = int(response_header.getheader('content-length'))
         response_header_bytes = response_header.read()
-        assert_equal(response_bytes[:BLOCK_HEADER_SIZE], response_header_bytes)
+        hdr = CBlockHeader()
+        hdr.deserialize(BytesIO(response_header_bytes))
+        assert_equal(header_len, len(hdr.serialize()))
+        assert_equal(response_bytes[:header_len], response_header_bytes)
 
         # Check block hex format
         response_hex = self.test_rest_request("/block/{}".format(bb_hash), req_type=ReqType.HEX, ret_type=RetType.OBJ)
@@ -240,9 +244,9 @@ class RESTTest (BitcoinTestFramework):
 
         # Compare with hex block header
         response_header_hex = self.test_rest_request("/headers/1/{}".format(bb_hash), req_type=ReqType.HEX, ret_type=RetType.OBJ)
-        assert_greater_than(int(response_header_hex.getheader('content-length')), BLOCK_HEADER_SIZE*2)
-        response_header_hex_bytes = response_header_hex.read(BLOCK_HEADER_SIZE*2)
-        assert_equal(binascii.hexlify(response_bytes[:BLOCK_HEADER_SIZE]), response_header_hex_bytes)
+        assert_greater_than(int(response_header_hex.getheader('content-length')), header_len * 2)
+        response_header_hex_bytes = response_header_hex.read(header_len * 2)
+        assert_equal(binascii.hexlify(response_bytes[:header_len]), response_header_hex_bytes)
 
         # Check json format
         block_json_obj = self.test_rest_request("/block/{}".format(bb_hash))

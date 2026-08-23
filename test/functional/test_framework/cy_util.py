@@ -6,8 +6,10 @@
 
 import os
 
+from decimal import Decimal
+
 from test_framework.messages import COIN, COutPoint, CTransaction, CTxIn, CTxOut, FromHex, MWEBHeader
-from test_framework.util import get_datadir_path, initialize_datadir, satoshi_round
+from test_framework.util import assert_greater_than, get_datadir_path, initialize_datadir, satoshi_round
 from test_framework.script_util import DUMMY_P2WPKH_SCRIPT, hogaddr_script
 from test_framework.test_node import TestNode
 
@@ -68,14 +70,40 @@ then mines the first MWEB block which includes that pegin.
 mining_node - The node to use to generate blocks
 """
 def setup_mweb_chain(mining_node):
-    # Create all pre-MWEB blocks
-    mining_node.generate(FIRST_MWEB_HEIGHT - 1)
+    remaining = FIRST_MWEB_HEIGHT - 1 - mining_node.getblockcount()
+    if remaining > 0:
+        mining_node.generate(remaining)
 
     # Pegin some coins
     mining_node.sendtoaddress(mining_node.getnewaddress(address_type='mweb'), 1)
 
     # Create some blocks - activate MWEB
     mining_node.generate(1)
+
+
+def assert_is_canonical_pegin(node, txid):
+    """Fail if txid is not a hybrid transparent→MWEB pegin.
+
+    After setup_mweb_chain, sendtoaddress(mweb) often becomes MWEB→MWEB because
+    Cyberyen block subsidy leaves a large MWEB balance. Tests that mean "pegin"
+    must assert shape, not only mempool presence.
+    """
+    raw = node.getrawtransaction(txid, True)
+    assert any(not vin.get('ismweb') for vin in raw.get('vin', [])), \
+        "canonical pegin must spend at least one transparent input"
+    assert any(not vout.get('ismweb') for vout in raw.get('vout', [])), \
+        "canonical pegin must have at least one transparent output"
+    vkern = raw.get('vkern') or []
+    assert vkern, "canonical pegin must include MWEB kernels"
+    assert_greater_than(Decimal(str(vkern[0].get('pegin', 0))), 0)
+
+
+def create_canonical_pegin(node, amount):
+    """sendtoaddress(mweb) from a wallet that must not cover amount from MWEB alone."""
+    addr = node.getnewaddress(address_type='mweb')
+    txid = node.sendtoaddress(addr, amount)
+    assert_is_canonical_pegin(node, txid)
+    return txid
 
 
 """Retrieves the HogEx transaction for the block.

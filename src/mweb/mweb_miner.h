@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BITCOIN_MWEB_MWEB_MINER_H
+#define BITCOIN_MWEB_MWEB_MINER_H
 
 #include <mw/node/BlockBuilder.h>
 #include <txmempool.h>
@@ -29,3 +30,5 @@ private:
 };
 
 } // namespace MWEB
+
+#endif // BITCOIN_MWEB_MWEB_MINER_H

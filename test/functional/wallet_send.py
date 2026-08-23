@@ -8,6 +8,7 @@ from decimal import Decimal, getcontext
 from itertools import product
 
 from test_framework.authproxy import JSONRPCException
+from test_framework.blocktools import subsidy_cy
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
@@ -281,7 +282,7 @@ class WalletSendTest(BitcoinTestFramework):
         self.test_send(from_wallet=w0, to_wallet=w1, amount=1, arg_fee_rate=10, fee_rate=10, add_to_wallet=False,
                        expect_error=(-8, "Pass the fee_rate either as an argument, or in the options object, but not both"))
 
-        assert_raises_rpc_error(-8, "Use fee_rate (sat/vB) instead of feeRate", w0.send, {w1.getnewaddress(): 1}, 6, "conservative", 1, {"feeRate": 0.01})
+        assert_raises_rpc_error(-8, "Use fee_rate (rin/vB) instead of feeRate", w0.send, {w1.getnewaddress(): 1}, 6, "conservative", 1, {"feeRate": 0.01})
 
         assert_raises_rpc_error(-3, "Unexpected key totalFee", w0.send, {w1.getnewaddress(): 1}, 6, "conservative", 1, {"totalFee": 0.01})
 
@@ -302,16 +303,16 @@ class WalletSendTest(BitcoinTestFramework):
                 self.test_send(from_wallet=w0, to_wallet=w1, amount=1, conf_target=v, estimate_mode=mode,
                     expect_error=(-3, "Expected type number for conf_target, got {}".format(k)))
 
-        # Test setting explicit fee rate just below the minimum and at zero.
-        self.log.info("Explicit fee rate raises RPC error 'fee rate too low' if fee_rate of 9.99999999 is passed")
-        self.test_send(from_wallet=w0, to_wallet=w1, amount=1, fee_rate=9.99999999,
-            expect_error=(-4, "Fee rate (9.999 sat/vB) is lower than the minimum fee rate setting (10.000 sat/vB)"))
-        self.test_send(from_wallet=w0, to_wallet=w1, amount=1, arg_fee_rate=9.99999999,
-            expect_error=(-4, "Fee rate (9.999 sat/vB) is lower than the minimum fee rate setting (10.000 sat/vB)"))
+        # Test setting explicit fee rate just below the minimum (1 rin/vB) and at zero.
+        self.log.info("Explicit fee rate raises RPC error 'fee rate too low' if fee_rate of 0.99999999 is passed")
+        self.test_send(from_wallet=w0, to_wallet=w1, amount=1, fee_rate=0.99999999,
+            expect_error=(-4, "Fee rate (0.999 rin/vB) is lower than the minimum fee rate setting (1.000 rin/vB)"))
+        self.test_send(from_wallet=w0, to_wallet=w1, amount=1, arg_fee_rate=0.99999999,
+            expect_error=(-4, "Fee rate (0.999 rin/vB) is lower than the minimum fee rate setting (1.000 rin/vB)"))
         self.test_send(from_wallet=w0, to_wallet=w1, amount=1, fee_rate=0,
-            expect_error=(-4, "Fee rate (0.000 sat/vB) is lower than the minimum fee rate setting (10.000 sat/vB)"))
+            expect_error=(-4, "Fee rate (0.000 rin/vB) is lower than the minimum fee rate setting (1.000 rin/vB)"))
         self.test_send(from_wallet=w0, to_wallet=w1, amount=1, arg_fee_rate=0,
-            expect_error=(-4, "Fee rate (0.000 sat/vB) is lower than the minimum fee rate setting (10.000 sat/vB)"))
+            expect_error=(-4, "Fee rate (0.000 rin/vB) is lower than the minimum fee rate setting (1.000 rin/vB)"))
 
         # TODO: Return hex if fee rate is below -maxmempool
         # res = self.test_send(from_wallet=w0, to_wallet=w1, amount=1, conf_target=0.1, estimate_mode="sat/b", add_to_wallet=False)
@@ -323,15 +324,15 @@ class WalletSendTest(BitcoinTestFramework):
         # assert_fee_amount(fee, Decimal(len(res["hex"]) / 2), Decimal("0.000001"))
 
         self.log.info("If inputs are specified, do not automatically add more...")
-        res = self.test_send(from_wallet=w0, to_wallet=w1, amount=51, inputs=[], add_to_wallet=False)
+        res = self.test_send(from_wallet=w0, to_wallet=w1, amount=subsidy_cy() + 1, inputs=[], add_to_wallet=False)
         assert res["complete"]
         utxo1 = w0.listunspent()[0]
-        assert_equal(utxo1["amount"], 50)
-        self.test_send(from_wallet=w0, to_wallet=w1, amount=51, inputs=[utxo1],
+        assert_equal(utxo1["amount"], subsidy_cy())
+        self.test_send(from_wallet=w0, to_wallet=w1, amount=subsidy_cy() + 1, inputs=[utxo1],
                        expect_error=(-4, "Insufficient funds"))
-        self.test_send(from_wallet=w0, to_wallet=w1, amount=51, inputs=[utxo1], add_inputs=False,
+        self.test_send(from_wallet=w0, to_wallet=w1, amount=subsidy_cy() + 1, inputs=[utxo1], add_inputs=False,
                        expect_error=(-4, "Insufficient funds"))
-        res = self.test_send(from_wallet=w0, to_wallet=w1, amount=51, inputs=[utxo1], add_inputs=True, add_to_wallet=False)
+        res = self.test_send(from_wallet=w0, to_wallet=w1, amount=subsidy_cy() + 1, inputs=[utxo1], add_inputs=True, add_to_wallet=False)
         assert res["complete"]
 
         self.log.info("Manual change address and position...")

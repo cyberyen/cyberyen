@@ -1,7 +1,5 @@
 #include <wallet/txrecord.h>
 #include <wallet/wallet.h>
-#include <wallet/txrecord.h>
-#include <wallet/wallet.h>
 
 #include <chain.h>
 #include <core_io.h>

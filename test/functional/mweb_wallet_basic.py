@@ -25,7 +25,7 @@ class MWEBWalletBasicTest(BitcoinTestFramework):
         self.log.info("Setting up MWEB chain")
         setup_mweb_chain(node0)
         self.sync_all()
-        
+
         #
         # Send to node1 mweb
         #
@@ -47,11 +47,11 @@ class MWEBWalletBasicTest(BitcoinTestFramework):
         assert n1_addr_coins[0]['confirmations'] == 0
         assert node1.getbalances()['mine']['untrusted_pending'] == 25
         assert node1.getbalances()['mine']['trusted'] == 0
-        
+
         self.log.info("Mine the next block")
         node0.generate(1)
         self.sync_blocks()
-        
+
         self.log.info("Verify node1's wallet lists the transaction as confirmed")
         n1_addr_coins = node1.listunspent(addresses=[n1_addr])
         assert_equal(len(n1_addr_coins), 1)
@@ -112,7 +112,7 @@ class MWEBWalletBasicTest(BitcoinTestFramework):
         assert_equal(tx3_accept['allowed'], True)
         assert_equal(node1.sendrawtransaction(tx3_hex, 0), tx3_id)
         self.sync_mempools()
-        
+
         n1_tx3 = node1.gettransaction(txid=tx3_id)
         assert_equal(n1_tx3['confirmations'], 0)
         assert n1_tx3['amount'] > -5 and n1_tx3['amount'] < -4.9
@@ -129,7 +129,7 @@ class MWEBWalletBasicTest(BitcoinTestFramework):
         node0.generate(1)
         self.sync_all()
         assert tx2_id not in node1.getrawmempool()
-        assert tx3_id not in node1.getrawmempool()        
+        assert tx3_id not in node1.getrawmempool()
 
         n2_addr2_coins = node2.listreceivedbyaddress(minconf=0, address_filter=n2_addr2)
         assert_equal(len(n2_addr2_coins), 1)

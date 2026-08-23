@@ -5,6 +5,7 @@
 #include <chain.h>
 #include <chainparams.h>
 #include <pow.h>
+#include <primitives/block.h>
 #include <test/util/setup_common.h>
 
 #include <boost/test/unit_test.hpp>
@@ -20,7 +21,7 @@ BOOST_AUTO_TEST_CASE(get_next_work)
     pindexLast.nHeight = 280223;
     pindexLast.nTime = 1358378777;  // Block #280223
     pindexLast.nBits = 0x1c0ac141;
-    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, chainParams->GetConsensus()), 0x1c093f8dU);
+    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, chainParams->GetConsensus()), 0x1c2b0504U);
 }
 
 /* Test the constraint on the upper bound for next work */
@@ -44,7 +45,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual)
     pindexLast.nHeight = 578591;
     pindexLast.nTime = 1401757934;  // Block #578591
     pindexLast.nBits = 0x1b075cf1;
-    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, chainParams->GetConsensus()), 0x1b01d73cU);
+    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, chainParams->GetConsensus()), 0x1b1d73c4U);
 }
 
 /* Test the constraint on the upper bound for actual time taken */
@@ -162,6 +163,29 @@ void sanity_check_chainparams(const ArgsManager& args, std::string chainName)
         BOOST_CHECK(UintToArith256(consensus.powLimit) < targ_max);
     }
     */
+}
+
+BOOST_AUTO_TEST_CASE(GetNextWorkRequired_regtest_no_retargeting)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, CBaseChainParams::REGTEST);
+    const auto& consensus = chainParams->GetConsensus();
+    BOOST_REQUIRE(consensus.fPowNoRetargeting);
+
+    // LWMA-2 window is N=240. A 1-second spacing chain longer than that
+    // would retarget if fPowNoRetargeting were still unreachable.
+    const int nBlocks = 250;
+    std::vector<CBlockIndex> blocks(nBlocks);
+    const uint32_t nBits = chainParams->GenesisBlock().nBits;
+    for (int i = 0; i < nBlocks; i++) {
+        blocks[i].pprev = i ? &blocks[i - 1] : nullptr;
+        blocks[i].nHeight = i;
+        blocks[i].nTime = chainParams->GenesisBlock().nTime + i;
+        blocks[i].nBits = nBits;
+    }
+
+    CBlockHeader header;
+    header.nTime = blocks.back().nTime + 1;
+    BOOST_CHECK_EQUAL(GetNextWorkRequired(&blocks.back(), &header, consensus), nBits);
 }
 
 BOOST_AUTO_TEST_CASE(ChainParams_MAIN_sanity)

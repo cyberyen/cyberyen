@@ -340,17 +340,37 @@ static void check_computeblockversion_bip8(const Consensus::Params& params, Cons
 
     const CBlockIndex* lastBlock = nullptr;
 
+    if (nStartHeight == 0 && nTimeoutHeight == 0) {
+        // MAIN/TESTNET TAPROOT+MWEB: height-based params, already buried at genesis.
+        // GetStateFor(nullptr) is DEFINED; STARTED then LOCKED_IN then ACTIVE over three windows.
+        VersionBitsTester chain;
+        versionbitscache.Clear();
+        lastBlock = chain.Mine(nMinerConfirmationWindow, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
+        BOOST_CHECK_EQUAL(VersionBitsState(lastBlock, params, dep, versionbitscache), ThresholdState::STARTED);
+        BOOST_CHECK((ComputeBlockVersion(lastBlock, params) & bit_mask) != 0);
+        lastBlock = chain.Mine(2 * nMinerConfirmationWindow, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
+        BOOST_CHECK_EQUAL(VersionBitsState(lastBlock, params, dep, versionbitscache), ThresholdState::LOCKED_IN);
+        BOOST_CHECK((ComputeBlockVersion(lastBlock, params) & bit_mask) != 0);
+        lastBlock = chain.Mine(3 * nMinerConfirmationWindow, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
+        BOOST_CHECK_EQUAL(VersionBitsState(lastBlock, params, dep, versionbitscache), ThresholdState::ACTIVE);
+        BOOST_CHECK_EQUAL(ComputeBlockVersion(lastBlock, params) & bit_mask, 0);
+        return;
+    }
+
     {
         // In the first chain, we don't set the bit, and wait for forced activation via timeout.
         // The bit should be set by CBV during range [nStartHeight, nTimeoutHeight + nMinerConfirmationWindow)
         VersionBitsTester chain;
         versionbitscache.Clear();
 
-        // Bit should not be set before nStartHeight
-        lastBlock = chain.Mine(nStartHeight - 1, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
-        BOOST_CHECK_EQUAL(ComputeBlockVersion(lastBlock, params) & bit_mask, 0);
-
-        // Once we hit nStartHeight, the feature switches to STARTED, we should be able to signal for activation.
+        // nStartHeight==0 is already signalling on the first block; do not
+        // pass Mine(nStartHeight-1) (unsigned wrap) for genesis-active BIP8.
+        if (nStartHeight > 0) {
+            lastBlock = chain.Mine(static_cast<unsigned int>(nStartHeight - 1), nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
+            BOOST_CHECK_EQUAL(ComputeBlockVersion(lastBlock, params) & bit_mask, 0);
+        } else {
+            BOOST_CHECK_EQUAL(ComputeBlockVersion(nullptr, params) & bit_mask, 0);
+        }
         for (uint32_t i = nStartHeight; i < nTimeoutHeight; i++) {
             lastBlock = chain.Mine(i, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
             BOOST_CHECK((ComputeBlockVersion(lastBlock, params) & bit_mask) != 0);
@@ -382,9 +402,14 @@ static void check_computeblockversion_bip8(const Consensus::Params& params, Cons
         versionbitscache.Clear();
 
         // Bit should not be set before nStartHeight
-        lastBlock = chain.Mine(nStartHeight - 1, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
-        BOOST_CHECK_EQUAL(ComputeBlockVersion(lastBlock, params) & bit_mask, 0);
-        BOOST_CHECK_EQUAL(VersionBitsState(lastBlock, params, dep, versionbitscache), ThresholdState::DEFINED);
+        if (nStartHeight > 0) {
+            lastBlock = chain.Mine(static_cast<unsigned int>(nStartHeight - 1), nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
+            BOOST_CHECK_EQUAL(ComputeBlockVersion(lastBlock, params) & bit_mask, 0);
+            BOOST_CHECK_EQUAL(VersionBitsState(lastBlock, params, dep, versionbitscache), ThresholdState::DEFINED);
+        } else {
+            BOOST_CHECK_EQUAL(ComputeBlockVersion(nullptr, params) & bit_mask, 0);
+            BOOST_CHECK_EQUAL(VersionBitsState(nullptr, params, dep, versionbitscache), ThresholdState::DEFINED);
+        }
 
         // Once we hit nStartHeight, the feature switches to STARTED, and we start signaling for activation.
         for (uint32_t i = 0; i < nMinerConfirmationWindow; i++) {

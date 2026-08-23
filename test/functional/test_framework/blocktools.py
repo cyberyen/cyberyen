@@ -5,6 +5,7 @@
 """Utilities for manipulating blocks and transactions."""
 
 from binascii import a2b_hex
+from decimal import Decimal
 import struct
 import time
 import unittest
@@ -49,8 +50,29 @@ WITNESS_SCALE_FACTOR = 4
 MAX_BLOCK_SIGOPS = 20000
 MAX_BLOCK_SIGOPS_WEIGHT = MAX_BLOCK_SIGOPS * WITNESS_SCALE_FACTOR
 
-# Genesis block time (regtest)
-TIME_GENESIS_BLOCK = 1296688602
+# Genesis block time (Cyberyen, all nets)
+TIME_GENESIS_BLOCK = 1659708882
+
+# CRegTestParams: src/chainparams.cpp nSubsidyHalvingInterval / nPowTargetSpacing
+REGTEST_SUBSIDY_HALVING_INTERVAL = 150
+REGTEST_POW_TARGET_SPACING = 60
+
+
+def get_block_subsidy(height):
+    """Python mirror of src/validation.cpp GetBlockSubsidy for CRegTestParams."""
+    halvings = height // REGTEST_SUBSIDY_HALVING_INTERVAL
+    if height <= 99000:
+        n_subsidy = (1000000 * COIN) >> halvings
+    elif height < (6 * REGTEST_SUBSIDY_HALVING_INTERVAL):
+        n_subsidy = (500000 * COIN) >> halvings
+    else:
+        n_subsidy = 10000 * COIN
+    return n_subsidy
+
+
+def subsidy_cy(height=0):
+    """Block subsidy in CY at height (Decimal, for RPC comparisons)."""
+    return Decimal(get_block_subsidy(height)) / Decimal(COIN)
 
 # From BIP141
 WITNESS_COMMITMENT_HEADER = b"\xaa\x21\xa9\xed"
@@ -63,8 +85,8 @@ def create_block(hashprev=None, coinbase=None, ntime=None, *, version=None, tmpl
     block = CBlock()
     if tmpl is None:
         tmpl = {}
-    block.nVersion = version or tmpl.get('version') or 1
-    block.nTime = ntime or tmpl.get('curtime') or int(time.time() + 600)
+    block.nVersion = version or tmpl.get('version') or 0x20000000  # VERSIONBITS_TOP_BITS; SegwitHeight is 0 on Cyberyen regtest
+    block.nTime = ntime or tmpl.get('curtime') or int(time.time() + REGTEST_POW_TARGET_SPACING)
     block.hashPrevBlock = hashprev or int(tmpl['previousblockhash'], 0x10)
     if tmpl and not tmpl.get('bits') is None:
         block.nBits = struct.unpack('>I', a2b_hex(tmpl['bits']))[0]
@@ -126,10 +148,7 @@ def create_coinbase(height, pubkey=None, extra_output_script=None, fees=0):
     coinbase = CTransaction()
     coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff), script_BIP34_coinbase_height(height), 0xffffffff))
     coinbaseoutput = CTxOut()
-    coinbaseoutput.nValue = 50 * COIN
-    halvings = int(height / 150)  # regtest
-    coinbaseoutput.nValue >>= halvings
-    coinbaseoutput.nValue += fees
+    coinbaseoutput.nValue = get_block_subsidy(height) + fees
     if pubkey is not None:
         coinbaseoutput.scriptPubKey = CScript([pubkey, OP_CHECKSIG])
     else:

@@ -241,6 +241,14 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 {
     assert(pindexLast != nullptr);
     assert(pblock != nullptr);
+
+    // fPowNoRetargeting is the regtest contract (MineBlocksOnDemand).
+    // It must be honored here: KGW/DGW/LWMA were added without it, so the
+    // check inside CalculateNextWorkRequired is unreachable when
+    // nLWMA3BiggerWindow == 0 (regtest and testnet4).
+    if (params.fPowNoRetargeting)
+	return pindexLast->nBits;
+
     const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
 
     if (pindexLast->nHeight + 1 < params.nPowKGWHeight) {

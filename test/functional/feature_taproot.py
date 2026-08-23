@@ -1199,7 +1199,7 @@ class TaprootTest(BitcoinTestFramework):
         self.num_nodes = 2
         self.setup_clean_chain = True
         # Node 0 has Taproot inactive, Node 1 active.
-        self.extra_args = [["-par=1", "-dustrelayfee=0.00003", "-mintxfee=0.00001", "-vbparams=taproot:1:1"], ["-par=1", "-dustrelayfee=0.00003", "-mintxfee=0.00001"]]
+        self.extra_args = [["-par=1", "-dustrelayfee=0.00003", "-mintxfee=0.00001", "-vbparams=taproot:1:1", "-vbparams=mweb:-2:0"], ["-par=1", "-dustrelayfee=0.00003", "-mintxfee=0.00001", "-vbparams=mweb:-2:0"]]
 
     def block_submit(self, node, txs, msg, err_msg, cb_pubkey=None, fees=0, sigops_weight=0, witness=False, accept=False):
 

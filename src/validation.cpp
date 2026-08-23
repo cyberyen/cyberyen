@@ -24,6 +24,7 @@
 #include <mw/node/CoinsView.h>
 #include <mweb/mweb_db.h>
 #include <mweb/mweb_node.h>
+#include <mweb/mweb_policy.h>
 #include <node/ui_interface.h>
 #include <optional.h>
 #include <policy/fees.h>
@@ -590,6 +591,18 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
     // MWEB: Don't accept MWEB transactions before activation.
     if (tx.HasMWEBTx() && !IsMWEBEnabled(::ChainActive().Tip(), args.m_chainparams.GetConsensus())) {
 	return state.Invalid(TxValidationResult::TX_NOT_STANDARD, "mweb-before-activation");
+    }
+
+    // MWEB: Reject oversized MWEB transactions under relay policy *before* the
+    // expensive signature/rangeproof verification in MWEB::Node::CheckTransaction.
+    // The consensus limits allow a single tx to carry a whole block's worth of
+    // inputs/outputs; verifying that for an unpaid, invalid tx would be a
+    // cheap-to-relay, expensive-to-verify DoS.
+    if (fRequireStandard && tx.HasMWEBTx()) {
+	std::string mweb_reason;
+	if (!MWEB::Policy::CheckWeight(tx, mweb_reason)) {
+	    return state.Invalid(TxValidationResult::TX_NOT_STANDARD, mweb_reason);
+	}
     }
 
     // MWEB: Check MWEB tx
@@ -2752,7 +2765,7 @@ bool CChainState::ConnectTip(BlockValidationState& state, const CChainParams& ch
                 if (state.GetResult() == BlockValidationResult::BLOCK_MUTATED) {
                     // The same block hash may be valid with different
                     // non-committed data, so do not retain these bytes.
-                    EraseBlockData(pindexNew);
+                    EraseBlockData(pindexNew, /*preserve_tx_metadata=*/true);
                 }
             }
             return error("%s: ConnectBlock %s failed, %s", __func__, pindexNew->GetBlockHash().ToString(), state.ToString());
@@ -3389,6 +3402,7 @@ void CChainState::ReceivedBlockTransactions(const CBlock& block, CBlockIndex* pi
     pindexNew->nFile = pos.nFile;
     pindexNew->nDataPos = pos.nPos;
     pindexNew->nUndoPos = 0;
+    pindexNew->nStatus &= ~BLOCK_DISCARDED_MUTATED_DATA;
     pindexNew->nStatus |= BLOCK_HAVE_DATA;
     if (IsWitnessEnabled(pindexNew->pprev, consensusParams)) {
 	pindexNew->nStatus |= BLOCK_OPT_WITNESS;
@@ -3730,11 +3744,15 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, BlockValidatio
 static bool ContextualCheckBlock(const CBlock& block, BlockValidationState& state, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
     const int nHeight = pindexPrev == nullptr ? 0 : pindexPrev->nHeight + 1;
+    // Cyberyen sets CSVHeight and BIP34Height to 0 on all networks; upstream keeps
+    // them > 0 so genesis never enters those branches. Make the genesis guard
+    // explicit (same pattern as ConnectBlock / AcceptBlockHeader).
+    const bool is_genesis = (pindexPrev == nullptr);
+    assert(!is_genesis || block.GetHash() == consensusParams.hashGenesisBlock);
 
     // Start enforcing BIP113 (Median Time Past).
     int nLockTimeFlags = 0;
-    if (nHeight >= consensusParams.CSVHeight) {
-	assert(pindexPrev != nullptr);
+    if (!is_genesis && nHeight >= consensusParams.CSVHeight) {
 	nLockTimeFlags |= LOCKTIME_MEDIAN_TIME_PAST;
     }
 
@@ -3750,7 +3768,7 @@ static bool ContextualCheckBlock(const CBlock& block, BlockValidationState& stat
     }
 
     // Enforce rule that the coinbase starts with serialized block height
-    if (nHeight >= consensusParams.BIP34Height)
+    if (!is_genesis && nHeight >= consensusParams.BIP34Height)
     {
 	CScript expect = CScript() << nHeight;
 	if (block.vtx[0]->vin[0].scriptSig.size() < expect.size() ||
@@ -3986,7 +4004,9 @@ bool CChainState::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, Block
     // and unrequested blocks.
     if (fAlreadyHave) return true;
     if (!fRequested) {  // If we didn't ask for it:
-	if (pindex->nTx != 0) return true;    // This is a previously-processed block that was pruned
+	if (pindex->nTx != 0 && !(pindex->nStatus & BLOCK_DISCARDED_MUTATED_DATA)) {
+	    return true; // This is a previously-processed block that was pruned
+	}
 	if (!fHasMoreOrSameWork) return true; // Don't process less-work chains
 	if (fTooFarAhead) return true;        // Block height is too high
 
@@ -4656,24 +4676,31 @@ bool CChainState::ReplayBlocks(const CChainParams& params)
     return true;
 }
 
-//! Helper for CChainState::RewindBlockIndex
-void CChainState::EraseBlockData(CBlockIndex* index)
+//! Discard stored block data, optionally retaining validated transaction metadata.
+void CChainState::EraseBlockData(CBlockIndex* index, bool preserve_tx_metadata)
 {
     AssertLockHeld(cs_main);
     assert(!m_chain.Contains(index)); // Make sure this block isn't active
 
-    // Reduce validity
-    index->nStatus = std::min<unsigned int>(index->nStatus & BLOCK_VALID_MASK, BLOCK_VALID_TREE) | (index->nStatus & ~BLOCK_VALID_MASK);
+    if (preserve_tx_metadata) {
+	// Keep descendants linked without walking the entire block index. The
+	// block passed transaction validation; only its mutable serialization
+	// needs to be replaced.
+	index->nStatus |= BLOCK_DISCARDED_MUTATED_DATA;
+    } else {
+	// Reduce validity.
+	index->nStatus = std::min<unsigned int>(index->nStatus & BLOCK_VALID_MASK, BLOCK_VALID_TREE) | (index->nStatus & ~BLOCK_VALID_MASK);
+	index->nStatus &= ~BLOCK_DISCARDED_MUTATED_DATA;
+	index->nTx = 0;
+	index->nChainTx = 0;
+	index->nSequenceId = 0;
+    }
     // Remove have-data flags.
     index->nStatus &= ~(BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO);
     // Remove storage location.
     index->nFile = 0;
     index->nDataPos = 0;
     index->nUndoPos = 0;
-    // Remove various other things
-    index->nTx = 0;
-    index->nChainTx = 0;
-    index->nSequenceId = 0;
     // Make sure it gets written.
     setDirtyBlockIndex.insert(index);
     // Update indexes
@@ -5054,12 +5081,19 @@ void CChainState::CheckBlockIndex(const Consensus::Params& consensusParams)
 	// VALID_TRANSACTIONS is equivalent to nTx > 0 for all nodes (whether or not pruning has occurred).
 	// HAVE_DATA is only equivalent to nTx > 0 (or VALID_TRANSACTIONS) if no pruning has occurred.
 	if (!fHavePruned) {
-	    // If we've never pruned, then HAVE_DATA should be equivalent to nTx > 0
-	    assert(!(pindex->nStatus & BLOCK_HAVE_DATA) == (pindex->nTx == 0));
-	    assert(pindexFirstMissing == pindexFirstNeverProcessed);
+	    // If we've never pruned, transaction metadata implies either
+	    // available data or an explicitly discarded mutated serialization.
+	    assert(((pindex->nStatus & BLOCK_HAVE_DATA) != 0 ||
+		    (pindex->nStatus & BLOCK_DISCARDED_MUTATED_DATA) != 0) == (pindex->nTx > 0));
+	    assert(pindexFirstMissing == pindexFirstNeverProcessed ||
+		   (pindexFirstMissing && (pindexFirstMissing->nStatus & BLOCK_DISCARDED_MUTATED_DATA)));
 	} else {
 	    // If we have pruned, then we can only say that HAVE_DATA implies nTx > 0
 	    if (pindex->nStatus & BLOCK_HAVE_DATA) assert(pindex->nTx > 0);
+	}
+	if (pindex->nStatus & BLOCK_DISCARDED_MUTATED_DATA) {
+	    assert(!(pindex->nStatus & BLOCK_HAVE_DATA));
+	    assert(pindex->nTx > 0);
 	}
 	if (pindex->nStatus & BLOCK_HAVE_UNDO) assert(pindex->nStatus & BLOCK_HAVE_DATA);
 	assert(((pindex->nStatus & BLOCK_VALID_MASK) >= BLOCK_VALID_TRANSACTIONS) == (pindex->nTx > 0)); // This is pruning-independent.
@@ -5112,7 +5146,7 @@ void CChainState::CheckBlockIndex(const Consensus::Params& consensusParams)
 	if (pindexFirstMissing == nullptr) assert(!foundInUnlinked); // We aren't missing data for any parent -- cannot be in m_blocks_unlinked.
 	if (pindex->pprev && (pindex->nStatus & BLOCK_HAVE_DATA) && pindexFirstNeverProcessed == nullptr && pindexFirstMissing != nullptr) {
 	    // We HAVE_DATA for this block, have received data for all parents at some point, but we're currently missing data for some parent.
-	    assert(fHavePruned); // We must have pruned.
+	    assert(fHavePruned || (pindexFirstMissing->nStatus & BLOCK_DISCARDED_MUTATED_DATA));
 	    // This block may have entered m_blocks_unlinked if:
 	    //  - it has a descendant that at some point had more work than the
 	    //    tip, and
