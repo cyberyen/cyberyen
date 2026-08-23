@@ -244,7 +244,17 @@ LIBMW_H = \
 	libmw/deps/ghc/include/ghc/fs_std.hpp \
 	libmw/deps/ghc/include/ghc/fs_std_fwd.hpp \
 	libmw/deps/ghc/include/ghc/fs_std_impl.hpp \
-	libmw/deps/mio/include/mio/mmap.hpp
+	libmw/deps/mio/include/mio/mmap.hpp \
+	libmw/src/crypto/Context.h \
+	libmw/src/crypto/ConversionUtil.h \
+	libmw/src/crypto/secp256k1-zkp.h \
+	libmw/src/db/common/DBEntry.h \
+	libmw/src/db/common/DBTable.h \
+	libmw/src/db/common/DBTransaction.h \
+	libmw/src/db/common/Database.h \
+	libmw/src/db/common/OrderedMultimap.h \
+	libmw/src/db/common/SerializableVec.h \
+	libmw/src/node/CoinActions.h
 
 .PHONY: FORCE check-symbols check-security
 # bitcoin core #
@@ -587,7 +597,12 @@ crypto_libbitcoin_crypto_base_a_SOURCES = \
   crypto/sha512.h \
   crypto/siphash.cpp \
   crypto/siphash.h \
-  libmw/src/crypto/Hasher.cpp
+  libmw/src/crypto/Hasher.cpp \
+  crypto/blake3/blake3.h \
+  crypto/blake3/blake3_impl.h \
+  crypto/blake3/blake3.c \
+  crypto/blake3/blake3_dispatch.c \
+  crypto/blake3/blake3_portable.c
 
 if USE_ASM
 crypto_libbitcoin_crypto_base_a_SOURCES += crypto/sha256_sse4.cpp
