@@ -4,7 +4,8 @@ Cyberyen Core version 0.21.7 is now available from:
 
 This release ports the MWEB hardening set from Litecoin Core 0.21.5.6,
 restores a protection that was absent from 0.21.6.1, fixes a node abort on
--reindex, and repairs the test suite.
+-reindex, repairs the test suite, and fixes build and CI packaging so the
+release can be built and verified from the source tarball.
 
 There are no mainnet consensus rule changes in this release.
 

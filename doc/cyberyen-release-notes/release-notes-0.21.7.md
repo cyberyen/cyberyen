@@ -7,7 +7,8 @@ Cyberyen Core version 0.21.7 is now available from:
 
 This release ports the MWEB hardening set from Litecoin Core 0.21.5.6,
 restores a protection that was absent from 0.21.6.1, fixes a node abort on
--reindex, and repairs the test suite.
+-reindex, repairs the test suite, and fixes build and CI packaging so the
+release can be built and verified from the source tarball.
 
 There are no mainnet consensus rule changes in this release.
 
@@ -52,6 +53,20 @@ Node fixes
   because the KGW/DGW/LWMA dispatch returns before the branch that checked it.
   Affects regtest only; mainnet and testnet4 set the flag false.
 
+Build and CI
+------------
+
+- Fix Boost 1.70 build on glibc >= 2.34 in depends (pthread stack minimum
+  guard in Boost.Thread).
+- Ship libmw headers and blake3 sources in the source distribution; blake3 is
+  compiled into Hasher.cpp via #include, not as separate objects, so
+  libbitcoinconsensus links without duplicate symbols.
+- CI installs cmake so depends can build libfmt.
+- Lint: shellcheck fixes, codespell excludes for vendored trees.
+- bitcoin-util-test fixtures use Cyberyen base58 prefixes and expected JSON.
+- test_runner.py treats cyberyen_scrypt.py as a framework helper, not a
+  missing functional test script.
+
 Testing
 -------
 
@@ -61,10 +76,13 @@ Testing
 - Test fixtures inherited from Bitcoin and Litecoin now use Cyberyen
   parameters: WIF prefix 156, cymweb and rcy address encodings with recomputed
   checksums, block subsidy, genesis timestamp, and network magic.
-- The functional suite goes from 64 passed / 42 skipped / 106 failed to
-  169 / 42 / 2, and the unit binary from an abort to a clean exit. The two
-  remaining failures require IPv6 on the loopback interface, which the CI
-  container cannot configure without NET_ADMIN.
+- mweb_reorg forces a canonical transparent→MWEB pegin so the test does not
+  degenerate into MWEB→MWEB under Cyberyen's block subsidy.
+- The unit binary exits cleanly; libmw Test* suites pass.
+- GitHub Actions on Ubuntu 22.04 (lint and native-jammy: build from
+  distdir, unit tests, functional tests) passes on this release branch.
+- p2p_dos_header_tree remains skipped because there is still no mechanism to
+  set a non-genesis regtest checkpoint.
 
 Downgrade note
 --------------
