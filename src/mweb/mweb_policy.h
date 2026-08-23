@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BITCOIN_MWEB_MWEB_POLICY_H
+#define BITCOIN_MWEB_MWEB_POLICY_H
 
 #include <string>
 
@@ -32,3 +33,5 @@ public:
 };
 
 }
+
+#endif // BITCOIN_MWEB_MWEB_POLICY_H

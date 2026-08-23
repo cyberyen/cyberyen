@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef CYBERYEN_MWEB_MODELS_H
-#define CYBERYEN_MWEB_MODELS_H
+#ifndef BITCOIN_MWEB_MWEB_MODELS_H
+#define BITCOIN_MWEB_MWEB_MODELS_H
 
 #include <amount.h>
 #include <mw/models/block/Block.h>
@@ -232,4 +232,4 @@ struct Tx {
 
 } // namespace MWEB
 
-#endif // CYBERYEN_MWEB_MODELS_H
+#endif // BITCOIN_MWEB_MWEB_MODELS_H

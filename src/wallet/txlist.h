@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BITCOIN_WALLET_TXLIST_H
+#define BITCOIN_WALLET_TXLIST_H
 
 #include <script/address.h>
 #include <wallet/txrecord.h>
@@ -39,3 +40,5 @@ private:
     bool IsAllToMe(const CWalletTx& wtx);
     bool IsMine(const CWalletTx& wtx);
 };
+
+#endif // BITCOIN_WALLET_TXLIST_H

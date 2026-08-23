@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BITCOIN_WALLET_TXASSEMBLER_H
+#define BITCOIN_WALLET_TXASSEMBLER_H
 
 #include <mweb/mweb_transact.h>
 #include <policy/fees.h>
@@ -126,3 +127,5 @@ private:
     void UpdateChangeAddress(InProcessTx& new_tx) const;
     OutputType GetChangeType(const InProcessTx& new_tx) const;
 };
+
+#endif // BITCOIN_WALLET_TXASSEMBLER_H
