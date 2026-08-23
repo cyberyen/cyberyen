@@ -314,7 +314,16 @@ endif
 
 BITCOIN_TEST_SUITE += \
   libmw/test/framework/src/TxBuilder.cpp \
-  libmw/test/framework/src/models/Tx.cpp
+  libmw/test/framework/src/models/Tx.cpp \
+  libmw/test/framework/include/test_framework/Deserializer.h \
+  libmw/test/framework/include/test_framework/Miner.h \
+  libmw/test/framework/include/test_framework/TestLeafSet.h \
+  libmw/test/framework/include/test_framework/TestMWEB.h \
+  libmw/test/framework/include/test_framework/TxBuilder.h \
+  libmw/test/framework/include/test_framework/models/MinedBlock.h \
+  libmw/test/framework/include/test_framework/models/Tx.h \
+  libmw/test/framework/include/test_framework/models/TxInput.h \
+  libmw/test/framework/include/test_framework/models/TxOutput.h
 
 BITCOIN_TESTS += \
   libmw/test/tests/consensus/Test_Aggregation.cpp \
