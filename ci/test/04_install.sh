@@ -70,15 +70,6 @@ elif [ "$CI_USE_APT_INSTALL" != "no" ]; then
   ${CI_RETRY_EXE} DOCKER_EXEC apt-get update
   ${CI_RETRY_EXE} DOCKER_EXEC apt-get install --no-install-recommends --no-upgrade -y $PACKAGES $DOCKER_PACKAGES
   ${CI_RETRY_EXE} DOCKER_EXEC pip3 install blake3
-  # libevent getaddrinfo(AI_ADDRCONFIG) skips AF_INET6 when the only v6 address is loopback.
-  ${CI_RETRY_EXE} DOCKER_EXEC bash -c 'command -v ip >/dev/null || apt-get install --no-install-recommends -y iproute2
-for iface in $(ls /proc/sys/net/ipv6/conf); do
-  case "$iface" in all|default|lo) continue ;; esac
-  echo 0 > "/proc/sys/net/ipv6/conf/$iface/disable_ipv6" 2>/dev/null || true
-done
-dev=$(ip -o link show | awk -F": " "\$2 ~ /^(eth|ens|enp)/ { sub(/@.*/, \"\", \$2); print \$2; exit }")
-ip -6 addr add fd00:c0ff:ee::1/64 dev "$dev" || true
-'
 fi
 
 if [ "$CI_OS_NAME" == "macos" ]; then
