@@ -13,5 +13,17 @@ homogenous
 setban
 hist
 ser
+unser
 unselect
 lowercased
+keypair
+keypairs
+fo
+blockin
+crypted
+dedup
+fpr
+asend
+atack
+inout
+files'

@@ -478,7 +478,7 @@ public:
     bool IsMWEBOnly() const noexcept { return HasMWEBTx() && vin.empty() && vout.empty(); }
 
     /// <summary>
-    /// Builds a vector of CTxInputs, starting with the canoncial inputs (CTxIn), followed by the MWEB input hashes.
+    /// Builds a vector of CTxInputs, starting with the canonical inputs (CTxIn), followed by the MWEB input hashes.
     /// </summary>
     /// <returns>A vector of all of the transaction's inputs.</returns>
     std::vector<CTxInput> GetInputs() const noexcept;
@@ -498,7 +498,7 @@ public:
     CTxOutput GetOutput(const OutputIndex& idx) const noexcept;
 
     /// <summary>
-    /// Builds a vector of CTxOutputs, starting with the canoncial outputs (CTxOut), followed by the MWEB output IDs.
+    /// Builds a vector of CTxOutputs, starting with the canonical outputs (CTxOut), followed by the MWEB output IDs.
     /// </summary>
     /// <returns>A vector of all of the transaction's outputs.</returns>
     std::vector<CTxOutput> GetOutputs() const noexcept;
