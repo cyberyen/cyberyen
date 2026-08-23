@@ -759,7 +759,7 @@ class CompactBlocksTest(BitcoinTestFramework):
 
         cmpct_block.prefilled_txn[0].tx.wit.vtxinwit = [CTxInWitness()]
         cmpct_block.prefilled_txn[0].tx.wit.vtxinwit[0].scriptWitness.stack = [ser_uint256(0)]
-        
+
         delivery_peer.send_and_ping(msg_cmpctblock(cmpct_block.to_p2p(), version))
         assert int(node.getbestblockhash(), 16) != block.sha256
 

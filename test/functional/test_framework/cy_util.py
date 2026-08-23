@@ -9,7 +9,7 @@ import os
 from decimal import Decimal
 
 from test_framework.messages import COIN, COutPoint, CTransaction, CTxIn, CTxOut, FromHex, MWEBHeader
-from test_framework.util import assert_equal, assert_greater_than, get_datadir_path, initialize_datadir, satoshi_round
+from test_framework.util import assert_greater_than, get_datadir_path, initialize_datadir, satoshi_round
 from test_framework.script_util import DUMMY_P2WPKH_SCRIPT, hogaddr_script
 from test_framework.test_node import TestNode
 

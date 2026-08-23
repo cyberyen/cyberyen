@@ -17,7 +17,6 @@ import re
 import shutil
 import subprocess
 import sys
-import hashlib
 
 
 SHA256_SUMS = {
@@ -94,16 +93,6 @@ def download_binary(tag, args) -> int:
         ret = subprocess.run(cmd).returncode
         if ret:
             return ret
-
-    hasher = hashlib.sha256()
-    with open(tarball, "rb") as afile:
-        hasher.update(afile.read())
-    tarballHash = hasher.hexdigest()
-
-    #if tarballHash not in SHA256_SUMS or SHA256_SUMS[tarballHash] != tarball:
-        #print("Checksum did not match")
-        #return 1
-    #print("Checksum matched")
 
     # Extract tarball
     ret = subprocess.run(['tar', '-zxf', tarball, '-C', tag,

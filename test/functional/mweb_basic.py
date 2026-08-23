@@ -8,7 +8,6 @@ from decimal import Decimal
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal
-from test_framework.cy_util import assert_is_canonical_pegin
 
 class MWEBBasicTest(BitcoinTestFramework):
     def set_test_params(self):
@@ -34,7 +33,7 @@ class MWEBBasicTest(BitcoinTestFramework):
         self.log.info("Generate final pre-MWEB block and pegin, ensuring tx is accepted to mempool")
         self.nodes[0].generate(1)
         pegin2_txid = self.nodes[0].sendtoaddress(addr0, 10)
-        self.sync_all();
+        self.sync_all()
         assert_equal(set(self.nodes[0].getrawmempool()), {pegin2_txid})
         assert_equal(set(self.nodes[1].getrawmempool()), {pegin2_txid})
 
@@ -52,7 +51,7 @@ class MWEBBasicTest(BitcoinTestFramework):
         if utxos[0]['address'] != addr0:
             utxo0 = utxos[1]
             utxo1 = utxos[0]
-          
+
         assert utxo0['amount'] == 10 and utxo0['address'] == addr0
         pegin2_info = self.nodes[0].gettransaction(pegin2_txid)
         pegin2_decoded = self.nodes[0].decoderawtransaction(pegin2_info['hex'])
@@ -118,7 +117,7 @@ class MWEBBasicTest(BitcoinTestFramework):
         self.log.info("Check for UTXO on node 1")
         utxos = self.nodes[1].listunspent(addresses=[addr2])
         assert_equal(len(utxos), 0)
-        
+
         self.log.info("Mine 1 more block. Peg-out coins should mature.")
         self.nodes[1].generate(1)
         self.sync_all()

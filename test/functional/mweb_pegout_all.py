@@ -19,9 +19,9 @@ class MWEBPegoutAllTest(BitcoinTestFramework):
     def run_test(self):
         self.log.info("Setup MWEB chain")
         setup_mweb_chain(self.nodes[0])
-        
+
         total_balance = self.nodes[0].getbalance()
-        pegout_txid = self.nodes[0].sendtoaddress(address=self.nodes[0].getnewaddress(), amount=total_balance, subtractfeefromamount=True)
+        self.nodes[0].sendtoaddress(address=self.nodes[0].getnewaddress(), amount=total_balance, subtractfeefromamount=True)
         assert_equal(len(self.nodes[0].getrawmempool()), 1)
         self.nodes[0].generate(1)
         assert_equal(len(self.nodes[0].getrawmempool()), 0)

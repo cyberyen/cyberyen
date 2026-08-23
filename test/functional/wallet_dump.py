@@ -56,7 +56,7 @@ def read_dump(file_name, addrs, script_addrs, hd_master_addr_old):
                     # ensure the old master is still available
                     assert hd_master_addr_old == addr
                 elif keytype == "hdseed=1":
-                    if hd_master_addr_old != None:
+                    if hd_master_addr_old is not None:
                         # MWEB: No new seed is generated when encrypting, so assert hd master key is unchanged
                         assert hd_master_addr_old == addr
                     hd_master_addr_ret = addr

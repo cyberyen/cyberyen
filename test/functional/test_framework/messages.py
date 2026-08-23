@@ -18,7 +18,6 @@ ser_*, deser_*: functions that handle serialization/deserialization.
 Classes use __slots__ to ensure extraneous attributes aren't accidentally added
 by tests, compromising their intended effect.
 """
-import binascii
 from codecs import encode
 import copy
 import hashlib
@@ -27,6 +26,7 @@ import math
 import random
 import socket
 import struct
+import blake3 as BLAKE3
 import time
 
 import cyberyen_scrypt
@@ -596,7 +596,7 @@ class CTransaction:
 
         if flags & 8:
             self.mweb_tx = deser_mweb_tx(f)
-            if self.mweb_tx == None:
+            if self.mweb_tx is None:
                 self.hogex = True
 
         self.nLockTime = struct.unpack("<I", f.read(4))[0]
@@ -640,7 +640,7 @@ class CTransaction:
         flags = 0
         if not self.wit.is_null():
             flags |= 1
-        if self.hogex or self.mweb_tx != None:
+        if self.hogex or self.mweb_tx is not None:
             flags |= 8
         r = b""
         r += struct.pack("<i", self.nVersion)
@@ -1975,7 +1975,6 @@ class msg_cfcheckpt:
 
 """------------MWEB------------"""
 
-import blake3 as BLAKE3
 
 def hex_reverse(h):
     return "".join(reversed([h[i:i+2] for i in range(0, len(h), 2)]))
@@ -2030,19 +2029,19 @@ def blake3(s):
 def ser_varint(n):
     r = b""
 
-    l=0;
+    l=0
     while True:
         t = (n & 0x7F) | (0x80, 0x00)[l == 0]
         r = struct.pack("B", t) + r
         if n <= 0x7F:
             break
-        n = (n >> 7) - 1;
+        n = (n >> 7) - 1
         l = l + 1
 
     return r
 
 def deser_varint(f):
-    n = 0;
+    n = 0
     while True:
         chData = struct.unpack("B", f.read(1))[0]
         n = (n << 7) | (chData & 0x7F)
@@ -2054,7 +2053,7 @@ def deser_varint(f):
     return n
 
 def ser_mweb_block(b):
-    if b == None:
+    if b is None:
         return struct.pack("B", 0)
     else:
         return struct.pack("B", 1) + b.serialize()
@@ -2069,7 +2068,7 @@ def deser_mweb_block(f):
         return None
 
 def ser_mweb_tx(t):
-    if t == None:
+    if t is None:
         return struct.pack("B", 0)
     else:
         return struct.pack("B", 1) + t.serialize()

@@ -31,7 +31,7 @@ class MWEBWalletUpgradeTest(BitcoinTestFramework):
         self.log.info("Setting up MWEB chain")
         setup_mweb_chain(node0)
         self.sync_all()
-        
+
         #
         # Create a non-HD wallet using an older cyberyen core version
         #
@@ -54,7 +54,7 @@ class MWEBWalletUpgradeTest(BitcoinTestFramework):
         #
         self.log.info("Upgrading wallet")
         node1.upgradewallet()
-        
+
         #
         # Send to MWEB address of upgraded wallet (node1)
         #

@@ -72,7 +72,7 @@ class KeyPoolTest(BitcoinTestFramework):
                 }
             ])
             nodes[0].walletlock()
-            
+
         # MWEB: We don't update hd seed when encrypting wallet, so new keypool was not generated.
         # We need to refill keypool manually.
         self.nodes[0].walletpassphrase('test', 10)

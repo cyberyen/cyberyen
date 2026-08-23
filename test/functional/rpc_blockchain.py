@@ -27,7 +27,6 @@ from test_framework.blocktools import (
     create_coinbase,
     TIME_GENESIS_BLOCK,
     REGTEST_POW_TARGET_SPACING,
-    subsidy_cy,
     get_block_subsidy,
 )
 from test_framework.messages import (
