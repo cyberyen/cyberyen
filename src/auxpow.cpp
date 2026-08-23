@@ -44,12 +44,12 @@ CAuxPow::check (const uint256& hashAuxBlock, int nChainId,
                 const Consensus::Params& params) const
 {
     if (params.fStrictChainId && parentBlock.GetChainId () == nChainId) {
-        LogPrint(BCLog::AUXPOW, "Aux POW parent has our chain ID");
+        LogPrint(BCLog::AUXPOW, "Aux POW parent has our chain ID\n");
         return false;
     }
 
     if (vChainMerkleBranch.size() > 30) {
-        LogPrint(BCLog::AUXPOW, "Aux POW chain merkle branch too long");
+        LogPrint(BCLog::AUXPOW, "Aux POW chain merkle branch too long\n");
         return false;
     }
 
@@ -62,13 +62,13 @@ CAuxPow::check (const uint256& hashAuxBlock, int nChainId,
     // Check that we are in the parent block merkle tree
     if (CheckMerkleBranch(coinbaseTx->GetHash(), vMerkleBranch, 0)
           != parentBlock.hashMerkleRoot) {
-        LogPrint(BCLog::AUXPOW, "Aux POW merkle root incorrect");
+        LogPrint(BCLog::AUXPOW, "Aux POW merkle root incorrect\n");
         return false;
     }
 
     // Check that there is at least one input.
     if (coinbaseTx->vin.empty()) {
-        LogPrint(BCLog::AUXPOW, "Aux POW coinbase has no inputs");
+        LogPrint(BCLog::AUXPOW, "Aux POW coinbase has no inputs\n");
         return false;
     }
 
@@ -87,7 +87,7 @@ CAuxPow::check (const uint256& hashAuxBlock, int nChainId,
         std::search(script.begin(), script.end(), vchRootHash.begin(), vchRootHash.end());
 
     if (pc == script.end()) {
-        LogPrint(BCLog::AUXPOW, "Aux POW missing chain merkle root in parent coinbase");
+        LogPrint(BCLog::AUXPOW, "Aux POW missing chain merkle root in parent coinbase\n");
         return false;
     }
 
@@ -97,11 +97,11 @@ CAuxPow::check (const uint256& hashAuxBlock, int nChainId,
         // mining header exists just before.
         if (script.end() != std::search(pcHead + 1, script.end(),
                                         mmHeaderBegin, mmHeaderEnd)) {
-            LogPrint(BCLog::AUXPOW, "Multiple merged mining headers in coinbase");
+            LogPrint(BCLog::AUXPOW, "Multiple merged mining headers in coinbase\n");
             return false;
         }
         if (pcHead + sizeof(pchMergedMiningHeader) != pc) {
-            LogPrint(BCLog::AUXPOW, "Merged mining header is not just before chain merkle root");
+            LogPrint(BCLog::AUXPOW, "Merged mining header is not just before chain merkle root\n");
             return false;
         }
     }
@@ -111,7 +111,7 @@ CAuxPow::check (const uint256& hashAuxBlock, int nChainId,
         // Enforce only one chain merkle root by checking that it starts early in the coinbase.
         // 8-12 bytes are enough to encode extraNonce and nBits.
         if (pc - script.begin() > 20) {
-            LogPrint(BCLog::AUXPOW, "Aux POW chain merkle root must start in the first 20 bytes of the parent coinbase");
+            LogPrint(BCLog::AUXPOW, "Aux POW chain merkle root must start in the first 20 bytes of the parent coinbase\n");
             return false;
         }
     }
@@ -121,20 +121,20 @@ CAuxPow::check (const uint256& hashAuxBlock, int nChainId,
     // a nonce and our chain ID and comparing to the index.
     pc += vchRootHash.size();
     if (script.end() - pc < 8) {
-        LogPrint(BCLog::AUXPOW, "Aux POW missing chain merkle tree size and nonce in parent coinbase");
+        LogPrint(BCLog::AUXPOW, "Aux POW missing chain merkle tree size and nonce in parent coinbase\n");
         return false;
     }
 
     const uint32_t nSize = DecodeLE32 (&pc[0]);
     const unsigned merkleHeight = vChainMerkleBranch.size ();
     if (nSize != (1u << merkleHeight)) {
-        LogPrint(BCLog::AUXPOW, "Aux POW merkle branch size does not match parent coinbase");
+        LogPrint(BCLog::AUXPOW, "Aux POW merkle branch size does not match parent coinbase\n");
         return false;
     }
 
     const uint32_t nNonce = DecodeLE32 (&pc[4]);
     if (nChainIndex != getExpectedIndex (nNonce, nChainId, merkleHeight)) {
-        LogPrint(BCLog::AUXPOW, "Aux POW wrong index");
+        LogPrint(BCLog::AUXPOW, "Aux POW wrong index\n");
         return false;
     }
 
